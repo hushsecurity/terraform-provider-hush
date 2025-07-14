@@ -1,0 +1,28 @@
+---
+name: Build
+on:
+  push:
+    branches:
+      - "main"
+      - "**-ci"
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: [self-hosted, hush-ec2-x64-ubuntu]
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      VERBOSE: "1"
+    steps:
+      - name: Git Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Capataz
+        uses: hushsecurity/capataz@main
+        with:
+          github_token: ${{ github.token }}
+          event_name: ${{ github.event_name }}
