@@ -1,0 +1,16 @@
+.idea
+.vscode
+*.swo
+*.swp
+*.swm
+*.swn
+*.pyc
+*.tfstate
+tags
+terraform.tfplan
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+.terraform.d/
+bin/
