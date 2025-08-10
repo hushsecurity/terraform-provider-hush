@@ -33,5 +33,6 @@ output "deployment" {
 
 - `description` (String) The description of the deployment
 - `env_type` (String) The environment type for the deployment (dev, staging, prod)
+- `kind` (String) The deployment kind (K8S, ECS, SERVERLESS)
 - `name` (String) The name of the deployment
 - `status` (String) The current status of the deployment
