@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 )
 
@@ -16,6 +17,7 @@ const (
 	nameDesc            = "The name of the deployment"
 	descriptionDesc     = "The description of the deployment"
 	envTypeDesc         = "The environment type for the deployment (dev, staging, prod)"
+	kindDesc            = "The deployment kind (K8S, ECS, SERVERLESS)"
 	statusDesc          = "The current status of the deployment"
 	tokenDesc           = "The deployment token for authentication"
 	passwordDesc        = "The deployment password for authentication"
@@ -45,6 +47,16 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Optional:    true,
 		Default:     "dev",
+	}
+	s["kind"] = &schema.Schema{
+		Description: kindDesc,
+		Type:        schema.TypeString,
+		Required:    true,
+		ValidateFunc: validation.StringInSlice([]string{
+			"K8S",
+			"ECS",
+			"SERVERLESS",
+		}, false),
 	}
 
 	s["token"] = &schema.Schema{
@@ -88,6 +100,11 @@ func DeploymentDataSourceSchema() map[string]*schema.Schema {
 		},
 		"env_type": {
 			Description: envTypeDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"kind": {
+			Description: kindDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -152,6 +169,7 @@ func setDeploymentFields(d *schema.ResourceData, deployment *client.Deployment) 
 		"name":        deployment.Name,
 		"description": deployment.Description,
 		"env_type":    deployment.EnvType,
+		"kind":        deployment.Kind,
 		"status":      deployment.Status,
 	}
 
