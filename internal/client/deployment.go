@@ -16,6 +16,7 @@ type Deployment struct {
 	Description string `json:"description,omitempty"`
 	EnvType     string `json:"env_type"`
 	Status      string `json:"status,omitempty"`
+	Kind        string `json:"kind,omitempty"`
 	CreatedAt   string `json:"created_at,omitempty"`
 	ModifiedAt  string `json:"modified_at,omitempty"`
 }
@@ -25,6 +26,7 @@ type CreateDeploymentInput struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 	EnvType     string `json:"env_type"`
+	Kind        string `json:"kind,omitempty"`
 }
 
 // UpdateDeploymentInput represents the input for updating a deployment
@@ -32,6 +34,7 @@ type UpdateDeploymentInput struct {
 	Name        *string `json:"name,omitempty"`
 	Description *string `json:"description,omitempty"`
 	EnvType     *string `json:"env_type,omitempty"`
+	Kind        *string `json:"kind,omitempty"`
 }
 
 // DeploymentCredentialsResponse embeds Deployment and adds credentials

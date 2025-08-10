@@ -31,6 +31,7 @@ func deploymentCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 		Name:        d.Get("name").(string),
 		Description: d.Get("description").(string),
 		EnvType:     d.Get("env_type").(string),
+		Kind:        d.Get("kind").(string),
 	}
 
 	resp, err := client.CreateDeploymentWithCredentials(ctx, c, input)
@@ -79,6 +80,11 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 	if d.HasChange("name") {
 		name := d.Get("name").(string)
 		input.Name = &name
+		hasChanges = true
+	}
+	if d.HasChange("kind") {
+		kind := d.Get("kind").(string)
+		input.Kind = &kind
 		hasChanges = true
 	}
 
