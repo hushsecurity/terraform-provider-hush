@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [1.0.2] - 2025-08-11
+
+### Fixed
+
+* **Resource `hush_deployment`**: Fixed `kind` field validation to accept lowercase values
+  * Changed validation to accept `k8s`, `ecs`, `serverless` (lowercase) to match API requirements
+  * Previously required uppercase values (`K8S`, `ECS`, `SERVERLESS`) which caused API errors
+* **Resource `hush_deployment`**: Added validation for `env_type` field
+  * Now validates that `env_type` accepts only `dev` or `prod` values as required by the API
+  * Prevents runtime errors by catching invalid values at plan time
+
 ## [1.0.1] - 2025-08-10
 
 ### Added
