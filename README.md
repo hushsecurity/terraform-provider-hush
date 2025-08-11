@@ -59,8 +59,8 @@ provider "hush" {
 resource "hush_deployment" "example" {
   name        = "my-deployment"
   description = "Example deployment"
-  env_type    = "production"
-  kind        = "K8S"
+  env_type    = "prod"
+  kind        = "k8s"
 }
 ```
 

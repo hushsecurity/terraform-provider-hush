@@ -17,7 +17,7 @@ resource "hush_deployment" "example" {
   name        = "example-deployment"
   description = "Example deployment for testing"
   env_type    = "dev"
-  kind        = "K8S"
+  kind        = "k8s"
 }
 
 output "deployment" {
@@ -30,13 +30,13 @@ output "deployment" {
 
 ### Required
 
+- `kind` (String) The deployment kind (k8s, ecs, serverless)
 - `name` (String) The name of the deployment
 
 ### Optional
 
 - `description` (String) The description of the deployment
-- `env_type` (String) The environment type for the deployment (dev, staging, prod)
-- `kind` (String) The deployment kind (K8S, ECS, SERVERLESS)
+- `env_type` (String) The environment type for the deployment (dev, prod)
 
 ### Read-Only
 
