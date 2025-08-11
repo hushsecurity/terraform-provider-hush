@@ -16,7 +16,7 @@ const (
 	idDesc              = "The unique identifier of the deployment"
 	nameDesc            = "The name of the deployment"
 	descriptionDesc     = "The description of the deployment"
-	envTypeDesc         = "The environment type for the deployment (dev, staging, prod)"
+	envTypeDesc         = "The environment type for the deployment (dev, prod)"
 	kindDesc            = "The deployment kind (k8s, ecs, serverless)"
 	statusDesc          = "The current status of the deployment"
 	tokenDesc           = "The deployment token for authentication"
