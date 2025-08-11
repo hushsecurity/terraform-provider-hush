@@ -32,7 +32,7 @@ output "deployment" {
 ### Read-Only
 
 - `description` (String) The description of the deployment
-- `env_type` (String) The environment type for the deployment (dev, staging, prod)
-- `kind` (String) The deployment kind (K8S, ECS, SERVERLESS)
+- `env_type` (String) The environment type for the deployment (dev, prod)
+- `kind` (String) The deployment kind (k8s, ecs, serverless)
 - `name` (String) The name of the deployment
 - `status` (String) The current status of the deployment
