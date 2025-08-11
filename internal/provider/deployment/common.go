@@ -17,7 +17,7 @@ const (
 	nameDesc            = "The name of the deployment"
 	descriptionDesc     = "The description of the deployment"
 	envTypeDesc         = "The environment type for the deployment (dev, staging, prod)"
-	kindDesc            = "The deployment kind (K8S, ECS, SERVERLESS)"
+	kindDesc            = "The deployment kind (k8s, ecs, serverless)"
 	statusDesc          = "The current status of the deployment"
 	tokenDesc           = "The deployment token for authentication"
 	passwordDesc        = "The deployment password for authentication"
@@ -53,9 +53,9 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Required:    true,
 		ValidateFunc: validation.StringInSlice([]string{
-			"K8S",
-			"ECS",
-			"SERVERLESS",
+			"k8s",
+			"ecs",
+			"serverless",
 		}, false),
 	}
 
