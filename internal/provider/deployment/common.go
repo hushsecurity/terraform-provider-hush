@@ -47,6 +47,10 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Optional:    true,
 		Default:     "dev",
+		ValidateFunc: validation.StringInSlice([]string{
+			"dev",
+			"prod",
+		}, false),
 	}
 	s["kind"] = &schema.Schema{
 		Description: kindDesc,
