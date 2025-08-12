@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 const deploymentsEndpoint = "/v1/deployments"
@@ -67,9 +65,6 @@ func GetDeployment(ctx context.Context, c *Client, id string) (*Deployment, erro
 	var dep Deployment
 	err := c.doRequest(ctx, http.MethodGet, path, nil, &dep)
 	if err != nil {
-		if err.Error() == "unexpected status: 404" {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return &dep, nil
@@ -77,7 +72,6 @@ func GetDeployment(ctx context.Context, c *Client, id string) (*Deployment, erro
 
 func UpdateDeployment(ctx context.Context, c *Client, id string, input *UpdateDeploymentInput) (*Deployment, error) {
 	path := fmt.Sprintf("%s/%s", deploymentsEndpoint, id)
-
 	var result Deployment
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &result); err != nil {
 		return nil, err
@@ -86,24 +80,10 @@ func UpdateDeployment(ctx context.Context, c *Client, id string, input *UpdateDe
 }
 
 func DeleteDeployment(ctx context.Context, c *Client, id string) error {
-	tflog.Info(ctx, "Deleting deployment", map[string]interface{}{
-		"deployment_id": id,
-	})
-
 	path := fmt.Sprintf("%s/%s", deploymentsEndpoint, id)
-
 	err := c.doRequest(ctx, http.MethodDelete, path, nil, nil)
 	if err != nil {
-		tflog.Error(ctx, "Failed to delete deployment", map[string]interface{}{
-			"deployment_id": id,
-			"error":         err.Error(),
-		})
 		return err
 	}
-
-	tflog.Info(ctx, "Successfully deleted deployment", map[string]interface{}{
-		"deployment_id": id,
-	})
-
 	return nil
 }
