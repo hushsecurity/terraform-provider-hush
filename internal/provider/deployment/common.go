@@ -2,10 +2,9 @@ package deployment
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"net/http"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -138,18 +137,15 @@ func deploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 	}
 
 	deployment, err = client.GetDeployment(ctx, c, deploymentID)
-	tflog.Debug(ctx, "Read deployment", map[string]interface{}{
-		"deployment_id": deploymentID,
-		"error":         err,
-	})
-
 	if err != nil {
-		if errors.Is(err, client.ErrNotFound) {
-			tflog.Debug(ctx, "Deployment not found, removing from state")
+		// Handle 404 errors gracefully by removing from state
+		errResponse, ok := err.(*client.APIError)
+		if ok && errResponse.StatusCode == http.StatusNotFound {
 			d.SetId("")
 			return nil
+		} else {
+			return diag.FromErr(err)
 		}
-		return diag.FromErr(fmt.Errorf("failed to read deployment: %w", err))
 	}
 
 	if deployment == nil {

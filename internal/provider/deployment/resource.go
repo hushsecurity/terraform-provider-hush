@@ -3,8 +3,8 @@ package deployment
 import (
 	"context"
 	"fmt"
+	"net/http"
 
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
@@ -20,7 +20,10 @@ func Resource() *schema.Resource {
 		ReadContext:   deploymentRead,
 		UpdateContext: deploymentUpdate,
 		DeleteContext: deploymentDelete,
-		Schema:        DeploymentResourceSchema(),
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
+		Schema: DeploymentResourceSchema(),
 	}
 }
 
@@ -39,23 +42,17 @@ func deploymentCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 		return diag.FromErr(err)
 	}
 
-	tflog.Debug(ctx, "Created deployment", map[string]interface{}{
-		"deployment_id": resp.ID,
-		"name":          resp.Name,
-	})
-
-	if resp.ID == "" {
-		return diag.Errorf("API returned empty ID for new deployment")
-	}
-
 	d.SetId(resp.ID)
 
-	if diags := setCredentialFields(d, resp); diags.HasError() {
-		return diags
+	// Set computed sensitive fields
+	if err := d.Set("token", resp.Token); err != nil {
+		return diag.FromErr(fmt.Errorf("failed to set token: %w", err))
 	}
-
-	if diags := setDeploymentFields(d, &resp.Deployment); diags.HasError() {
-		return diags
+	if err := d.Set("password", resp.Password); err != nil {
+		return diag.FromErr(fmt.Errorf("failed to set password: %w", err))
+	}
+	if err := d.Set("image_pull_secret", resp.ImagePullSecret); err != nil {
+		return diag.FromErr(fmt.Errorf("failed to set image_pull_secret: %w", err))
 	}
 
 	return nil
@@ -92,17 +89,14 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 		return nil
 	}
 
-	updated, err := client.UpdateDeployment(ctx, c, d.Id(), input)
+	_, err := client.UpdateDeployment(ctx, c, d.Id(), input)
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("failed to update deployment: %w", err))
-	}
-
-	tflog.Debug(ctx, "Updated deployment", map[string]interface{}{
-		"deployment_id": d.Id(),
-	})
-
-	if diags := setDeploymentFields(d, updated); diags.HasError() {
-		return diags
+		errResponse, ok := err.(*client.APIError)
+		if ok && errResponse.StatusCode == http.StatusNotFound {
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
 	}
 
 	return nil
@@ -113,25 +107,13 @@ func deploymentDelete(ctx context.Context, d *schema.ResourceData, m interface{}
 
 	err := client.DeleteDeployment(ctx, c, d.Id())
 	if err != nil {
-		return diag.FromErr(err)
-	}
-
-	d.SetId("")
-	return nil
-}
-
-func setCredentialFields(d *schema.ResourceData, resp *client.DeploymentCredentialsResponse) diag.Diagnostics {
-	credentials := map[string]interface{}{
-		"token":             resp.Token,
-		"password":          resp.Password,
-		"image_pull_secret": resp.ImagePullSecret,
-	}
-
-	for field, value := range credentials {
-		if err := d.Set(field, value); err != nil {
-			return diag.FromErr(fmt.Errorf("failed to set %s: %w", field, err))
+		errResponse, ok := err.(*client.APIError)
+		if ok && errResponse.StatusCode == http.StatusNotFound {
+			d.SetId("")
+		} else {
+			return diag.FromErr(err)
 		}
 	}
-
+	d.SetId("")
 	return nil
 }
