@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+## [1.0.3] - 2025-08-13
+
+### Changed
+
+* **Error Handling**: Improved error handling throughout the provider for better user experience
+  * Centralized error handling with new `APIError` struct providing clear, actionable error messages
+  * Simplified error propagation with clean type assertion patterns
+  * Improved 404 handling for graceful resource state management
+
+### Removed
+
+* **Logging**: Eliminated tflog imports and verbose error logging in provider layer
+  * Streamlined operations for cleaner, more reliable execution
+
 ## [1.0.2] - 2025-08-11
 
 ### Fixed
