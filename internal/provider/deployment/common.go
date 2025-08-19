@@ -87,14 +87,17 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 func DeploymentDataSourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"id": {
-			Description: idDesc,
-			Type:        schema.TypeString,
-			Required:    true,
+			Description:   idDesc,
+			Type:          schema.TypeString,
+			Optional:      true,
+			Computed:      true,
+			ConflictsWith: []string{"name"},
 		},
 		"name": {
-			Description: nameDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
+			Description:   nameDesc,
+			Type:          schema.TypeString,
+			Optional:      true,
+			ConflictsWith: []string{"id"},
 		},
 		"description": {
 			Description: descriptionDesc,
@@ -126,31 +129,49 @@ func deploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 
 	var deployment *client.Deployment
 	var err error
-	var deploymentID string
 
 	if id := d.Id(); id != "" {
-		deploymentID = id
-	} else if id, exists := d.GetOk("id"); exists {
-		deploymentID = id.(string)
-	} else {
-		return diag.Errorf("deployment ID is required")
-	}
-
-	deployment, err = client.GetDeployment(ctx, c, deploymentID)
-	if err != nil {
-		// Handle 404 errors gracefully by removing from state
-		errResponse, ok := err.(*client.APIError)
-		if ok && errResponse.StatusCode == http.StatusNotFound {
-			d.SetId("")
-			return nil
-		} else {
-			return diag.FromErr(err)
+		deployment, err = client.GetDeployment(ctx, c, id)
+		if err != nil {
+			// Handle 404 errors gracefully by removing from state
+			errResponse, ok := err.(*client.APIError)
+			if ok && errResponse.StatusCode == http.StatusNotFound {
+				d.SetId("")
+				return nil
+			} else {
+				return diag.FromErr(err)
+			}
 		}
-	}
+	} else if id, exists := d.GetOk("id"); exists {
+		// Lookup by ID provided in configuration
+		deploymentID := id.(string)
+		deployment, err = client.GetDeployment(ctx, c, deploymentID)
+		if err != nil {
+			errResponse, ok := err.(*client.APIError)
+			if ok && errResponse.StatusCode == http.StatusNotFound {
+				return diag.Errorf("no deployment found with ID: %s", deploymentID)
+			} else {
+				return diag.FromErr(err)
+			}
+		}
+	} else if name, exists := d.GetOk("name"); exists {
+		// Lookup by name
+		deploymentName := name.(string)
+		deployments, err := client.GetDeploymentsByName(ctx, c, deploymentName)
+		if err != nil {
+			return diag.FromErr(fmt.Errorf("failed to lookup deployment by name '%s': %w", deploymentName, err))
+		}
 
-	if deployment == nil {
-		d.SetId("")
-		return nil
+		switch len(deployments) {
+		case 0:
+			return diag.Errorf("no deployment found with name: %s", deploymentName)
+		case 1:
+			deployment = &deployments[0]
+		default:
+			return diag.Errorf("multiple deployments found with name '%s'. Deployment names must be unique. Consider using the deployment ID instead for exact matching", deploymentName)
+		}
+	} else {
+		return diag.Errorf("either 'id' or 'name' must be specified")
 	}
 
 	if d.Id() == "" {
