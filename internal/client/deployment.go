@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const deploymentsEndpoint = "/v1/deployments"
@@ -86,4 +87,25 @@ func DeleteDeployment(ctx context.Context, c *Client, id string) error {
 		return err
 	}
 	return nil
+}
+
+// DeploymentListResponse represents the response from listing deployments
+type DeploymentListResponse struct {
+	Items      []Deployment `json:"items"`
+	NextCursor *string      `json:"next_cursor"`
+	HasMore    bool         `json:"has_more"`
+}
+
+// GetDeploymentsByName retrieves deployments by name
+func GetDeploymentsByName(ctx context.Context, c *Client, name string) ([]Deployment, error) {
+	// URL encode the name parameter to handle special characters
+	encodedName := url.QueryEscape(name)
+	path := fmt.Sprintf("%s?name=%s", deploymentsEndpoint, encodedName)
+
+	var resp DeploymentListResponse
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+
+	return resp.Items, nil
 }
