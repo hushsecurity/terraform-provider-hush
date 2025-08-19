@@ -5,7 +5,8 @@ The [Hush Terraform Provider](https://registry.terraform.io/providers/hushsecuri
 ## Features
 
 * **Resource Management**: Create, read, update, and delete Hush deployments
-* **Data Sources**: Query existing deployments by ID
+* **Data Sources**: Query existing deployments by ID or name
+* **Flexible Lookup**: Support for both ID-based and name-based deployment lookups
 * **Automatic Authentication**: OAuth2 client credentials flow with automatic token refresh
 * **Comprehensive Examples**: Ready-to-use examples for all supported resources and data sources
 * **Auto-generated Documentation**: Complete provider documentation in the `docs/` directory
@@ -16,7 +17,7 @@ The [Hush Terraform Provider](https://registry.terraform.io/providers/hushsecuri
 
 ## Data Sources
 
-* `hush_deployment` - Read existing Hush deployments
+* `hush_deployment` - Read existing Hush deployments by ID or name
 
 ## Requirements
 
@@ -61,6 +62,11 @@ resource "hush_deployment" "example" {
   description = "Example deployment"
   env_type    = "prod"
   kind        = "k8s"
+}
+
+# Look up deployment by name
+data "hush_deployment" "by_name" {
+  name = "my-deployment"
 }
 ```
 
