@@ -8,6 +8,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+* **Data Source `hush_deployment`**: New name-based deployment lookup functionality
+  * Added support for looking up deployments by `name` parameter in addition to existing `id` lookup
+  * Implemented exact name matching with proper URL encoding for special characters
+  * Added comprehensive validation preventing simultaneous use of `id` and `name` parameters
+  * Maintains full backward compatibility with existing ID-based lookups
+
+### Enhanced
+
+* **Client Layer**: Added `GetDeploymentsByName()` function with URL-safe parameter encoding
+* **Error Handling**: Improved error messages for deployment lookup scenarios with clear guidance
+
+### Removed
+
+* **Data Source filtering**: Removed `env_type` filter support from name-based lookups
+
 ## [1.0.3] - 2025-08-13
 
 ### Changed
