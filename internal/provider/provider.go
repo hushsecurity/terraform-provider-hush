@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_channel"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_configuration"
 )
 
 func New(version string) func() *schema.Provider {
@@ -37,10 +39,14 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"hush_deployment": deployment.Resource(),
+				"hush_deployment":                 deployment.Resource(),
+				"hush_notification_channel":       notification_channel.Resource(),
+				"hush_notification_configuration": notification_configuration.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
-				"hush_deployment": deployment.DataSource(),
+				"hush_deployment":                 deployment.DataSource(),
+				"hush_notification_channel":       notification_channel.DataSource(),
+				"hush_notification_configuration": notification_configuration.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
