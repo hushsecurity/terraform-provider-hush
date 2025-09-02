@@ -37,7 +37,11 @@ Each example directory contains:
 ### Resources
 
 - **[hush_deployment](resources/hush_deployment/)** - Create and manage Hush deployments
+- **[hush_notification_channel](resources/hush_notification_channel/)** - Create and manage notification channels (email, webhook, Slack)
+- **[hush_notification_configuration](resources/hush_notification_configuration/)** - Create and manage notification configurations and triggers
 
 ### Data Sources
 
 - **[hush_deployment](data-sources/hush_deployment/)** - Read information about existing deployments
+- **[hush_notification_channel](data-sources/hush_notification_channel/)** - Read information about existing notification channels
+- **[hush_notification_configuration](data-sources/hush_notification_configuration/)** - Read information about existing notification configurations
