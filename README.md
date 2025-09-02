@@ -4,9 +4,9 @@ The [Hush Terraform Provider](https://registry.terraform.io/providers/hushsecuri
 
 ## Features
 
-* **Resource Management**: Create, read, update, and delete Hush deployments
-* **Data Sources**: Query existing deployments by ID or name
-* **Flexible Lookup**: Support for both ID-based and name-based deployment lookups
+* **Resource Management**: Create, read, update, and delete Hush deployments, notification channels, and notification configurations
+* **Data Sources**: Query existing deployments, notification channels, and notification configurations by ID or name
+* **Flexible Lookup**: Support for both ID-based and name-based lookups across all resources
 * **Automatic Authentication**: OAuth2 client credentials flow with automatic token refresh
 * **Comprehensive Examples**: Ready-to-use examples for all supported resources and data sources
 * **Auto-generated Documentation**: Complete provider documentation in the `docs/` directory
@@ -14,10 +14,14 @@ The [Hush Terraform Provider](https://registry.terraform.io/providers/hushsecuri
 ## Resources
 
 * `hush_deployment` - Manage Hush sensor deployments
+* `hush_notification_channel` - Manage notification channels (email, webhook, Slack)
+* `hush_notification_configuration` - Manage notification configurations and triggers
 
 ## Data Sources
 
 * `hush_deployment` - Read existing Hush deployments by ID or name
+* `hush_notification_channel` - Read existing notification channels by ID or name
+* `hush_notification_configuration` - Read existing notification configurations by ID or name
 
 ## Requirements
 
@@ -64,6 +68,28 @@ resource "hush_deployment" "example" {
   kind        = "k8s"
 }
 
+# Create a notification channel
+resource "hush_notification_channel" "email_alerts" {
+  name        = "security-alerts"
+  description = "Email notifications for security alerts"
+  enabled     = true
+
+  email_config {
+    address = "security@example.com"
+  }
+}
+
+# Create a notification configuration
+resource "hush_notification_configuration" "immediate_alerts" {
+  name        = "New Secret at Risk Alerts"
+  description = "Immediate notifications for new secrets at risk"
+  enabled     = true
+  
+  channel_ids = [hush_notification_channel.email_alerts.id]
+  aggregation = "short"
+  trigger     = "new_nhi_at_risk"
+}
+
 # Look up deployment by name
 data "hush_deployment" "by_name" {
   name = "my-deployment"
@@ -75,7 +101,11 @@ data "hush_deployment" "by_name" {
 Complete examples are available in the [`examples/`](./examples/) directory:
 
 * [`examples/resources/hush_deployment/`](./examples/resources/hush_deployment/) - Creating deployments
+* [`examples/resources/hush_notification_channel/`](./examples/resources/hush_notification_channel/) - Creating notification channels
+* [`examples/resources/hush_notification_configuration/`](./examples/resources/hush_notification_configuration/) - Creating notification configurations
 * [`examples/data-sources/hush_deployment/`](./examples/data-sources/hush_deployment/) - Reading deployments
+* [`examples/data-sources/hush_notification_channel/`](./examples/data-sources/hush_notification_channel/) - Reading notification channels
+* [`examples/data-sources/hush_notification_configuration/`](./examples/data-sources/hush_notification_configuration/) - Reading notification configurations
 
 ## Documentation
 
