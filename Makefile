@@ -36,6 +36,14 @@ lint-examples:
 generate:
 	go generate -v -x
 
+.PHONY: test
+test:
+	go test -v ./...
+
+.PHONY: test-acc
+test-acc:
+	TF_ACC=1 go test -v ./... -timeout 120m
+
 .PHONY: docs
 docs:
 	@tfplugindocs generate
