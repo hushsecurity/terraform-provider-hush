@@ -25,6 +25,9 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
       
+      - name: Test
+        run: go test -v ./...
+      
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         id: import_gpg
