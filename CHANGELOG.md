@@ -6,24 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.2.0] - 2025-09-10
+
+### Added
+
+* **Notification Channels**: Support for email, webhook, and Slack notification channels
+  * `hush_notification_channel` resource for managing notification delivery channels
+  * `hush_notification_channel` data source for importing existing channels
+  * Multiple email address support for team notifications
+
+* **Notification Configurations**: Automated security alert management  
+  * `hush_notification_configuration` resource for predefined security workflows
+  * `hush_notification_configuration` data source with lookup by name, ID, or trigger type
+  * Support for "New Secret At Risk" and "Secrets at Risk Digest" configurations
+
 ## [1.1.0] - 2025-08-20
 
 ### Added
 
-* **Data Source `hush_deployment`**: New name-based deployment lookup functionality
-  * Added support for looking up deployments by `name` parameter in addition to existing `id` lookup
-  * Implemented exact name matching with proper URL encoding for special characters
-  * Added comprehensive validation preventing simultaneous use of `id` and `name` parameters
-  * Maintains full backward compatibility with existing ID-based lookups
-
-### Enhanced
-
-* **Client Layer**: Added `GetDeploymentsByName()` function with URL-safe parameter encoding
-* **Error Handling**: Improved error messages for deployment lookup scenarios with clear guidance
-
-### Removed
-
-* **Data Source filtering**: Removed `env_type` filter support from name-based lookups
+* **Deployment Data Source**: Added support for looking up deployments by `name` in addition to `id`
 
 ## [1.0.3] - 2025-08-13
 
