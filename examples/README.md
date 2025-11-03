@@ -39,9 +39,13 @@ Each example directory contains:
 - **[hush_deployment](resources/hush_deployment/)** - Create and manage Hush deployments
 - **[hush_notification_channel](resources/hush_notification_channel/)** - Create and manage notification channels (email, webhook, Slack)
 - **[hush_notification_configuration](resources/hush_notification_configuration/)** - Create and manage notification configurations and triggers
+- **[hush_plaintext_access_credential](resources/hush_plaintext_access_credential/)** - Create and manage plaintext access credentials for single secret values
+- **[hush_kv_access_credential](resources/hush_kv_access_credential/)** - Create and manage key-value access credentials for multiple secret pairs
 
 ### Data Sources
 
 - **[hush_deployment](data-sources/hush_deployment/)** - Read information about existing deployments
 - **[hush_notification_channel](data-sources/hush_notification_channel/)** - Read information about existing notification channels
 - **[hush_notification_configuration](data-sources/hush_notification_configuration/)** - Read information about existing notification configurations
+- **[hush_plaintext_access_credential](data-sources/hush_plaintext_access_credential/)** - Read information about existing plaintext access credentials
+- **[hush_kv_access_credential](data-sources/hush_kv_access_credential/)** - Read information about existing key-value access credentials
