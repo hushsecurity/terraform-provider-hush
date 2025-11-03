@@ -11,8 +11,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_channel"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_configuration"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
 )
 
 func New(version string) func() *schema.Provider {
@@ -39,14 +41,18 @@ func New(version string) func() *schema.Provider {
 				},
 			},
 			ResourcesMap: map[string]*schema.Resource{
-				"hush_deployment":                 deployment.Resource(),
-				"hush_notification_channel":       notification_channel.Resource(),
-				"hush_notification_configuration": notification_configuration.Resource(),
+				"hush_deployment":                  deployment.Resource(),
+				"hush_notification_channel":        notification_channel.Resource(),
+				"hush_notification_configuration":  notification_configuration.Resource(),
+				"hush_plaintext_access_credential": plaintext_access_credential.Resource(),
+				"hush_kv_access_credential":        kv_access_credential.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
-				"hush_deployment":                 deployment.DataSource(),
-				"hush_notification_channel":       notification_channel.DataSource(),
-				"hush_notification_configuration": notification_configuration.DataSource(),
+				"hush_deployment":                  deployment.DataSource(),
+				"hush_notification_channel":        notification_channel.DataSource(),
+				"hush_notification_configuration":  notification_configuration.DataSource(),
+				"hush_plaintext_access_credential": plaintext_access_credential.DataSource(),
+				"hush_kv_access_credential":        kv_access_credential.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
