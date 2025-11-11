@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_channel"
@@ -46,6 +47,7 @@ func New(version string) func() *schema.Provider {
 				"hush_notification_configuration":  notification_configuration.Resource(),
 				"hush_plaintext_access_credential": plaintext_access_credential.Resource(),
 				"hush_kv_access_credential":        kv_access_credential.Resource(),
+				"hush_access_policy":               access_policy.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -53,6 +55,7 @@ func New(version string) func() *schema.Provider {
 				"hush_notification_configuration":  notification_configuration.DataSource(),
 				"hush_plaintext_access_credential": plaintext_access_credential.DataSource(),
 				"hush_kv_access_credential":        kv_access_credential.DataSource(),
+				"hush_access_policy":               access_policy.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
