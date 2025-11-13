@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.3.0] - 2025-11-13
+
+### Added
+
+* **Access Credentials**: Secure secrets management for deployments
+  * `hush_plaintext_access_credential` resource for managing single secret values
+  * `hush_plaintext_access_credential` data source for importing existing credentials
+  * `hush_kv_access_credential` resource for managing key-value secret pairs
+  * `hush_kv_access_credential` data source for importing existing credentials
+  * **Write-Only Secrets**: Enhanced security for plaintext credentials with `secret_wo` and `secret_wo_version` attributes
+    * Secrets stored using `secret_wo` are never persisted in Terraform state
+    * Version-based secret rotation with automatic resource recreation
+    * Backward compatible with standard `secret` attribute for traditional state storage
+
 ## [1.2.0] - 2025-09-10
 
 ### Added
