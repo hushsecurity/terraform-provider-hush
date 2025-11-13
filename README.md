@@ -4,8 +4,9 @@ The [Hush Terraform Provider](https://registry.terraform.io/providers/hushsecuri
 
 ## Features
 
-* **Resource Management**: Create, read, update, and delete Hush deployments, notification channels, and notification configurations
-* **Data Sources**: Query existing deployments, notification channels, and notification configurations by ID or name
+* **Resource Management**: Create, read, update, and delete Hush deployments, notification channels, notification configurations, and access credentials
+* **Write-Only Secrets**: Enhanced security for plaintext credentials with write-only attributes (secrets not stored in state)
+* **Data Sources**: Query existing deployments, notification channels, notification configurations, and access credentials by ID or name
 * **Flexible Lookup**: Support for both ID-based and name-based lookups across all resources
 * **Automatic Authentication**: OAuth2 client credentials flow with automatic token refresh
 * **Comprehensive Examples**: Ready-to-use examples for all supported resources and data sources
@@ -16,12 +17,16 @@ The [Hush Terraform Provider](https://registry.terraform.io/providers/hushsecuri
 * `hush_deployment` - Manage Hush sensor deployments
 * `hush_notification_channel` - Manage notification channels (email, webhook, Slack)
 * `hush_notification_configuration` - Manage notification configurations and triggers
+* `hush_plaintext_access_credential` - Manage plaintext access credentials (supports write-only secrets)
+* `hush_kv_access_credential` - Manage key-value access credentials
 
 ## Data Sources
 
 * `hush_deployment` - Read existing Hush deployments by ID or name
 * `hush_notification_channel` - Read existing notification channels by ID or name
 * `hush_notification_configuration` - Read existing notification configurations by ID or name
+* `hush_plaintext_access_credential` - Read existing plaintext access credentials by ID
+* `hush_kv_access_credential` - Read existing key-value access credentials by ID
 
 ## Requirements
 
