@@ -32,11 +32,15 @@ func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, met
 		AccessCredentialID:  d.Get("access_credential_id").(string),
 		DeploymentIDs:       expandStringList(d.Get("deployment_ids").([]any)),
 		AttestationCriteria: expandAttestationCriteria(d.Get("attestation_criteria").([]any)),
-		DeliveryConfig:      expandDeliveryConfig(d.Get("delivery_config").([]any)),
+		DeliveryConfig:      expandDeliveryConfig(d),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
 		input.Description = v.(string)
+	}
+
+	if v, ok := d.GetOk("access_privilege_ids"); ok {
+		input.AccessPrivilegeIDs = expandStringList(v.([]any))
 	}
 
 	policy, err := client.CreateAccessPolicy(ctx, c, input)
@@ -45,6 +49,7 @@ func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	d.SetId(policy.ID)
+
 	return accessPolicyRead(ctx, d, meta)
 }
 
@@ -73,6 +78,11 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 		input.AccessCredentialID = &credID
 	}
 
+	if d.HasChange("access_privilege_ids") {
+		privilegeIDs := expandStringList(d.Get("access_privilege_ids").([]any))
+		input.AccessPrivilegeIDs = &privilegeIDs
+	}
+
 	if d.HasChange("deployment_ids") {
 		deploymentIDs := expandStringList(d.Get("deployment_ids").([]any))
 		input.DeploymentIDs = &deploymentIDs
@@ -83,8 +93,8 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 		input.AttestationCriteria = &criteria
 	}
 
-	if d.HasChange("delivery_config") {
-		deliveryConfig := expandDeliveryConfig(d.Get("delivery_config").([]any))
+	if d.HasChange("env_delivery_config") {
+		deliveryConfig := expandDeliveryConfig(d)
 		input.DeliveryConfig = &deliveryConfig
 	}
 
