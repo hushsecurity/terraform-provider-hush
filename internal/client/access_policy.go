@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 )
 
 const accessPoliciesEndpoint = "/v1/access_policies"
@@ -31,14 +30,22 @@ const (
 	DeliveryTypeEnv DeliveryType = "env"
 )
 
-type DeliveryItem struct {
-	Key  string `json:"key"`
-	Name string `json:"name"`
+type EnvMappingType string
+
+const (
+	EnvMappingTypeKey      EnvMappingType = "key"
+	EnvMappingTypeTemplate EnvMappingType = "template"
+)
+
+type EnvDeliveryItem struct {
+	Name string         `json:"name"`
+	Key  string         `json:"key,omitempty"`
+	Type EnvMappingType `json:"type,omitempty"`
 }
 
 type DeliveryConfig struct {
-	Type  DeliveryType   `json:"type"`
-	Items []DeliveryItem `json:"items"`
+	Type  DeliveryType `json:"type"`
+	Items []any        `json:"items"`
 }
 
 type AccessPolicy struct {
@@ -47,9 +54,12 @@ type AccessPolicy struct {
 	Description         string                 `json:"description,omitempty"`
 	Enabled             bool                   `json:"enabled"`
 	AccessCredentialID  string                 `json:"access_credential_id"`
+	AccessPrivilegeIDs  []string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
 	DeploymentIDs       []string               `json:"deployment_ids"`
 	DeliveryConfig      DeliveryConfig         `json:"delivery_config"`
+	Status              string                 `json:"status,omitempty"`
+	StatusDetail        string                 `json:"status_detail,omitempty"`
 }
 
 type CreateAccessPolicyInput struct {
@@ -57,6 +67,7 @@ type CreateAccessPolicyInput struct {
 	Description         string                 `json:"description,omitempty"`
 	Enabled             bool                   `json:"enabled"`
 	AccessCredentialID  string                 `json:"access_credential_id"`
+	AccessPrivilegeIDs  []string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
 	DeploymentIDs       []string               `json:"deployment_ids"`
 	DeliveryConfig      DeliveryConfig         `json:"delivery_config"`
@@ -67,6 +78,7 @@ type UpdateAccessPolicyInput struct {
 	Description         *string                 `json:"description,omitempty"`
 	Enabled             *bool                   `json:"enabled,omitempty"`
 	AccessCredentialID  *string                 `json:"access_credential_id,omitempty"`
+	AccessPrivilegeIDs  *[]string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria *[]AttestationCriterion `json:"attestation_criteria,omitempty"`
 	DeploymentIDs       *[]string               `json:"deployment_ids,omitempty"`
 	DeliveryConfig      *DeliveryConfig         `json:"delivery_config,omitempty"`
@@ -82,6 +94,9 @@ type AccessPolicyListResponse struct {
 func CreateAccessPolicy(ctx context.Context, c *Client, input *CreateAccessPolicyInput) (*AccessPolicy, error) {
 	var result AccessPolicy
 	if err := c.doRequest(ctx, http.MethodPost, accessPoliciesEndpoint, input, &result); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, result.ID, GetAccessPolicy); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -102,7 +117,14 @@ func UpdateAccessPolicy(ctx context.Context, c *Client, id string, input *Update
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &result); err != nil {
 		return nil, err
 	}
+	if err := waitForResourceStatus(ctx, c, id, GetAccessPolicy); err != nil {
+		return nil, err
+	}
 	return &result, nil
+}
+
+func (p AccessPolicy) statusFields() (string, string) {
+	return p.Status, p.StatusDetail
 }
 
 func DeleteAccessPolicy(ctx context.Context, c *Client, id string) error {
@@ -114,14 +136,8 @@ func DeleteAccessPolicy(ctx context.Context, c *Client, id string) error {
 }
 
 func ListAccessPolicies(ctx context.Context, c *Client) (*AccessPolicyListResponse, error) {
-	params := url.Values{}
-	path := accessPoliciesEndpoint
-	if len(params) > 0 {
-		path += "?" + params.Encode()
-	}
-
 	var resp AccessPolicyListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+	if err := c.doRequest(ctx, http.MethodGet, accessPoliciesEndpoint, nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

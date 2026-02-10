@@ -16,9 +16,12 @@ const (
 	descriptionDesc         = "The description of the access policy"
 	enabledDesc             = "Whether the access policy is enabled"
 	accessCredentialIDDesc  = "The ID of the access credential"
+	accessPrivilegeIDsDesc  = "The list of access privilege IDs"
 	deploymentIDsDesc       = "The list of deployment IDs"
 	attestationCriteriaDesc = "The attestation criteria for the access policy"
-	deliveryConfigDesc      = "The delivery configuration for the access policy"
+	envDeliveryConfigDesc   = "Environment variable delivery configuration for the access policy"
+	statusDesc              = "The status of the access policy (syncing, ok, warning, error, disabled)"
+	statusDetailDesc        = "The status detail of the access policy"
 )
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
@@ -48,6 +51,16 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Required:    true,
 			Description: accessCredentialIDDesc,
+		},
+		"access_privilege_ids": {
+			Type:        schema.TypeList,
+			Optional:    true,
+			MinItems:    1,
+			MaxItems:    1,
+			Description: accessPrivilegeIDsDesc,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
 		},
 		"deployment_ids": {
 			Type:        schema.TypeList,
@@ -84,20 +97,14 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"delivery_config": {
+		"env_delivery_config": {
 			Type:        schema.TypeList,
 			Required:    true,
 			MaxItems:    1,
-			Description: deliveryConfigDesc,
+			Description: envDeliveryConfigDesc,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"type": {
-						Type:         schema.TypeString,
-						Required:     true,
-						ValidateFunc: validation.StringInSlice([]string{"env"}, false),
-						Description:  "The type of delivery (only 'env' is supported)",
-					},
-					"items": {
+					"item": {
 						Type:        schema.TypeList,
 						Required:    true,
 						MinItems:    1,
@@ -106,19 +113,36 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 							Schema: map[string]*schema.Schema{
 								"key": {
 									Type:        schema.TypeString,
-									Required:    true,
-									Description: "The key for the delivery item",
+									Optional:    true,
+									Description: "The credential key or template string for the delivery item",
 								},
 								"name": {
 									Type:        schema.TypeString,
 									Required:    true,
 									Description: "The environment variable name for the delivery item",
 								},
+								"type": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									Default:      string(client.EnvMappingTypeKey),
+									ValidateFunc: validation.StringInSlice([]string{string(client.EnvMappingTypeKey), string(client.EnvMappingTypeTemplate)}, false),
+									Description:  "The type of delivery item mapping (key or template)",
+								},
 							},
 						},
 					},
 				},
 			},
+		},
+		"status": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: statusDesc,
+		},
+		"status_detail": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: statusDetailDesc,
 		},
 	}
 }
@@ -150,6 +174,14 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Description: accessCredentialIDDesc,
 		},
+		"access_privilege_ids": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: accessPrivilegeIDsDesc,
+			Elem: &schema.Schema{
+				Type: schema.TypeString,
+			},
+		},
 		"deployment_ids": {
 			Type:        schema.TypeList,
 			Computed:    true,
@@ -167,7 +199,7 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 					"type": {
 						Type:        schema.TypeString,
 						Computed:    true,
-						Description: "The type of attestation criterion (namespace or label)",
+						Description: "The type of attestation criterion (k8s:ns, k8s:sa, k8s:pod-label, k8s:pod-name, or k8s:container-name)",
 					},
 					"value": {
 						Type:        schema.TypeString,
@@ -182,18 +214,13 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"delivery_config": {
+		"env_delivery_config": {
 			Type:        schema.TypeList,
 			Computed:    true,
-			Description: deliveryConfigDesc,
+			Description: envDeliveryConfigDesc,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"type": {
-						Type:        schema.TypeString,
-						Computed:    true,
-						Description: "The type of delivery (env or file)",
-					},
-					"items": {
+					"item": {
 						Type:        schema.TypeList,
 						Computed:    true,
 						Description: "The delivery items",
@@ -202,18 +229,33 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 								"key": {
 									Type:        schema.TypeString,
 									Computed:    true,
-									Description: "The key for the delivery item",
+									Description: "The credential key or template string for the delivery item",
 								},
 								"name": {
 									Type:        schema.TypeString,
 									Computed:    true,
 									Description: "The environment variable name for the delivery item",
 								},
+								"type": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The type of delivery item mapping (key or template)",
+								},
 							},
 						},
 					},
 				},
 			},
+		},
+		"status": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: statusDesc,
+		},
+		"status_detail": {
+			Type:        schema.TypeString,
+			Computed:    true,
+			Description: statusDetailDesc,
 		},
 	}
 }
@@ -254,15 +296,21 @@ func setAccessPolicyFields(d *schema.ResourceData, policy *client.AccessPolicy) 
 		"description":          policy.Description,
 		"enabled":              policy.Enabled,
 		"access_credential_id": policy.AccessCredentialID,
+		"access_privilege_ids": policy.AccessPrivilegeIDs,
 		"deployment_ids":       policy.DeploymentIDs,
 		"attestation_criteria": flattenAttestationCriteria(policy.AttestationCriteria),
-		"delivery_config":      flattenDeliveryConfig(policy.DeliveryConfig),
+		"status":               policy.Status,
+		"status_detail":        policy.StatusDetail,
 	}
 
 	for field, value := range fields {
 		if err := d.Set(field, value); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set %s: %w", field, err))
 		}
+	}
+
+	if diags := flattenDeliveryConfig(d, policy.DeliveryConfig); diags.HasError() {
+		return diags
 	}
 
 	return nil
@@ -292,24 +340,38 @@ func expandAttestationCriteria(list []any) []client.AttestationCriterion {
 	return result
 }
 
-func expandDeliveryConfig(list []any) client.DeliveryConfig {
+func expandDeliveryConfig(d *schema.ResourceData) client.DeliveryConfig {
+	if v, ok := d.GetOk("env_delivery_config"); ok {
+		return expandEnvDeliveryConfig(v.([]any))
+	}
+
+	return client.DeliveryConfig{}
+}
+
+func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return client.DeliveryConfig{}
 	}
 
 	m := list[0].(map[string]any)
 	config := client.DeliveryConfig{
-		Type: client.DeliveryType(m["type"].(string)),
+		Type: client.DeliveryTypeEnv,
 	}
 
-	if items, ok := m["items"].([]any); ok {
-		config.Items = make([]client.DeliveryItem, len(items))
+	if items, ok := m["item"].([]any); ok {
+		config.Items = make([]any, len(items))
 		for i, item := range items {
 			itemMap := item.(map[string]any)
-			config.Items[i] = client.DeliveryItem{
-				Key:  itemMap["key"].(string),  // Credential key field
+			deliveryItem := client.EnvDeliveryItem{
 				Name: itemMap["name"].(string), // Environment variable name
 			}
+			if key, ok := itemMap["key"].(string); ok && key != "" {
+				deliveryItem.Key = key
+			}
+			if t, ok := itemMap["type"].(string); ok && t != "" {
+				deliveryItem.Type = client.EnvMappingType(t)
+			}
+			config.Items[i] = deliveryItem
 		}
 	}
 
@@ -331,21 +393,15 @@ func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
 	return result
 }
 
-func flattenDeliveryConfig(config client.DeliveryConfig) []any {
-	items := make([]any, len(config.Items))
-	for i, item := range config.Items {
-		items[i] = map[string]any{
-			"key":  item.Key,
-			"name": item.Name,
+func flattenDeliveryConfig(d *schema.ResourceData, config client.DeliveryConfig) diag.Diagnostics {
+	switch config.Type {
+	case client.DeliveryTypeEnv:
+		if err := d.Set("env_delivery_config", []any{map[string]any{"item": config.Items}}); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set env_delivery_config: %w", err))
 		}
 	}
 
-	return []any{
-		map[string]any{
-			"type":  string(config.Type),
-			"items": items,
-		},
-	}
+	return nil
 }
 
 func isNotFoundError(err error) bool {
