@@ -10,6 +10,7 @@ const (
 	AccessCredentialTypePostgres AccessCredentialType = "postgres"
 	AccessCredentialTypeMongoDB  AccessCredentialType = "mongodb"
 	AccessCredentialTypeMySQL    AccessCredentialType = "mysql"
+	AccessCredentialTypeOpenAI   AccessCredentialType = "openai"
 )
 
 // Postgres
@@ -259,4 +260,71 @@ func UpdateMySQLAccessCredential(ctx context.Context, c *Client, id string, inpu
 
 func (m MySQLAccessCredential) statusFields() (string, string) {
 	return m.Status, m.StatusDetail
+}
+
+// OpenAI
+
+type OpenAIAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	ProjectID     string               `json:"project_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateOpenAIAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	APIKey        string   `json:"api_key"`
+	ProjectID     string   `json:"project_id,omitempty"`
+}
+
+type UpdateOpenAIAccessCredentialInput struct {
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
+	APIKey        *string   `json:"api_key,omitempty"`
+	ProjectID     *string   `json:"project_id,omitempty"`
+}
+
+func CreateOpenAIAccessCredential(ctx context.Context, c *Client, input *CreateOpenAIAccessCredentialInput) (*OpenAIAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/openai"
+	var resp OpenAIAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetOpenAIAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetOpenAIAccessCredential(ctx context.Context, c *Client, id string) (*OpenAIAccessCredential, error) {
+	path := fmt.Sprintf("%s/openai/%s", accessCredentialsEndpoint, id)
+	var resp OpenAIAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateOpenAIAccessCredential(ctx context.Context, c *Client, id string, input *UpdateOpenAIAccessCredentialInput) (*OpenAIAccessCredential, error) {
+	path := fmt.Sprintf("%s/openai/%s", accessCredentialsEndpoint, id)
+	var resp OpenAIAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetOpenAIAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (o OpenAIAccessCredential) statusFields() (string, string) {
+	return o.Status, o.StatusDetail
 }

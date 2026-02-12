@@ -78,6 +78,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetMySQLAccessCredential(context.Background(), c, resourceId)
 			case "mysql_access_privilege":
 				_, err = client.GetMySQLAccessPrivilege(context.Background(), c, resourceId)
+			case "openai_access_credential":
+				_, err = client.GetOpenAIAccessCredential(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
