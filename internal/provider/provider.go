@@ -16,6 +16,14 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_channel"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_configuration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_credential"
+)
+
+const (
+	envHushAPIKeyID     = "HUSH_API_KEY_ID"
+	envHushAPIKeySecret = "HUSH_API_KEY_SECRET"
+	envHushRealm        = "HUSH_REALM"
+	envHushDevBaseURL   = "HUSH_DEV_BASE_URL"
 )
 
 func New(version string) func() *schema.Provider {
@@ -25,18 +33,18 @@ func New(version string) func() *schema.Provider {
 				"api_key_id": {
 					Type:        schema.TypeString,
 					Required:    true,
-					DefaultFunc: schema.EnvDefaultFunc("HUSH_API_KEY_ID", nil),
+					DefaultFunc: schema.EnvDefaultFunc(envHushAPIKeyID, nil),
 				},
 				"api_key_secret": {
 					Type:        schema.TypeString,
 					Required:    true,
-					DefaultFunc: schema.EnvDefaultFunc("HUSH_API_KEY_SECRET", nil),
+					DefaultFunc: schema.EnvDefaultFunc(envHushAPIKeySecret, nil),
 				},
 				"realm": {
 					Type:         schema.TypeString,
 					Optional:     true,
 					Default:      "US",
-					DefaultFunc:  schema.EnvDefaultFunc("HUSH_REALM", "US"),
+					DefaultFunc:  schema.EnvDefaultFunc(envHushRealm, "US"),
 					Description:  "The Hush realm",
 					ValidateFunc: validation.StringInSlice([]string{"US", "EU"}, false),
 				},
@@ -48,6 +56,7 @@ func New(version string) func() *schema.Provider {
 				"hush_plaintext_access_credential": plaintext_access_credential.Resource(),
 				"hush_kv_access_credential":        kv_access_credential.Resource(),
 				"hush_access_policy":               access_policy.Resource(),
+				"hush_postgres_access_credential":  postgres_access_credential.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -56,6 +65,7 @@ func New(version string) func() *schema.Provider {
 				"hush_plaintext_access_credential": plaintext_access_credential.DataSource(),
 				"hush_kv_access_credential":        kv_access_credential.DataSource(),
 				"hush_access_policy":               access_policy.DataSource(),
+				"hush_postgres_access_credential":  postgres_access_credential.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
@@ -74,7 +84,7 @@ func configure(version string, p *schema.Provider) func(context.Context, *schema
 		var baseURL string
 
 		// Check for development override (for internal development only)
-		if devURL := os.Getenv("HUSH_DEV_BASE_URL"); devURL != "" {
+		if devURL := os.Getenv(envHushDevBaseURL); devURL != "" {
 			baseURL = devURL
 		} else {
 			// Production realm mapping - build URL dynamically
