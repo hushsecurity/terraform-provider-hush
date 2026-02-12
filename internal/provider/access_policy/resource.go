@@ -23,16 +23,16 @@ func Resource() *schema.Resource {
 	}
 }
 
-func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	input := &client.CreateAccessPolicyInput{
 		Name:                d.Get("name").(string),
 		Enabled:             d.Get("enabled").(bool),
 		AccessCredentialID:  d.Get("access_credential_id").(string),
-		DeploymentIDs:       expandStringList(d.Get("deployment_ids").([]interface{})),
-		AttestationCriteria: expandAttestationCriteria(d.Get("attestation_criteria").([]interface{})),
-		DeliveryConfig:      expandDeliveryConfig(d.Get("delivery_config").([]interface{})),
+		DeploymentIDs:       expandStringList(d.Get("deployment_ids").([]any)),
+		AttestationCriteria: expandAttestationCriteria(d.Get("attestation_criteria").([]any)),
+		DeliveryConfig:      expandDeliveryConfig(d.Get("delivery_config").([]any)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
@@ -48,7 +48,7 @@ func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, met
 	return accessPolicyRead(ctx, d, meta)
 }
 
-func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	input := &client.UpdateAccessPolicyInput{}
@@ -74,17 +74,17 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if d.HasChange("deployment_ids") {
-		deploymentIDs := expandStringList(d.Get("deployment_ids").([]interface{}))
+		deploymentIDs := expandStringList(d.Get("deployment_ids").([]any))
 		input.DeploymentIDs = &deploymentIDs
 	}
 
 	if d.HasChange("attestation_criteria") {
-		criteria := expandAttestationCriteria(d.Get("attestation_criteria").([]interface{}))
+		criteria := expandAttestationCriteria(d.Get("attestation_criteria").([]any))
 		input.AttestationCriteria = &criteria
 	}
 
 	if d.HasChange("delivery_config") {
-		deliveryConfig := expandDeliveryConfig(d.Get("delivery_config").([]interface{}))
+		deliveryConfig := expandDeliveryConfig(d.Get("delivery_config").([]any))
 		input.DeliveryConfig = &deliveryConfig
 	}
 
@@ -96,7 +96,7 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 	return accessPolicyRead(ctx, d, meta)
 }
 
-func resourceAccessPolicyDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func resourceAccessPolicyDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	err := client.DeleteAccessPolicy(ctx, c, d.Id())

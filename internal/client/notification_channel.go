@@ -59,28 +59,28 @@ func (s SlackConfig) GetType() NotificationChannelType {
 }
 
 type NotificationChannel struct {
-	ID          string                   `json:"id,omitempty"`
-	OrgID       string                   `json:"org_id,omitempty"`
-	Name        string                   `json:"name"`
-	Description string                   `json:"description,omitempty"`
-	Enabled     bool                     `json:"enabled"`
-	Type        NotificationChannelType  `json:"type"`
-	Config      []map[string]interface{} `json:"config"`
+	ID          string                  `json:"id,omitempty"`
+	OrgID       string                  `json:"org_id,omitempty"`
+	Name        string                  `json:"name"`
+	Description string                  `json:"description,omitempty"`
+	Enabled     bool                    `json:"enabled"`
+	Type        NotificationChannelType `json:"type"`
+	Config      []map[string]any        `json:"config"`
 }
 
 type CreateNotificationChannelInput struct {
-	Name        string                   `json:"name"`
-	Description *string                  `json:"description,omitempty"`
-	Enabled     bool                     `json:"enabled"`
-	Config      []map[string]interface{} `json:"config"`
+	Name        string           `json:"name"`
+	Description *string          `json:"description,omitempty"`
+	Enabled     bool             `json:"enabled"`
+	Config      []map[string]any `json:"config"`
 }
 
 type UpdateNotificationChannelInput struct {
-	Name        *string                   `json:"name,omitempty"`
-	Description *string                   `json:"description,omitempty"`
-	Enabled     *bool                     `json:"enabled,omitempty"`
-	Type        *NotificationChannelType  `json:"type,omitempty"`
-	Config      *[]map[string]interface{} `json:"config,omitempty"`
+	Name        *string                  `json:"name,omitempty"`
+	Description *string                  `json:"description,omitempty"`
+	Enabled     *bool                    `json:"enabled,omitempty"`
+	Type        *NotificationChannelType `json:"type,omitempty"`
+	Config      *[]map[string]any        `json:"config,omitempty"`
 }
 
 func CreateNotificationChannel(ctx context.Context, c *Client, input *CreateNotificationChannelInput) (*NotificationChannel, error) {

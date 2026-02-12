@@ -23,12 +23,12 @@ func Resource() *schema.Resource {
 	}
 }
 
-func plaintextAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func plaintextAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	deploymentIDs := make([]string, 0)
 	if v, ok := d.GetOk("deployment_ids"); ok {
-		list := v.([]interface{})
+		list := v.([]any)
 		for _, item := range list {
 			deploymentIDs = append(deploymentIDs, item.(string))
 		}
@@ -58,7 +58,7 @@ func plaintextAccessCredentialCreate(ctx context.Context, d *schema.ResourceData
 	return plaintextAccessCredentialRead(ctx, d, meta)
 }
 
-func plaintextAccessCredentialRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func plaintextAccessCredentialRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	id := d.Id()
@@ -95,17 +95,11 @@ func plaintextAccessCredentialRead(ctx context.Context, d *schema.ResourceData, 
 	if err := d.Set("type", string(credential.Type)); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("created_at", credential.CreatedAt); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("modified_at", credential.ModifiedAt); err != nil {
-		return diag.FromErr(err)
-	}
 
 	return nil
 }
 
-func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 	id := d.Id()
 
@@ -129,7 +123,7 @@ func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData
 	return plaintextAccessCredentialRead(ctx, d, meta)
 }
 
-func plaintextAccessCredentialDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func plaintextAccessCredentialDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 	id := d.Id()
 

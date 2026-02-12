@@ -63,8 +63,8 @@ func New(version string) func() *schema.Provider {
 	}
 }
 
-func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (interface{}, diag.Diagnostics) {
-	return func(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func configure(version string, p *schema.Provider) func(context.Context, *schema.ResourceData) (any, diag.Diagnostics) {
+	return func(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 		userAgent := p.UserAgent("terraform-provider-hush", version)
 
 		apiKeyID := d.Get("api_key_id").(string)
