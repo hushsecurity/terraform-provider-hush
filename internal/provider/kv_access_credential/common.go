@@ -17,8 +17,6 @@ const (
 	valueDesc         = "The value for the key-value pair"
 	keysDesc          = "List of keys available in this credential (computed)"
 	typeDesc          = "The type of access credential (always KV for this resource)"
-	createdAtDesc     = "The timestamp when the credential was created"
-	modifiedAtDesc    = "The timestamp when the credential was last modified"
 )
 
 func KVAccessCredentialResourceSchema() map[string]*schema.Schema {
@@ -116,16 +114,6 @@ func KVAccessCredentialDataSourceSchema() map[string]*schema.Schema {
 		},
 		"type": {
 			Description: typeDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"created_at": {
-			Description: createdAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"modified_at": {
-			Description: modifiedAtDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

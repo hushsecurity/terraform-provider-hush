@@ -26,7 +26,7 @@ func Resource() *schema.Resource {
 	}
 }
 
-func notificationConfigurationCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationConfigurationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	configID := d.Get("config_id").(string)
 	if configID == "" {
 		return diag.Errorf("config_id is required for notification configuration resources. Use a data source to look up predefined configuration IDs.")
@@ -42,7 +42,7 @@ func notificationConfigurationCreate(ctx context.Context, d *schema.ResourceData
 	return notificationConfigurationUpdate(ctx, d, m)
 }
 
-func notificationConfigurationUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationConfigurationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	input := &client.UpdateNotificationConfigurationInput{}
@@ -76,7 +76,7 @@ func notificationConfigurationUpdate(ctx context.Context, d *schema.ResourceData
 	return notificationConfigurationRead(ctx, d, m)
 }
 
-func notificationConfigurationDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationConfigurationDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	input := &client.UpdateNotificationConfigurationInput{

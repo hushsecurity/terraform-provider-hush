@@ -26,7 +26,7 @@ func Resource() *schema.Resource {
 	}
 }
 
-func notificationChannelCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationChannelCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	_, config, err := getNotificationChannelTypeAndConfig(d)
@@ -54,7 +54,7 @@ func notificationChannelCreate(ctx context.Context, d *schema.ResourceData, m in
 	return notificationChannelRead(ctx, d, m)
 }
 
-func notificationChannelUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationChannelUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	input := &client.UpdateNotificationChannelInput{}
@@ -101,7 +101,7 @@ func notificationChannelUpdate(ctx context.Context, d *schema.ResourceData, m in
 	return notificationChannelRead(ctx, d, m)
 }
 
-func notificationChannelDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationChannelDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	err := client.DeleteNotificationChannel(ctx, c, d.Id())

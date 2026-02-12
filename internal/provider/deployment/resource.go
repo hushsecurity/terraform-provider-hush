@@ -27,7 +27,7 @@ func Resource() *schema.Resource {
 	}
 }
 
-func deploymentCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func deploymentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	input := &client.CreateDeploymentInput{
@@ -58,7 +58,7 @@ func deploymentCreate(ctx context.Context, d *schema.ResourceData, m interface{}
 	return nil
 }
 
-func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	input := &client.UpdateDeploymentInput{}
@@ -102,7 +102,7 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m interface{}
 	return nil
 }
 
-func deploymentDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func deploymentDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	err := client.DeleteDeployment(ctx, c, d.Id())

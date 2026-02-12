@@ -48,7 +48,7 @@ func init() {
 	}
 }
 
-func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}, diag.Diagnostics) {
+func providerConfigure(ctx context.Context, d *schema.ResourceData) (any, diag.Diagnostics) {
 	client, err := client.NewClient(
 		ctx,
 		d.Get("api_key_id").(string),

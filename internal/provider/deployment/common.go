@@ -124,7 +124,7 @@ func DeploymentDataSourceSchema() map[string]*schema.Schema {
 
 // Helper Functions
 
-func deploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func deploymentRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	var deployment *client.Deployment
@@ -186,7 +186,7 @@ func deploymentRead(ctx context.Context, d *schema.ResourceData, m interface{}) 
 }
 
 func setDeploymentFields(d *schema.ResourceData, deployment *client.Deployment) diag.Diagnostics {
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"name":        deployment.Name,
 		"description": deployment.Description,
 		"env_type":    deployment.EnvType,

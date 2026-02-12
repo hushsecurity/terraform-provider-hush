@@ -18,8 +18,6 @@ const (
 	channelIDsDesc      = "The list of notification channel IDs to send notifications to"
 	aggregationDesc     = "The aggregation duration for notifications"
 	triggerDesc         = "The trigger type for notifications"
-	createdAtDesc       = "The creation timestamp of the notification configuration"
-	modifiedAtDesc      = "The last modification timestamp of the notification configuration"
 	lastTriggeredAtDesc = "The last trigger timestamp of the notification configuration"
 )
 
@@ -117,16 +115,6 @@ func NotificationConfigurationDataSourceSchema() map[string]*schema.Schema {
 			Computed:      true,
 			ConflictsWith: []string{"id", "name"},
 		},
-		"created_at": {
-			Description: createdAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"modified_at": {
-			Description: modifiedAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 		"last_triggered_at": {
 			Description: lastTriggeredAtDesc,
 			Type:        schema.TypeString,
@@ -137,7 +125,7 @@ func NotificationConfigurationDataSourceSchema() map[string]*schema.Schema {
 
 // Helper Functions
 
-func notificationConfigurationRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationConfigurationRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	var config *client.NotificationConfiguration
@@ -215,15 +203,13 @@ func notificationConfigurationRead(ctx context.Context, d *schema.ResourceData, 
 }
 
 func setNotificationConfigurationFields(d *schema.ResourceData, config *client.NotificationConfiguration) diag.Diagnostics {
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"name":              config.Name,
 		"description":       config.Description,
 		"enabled":           config.Enabled,
 		"channel_ids":       config.ChannelIDs,
 		"aggregation":       string(config.Aggregation),
 		"trigger":           string(config.Trigger),
-		"created_at":        config.CreatedAt,
-		"modified_at":       config.ModifiedAt,
 		"last_triggered_at": config.LastTriggeredAt,
 	}
 
@@ -237,7 +223,7 @@ func setNotificationConfigurationFields(d *schema.ResourceData, config *client.N
 }
 
 func buildNotificationConfigurationChannelIDs(d *schema.ResourceData) []string {
-	channelIDsRaw := d.Get("channel_ids").([]interface{})
+	channelIDsRaw := d.Get("channel_ids").([]any)
 	channelIDs := make([]string, len(channelIDsRaw))
 	for i, v := range channelIDsRaw {
 		channelIDs[i] = v.(string)

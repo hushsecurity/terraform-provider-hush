@@ -23,12 +23,12 @@ func Resource() *schema.Resource {
 	}
 }
 
-func kvAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func kvAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	deploymentIDs := make([]string, 0)
 	if v, ok := d.GetOk("deployment_ids"); ok {
-		list := v.([]interface{})
+		list := v.([]any)
 		for _, item := range list {
 			deploymentIDs = append(deploymentIDs, item.(string))
 		}
@@ -36,9 +36,9 @@ func kvAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	items := make([]client.KVItem, 0)
 	if v, ok := d.GetOk("items"); ok {
-		itemsList := v.([]interface{})
+		itemsList := v.([]any)
 		for _, item := range itemsList {
-			itemMap := item.(map[string]interface{})
+			itemMap := item.(map[string]any)
 			items = append(items, client.KVItem{
 				Key:   itemMap["key"].(string),
 				Value: itemMap["value"].(string),
@@ -63,7 +63,7 @@ func kvAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta 
 	return kvAccessCredentialRead(ctx, d, meta)
 }
 
-func kvAccessCredentialRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func kvAccessCredentialRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 
 	id := d.Id()
@@ -104,17 +104,11 @@ func kvAccessCredentialRead(ctx context.Context, d *schema.ResourceData, meta in
 	if err := d.Set("type", string(credential.Type)); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := d.Set("created_at", credential.CreatedAt); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("modified_at", credential.ModifiedAt); err != nil {
-		return diag.FromErr(err)
-	}
 
 	return nil
 }
 
-func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 	id := d.Id()
 
@@ -138,7 +132,7 @@ func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	return kvAccessCredentialRead(ctx, d, meta)
 }
 
-func kvAccessCredentialDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func kvAccessCredentialDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 	id := d.Id()
 

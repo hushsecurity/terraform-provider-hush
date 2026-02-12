@@ -16,8 +16,6 @@ const (
 	nameDesc        = "The name of the notification channel"
 	descriptionDesc = "The description of the notification channel"
 	enabledDesc     = "Whether the notification channel is enabled"
-	createdAtDesc   = "The creation timestamp of the notification channel"
-	modifiedAtDesc  = "The last modification timestamp of the notification channel"
 )
 
 func NotificationChannelResourceSchema() map[string]*schema.Schema {
@@ -229,22 +227,12 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"created_at": {
-			Description: createdAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"modified_at": {
-			Description: modifiedAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 	}
 }
 
 // Helper Functions
 
-func notificationChannelRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func notificationChannelRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	var channel *client.NotificationChannel
@@ -304,13 +292,11 @@ func notificationChannelRead(ctx context.Context, d *schema.ResourceData, m inte
 }
 
 func setNotificationChannelFields(d *schema.ResourceData, channel *client.NotificationChannel) diag.Diagnostics {
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"name":        channel.Name,
 		"description": channel.Description,
 		"enabled":     channel.Enabled,
 		"type":        string(channel.Type),
-		"created_at":  channel.CreatedAt,
-		"modified_at": channel.ModifiedAt,
 	}
 
 	for field, value := range fields {
@@ -340,9 +326,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	switch channel.Type {
 	case client.NotificationChannelTypeEmail:
 		if len(channel.Config) > 0 {
-			emailConfigs := make([]map[string]interface{}, len(channel.Config))
+			emailConfigs := make([]map[string]any, len(channel.Config))
 			for i, config := range channel.Config {
-				emailConfigs[i] = map[string]interface{}{
+				emailConfigs[i] = map[string]any{
 					"address":  config["address"],
 					"verified": config["verified"],
 				}
@@ -353,9 +339,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 		}
 	case client.NotificationChannelTypeWebhook:
 		if len(channel.Config) > 0 {
-			webhookConfigs := make([]map[string]interface{}, len(channel.Config))
+			webhookConfigs := make([]map[string]any, len(channel.Config))
 			for i, config := range channel.Config {
-				webhookConfigs[i] = map[string]interface{}{
+				webhookConfigs[i] = map[string]any{
 					"url":      config["url"],
 					"method":   config["method"],
 					"verified": config["verified"],
@@ -367,9 +353,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 		}
 	case client.NotificationChannelTypeSlack:
 		if len(channel.Config) > 0 {
-			slackConfigs := make([]map[string]interface{}, len(channel.Config))
+			slackConfigs := make([]map[string]any, len(channel.Config))
 			for i, config := range channel.Config {
-				slackConfigs[i] = map[string]interface{}{
+				slackConfigs[i] = map[string]any{
 					"integration_id": config["integration_id"],
 					"channel":        config["channel"],
 					"channel_id":     config["channel_id"],
@@ -384,14 +370,14 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	return nil
 }
 
-func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.NotificationChannelType, []map[string]interface{}, error) {
+func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.NotificationChannelType, []map[string]any, error) {
 	if emailConfigs, ok := d.GetOk("email_config"); ok {
-		configList := emailConfigs.([]interface{})
+		configList := emailConfigs.([]any)
 		if len(configList) > 0 {
-			result := make([]map[string]interface{}, len(configList))
+			result := make([]map[string]any, len(configList))
 			for i, configInterface := range configList {
-				configMap := configInterface.(map[string]interface{})
-				result[i] = map[string]interface{}{
+				configMap := configInterface.(map[string]any)
+				result[i] = map[string]any{
 					"address": configMap["address"],
 				}
 			}
@@ -400,12 +386,12 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 	}
 
 	if webhookConfigs, ok := d.GetOk("webhook_config"); ok {
-		configList := webhookConfigs.([]interface{})
+		configList := webhookConfigs.([]any)
 		if len(configList) > 0 {
-			result := make([]map[string]interface{}, len(configList))
+			result := make([]map[string]any, len(configList))
 			for i, configInterface := range configList {
-				configMap := configInterface.(map[string]interface{})
-				result[i] = map[string]interface{}{
+				configMap := configInterface.(map[string]any)
+				result[i] = map[string]any{
 					"url": configMap["url"],
 				}
 				if method, ok := configMap["method"]; ok && method != "" {
@@ -417,12 +403,12 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 	}
 
 	if slackConfigs, ok := d.GetOk("slack_config"); ok {
-		configList := slackConfigs.([]interface{})
+		configList := slackConfigs.([]any)
 		if len(configList) > 0 {
-			result := make([]map[string]interface{}, len(configList))
+			result := make([]map[string]any, len(configList))
 			for i, configInterface := range configList {
-				configMap := configInterface.(map[string]interface{})
-				result[i] = map[string]interface{}{
+				configMap := configInterface.(map[string]any)
+				result[i] = map[string]any{
 					"integration_id": configMap["integration_id"],
 					"channel":        configMap["channel"],
 				}

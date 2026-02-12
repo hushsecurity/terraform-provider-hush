@@ -220,7 +220,7 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 
 // Helper Functions
 
-func accessPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+func accessPolicyRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	id := d.Id()
@@ -249,7 +249,7 @@ func accessPolicyRead(ctx context.Context, d *schema.ResourceData, m interface{}
 }
 
 func setAccessPolicyFields(d *schema.ResourceData, policy *client.AccessPolicy) diag.Diagnostics {
-	fields := map[string]interface{}{
+	fields := map[string]any{
 		"name":                 policy.Name,
 		"description":          policy.Description,
 		"enabled":              policy.Enabled,
@@ -268,7 +268,7 @@ func setAccessPolicyFields(d *schema.ResourceData, policy *client.AccessPolicy) 
 	return nil
 }
 
-func expandStringList(list []interface{}) []string {
+func expandStringList(list []any) []string {
 	result := make([]string, len(list))
 	for i, v := range list {
 		result[i] = v.(string)
@@ -276,10 +276,10 @@ func expandStringList(list []interface{}) []string {
 	return result
 }
 
-func expandAttestationCriteria(list []interface{}) []client.AttestationCriterion {
+func expandAttestationCriteria(list []any) []client.AttestationCriterion {
 	result := make([]client.AttestationCriterion, len(list))
 	for i, v := range list {
-		m := v.(map[string]interface{})
+		m := v.(map[string]any)
 		criterion := client.AttestationCriterion{
 			Type:  client.AttestationCriterionType(m["type"].(string)),
 			Value: m["value"].(string),
@@ -292,20 +292,20 @@ func expandAttestationCriteria(list []interface{}) []client.AttestationCriterion
 	return result
 }
 
-func expandDeliveryConfig(list []interface{}) client.DeliveryConfig {
+func expandDeliveryConfig(list []any) client.DeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return client.DeliveryConfig{}
 	}
 
-	m := list[0].(map[string]interface{})
+	m := list[0].(map[string]any)
 	config := client.DeliveryConfig{
 		Type: client.DeliveryType(m["type"].(string)),
 	}
 
-	if items, ok := m["items"].([]interface{}); ok {
+	if items, ok := m["items"].([]any); ok {
 		config.Items = make([]client.DeliveryItem, len(items))
 		for i, item := range items {
-			itemMap := item.(map[string]interface{})
+			itemMap := item.(map[string]any)
 			config.Items[i] = client.DeliveryItem{
 				Key:  itemMap["key"].(string),  // Credential key field
 				Name: itemMap["name"].(string), // Environment variable name
@@ -316,10 +316,10 @@ func expandDeliveryConfig(list []interface{}) client.DeliveryConfig {
 	return config
 }
 
-func flattenAttestationCriteria(criteria []client.AttestationCriterion) []interface{} {
-	result := make([]interface{}, len(criteria))
+func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
+	result := make([]any, len(criteria))
 	for i, c := range criteria {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"type":  string(c.Type),
 			"value": c.Value,
 		}
@@ -331,17 +331,17 @@ func flattenAttestationCriteria(criteria []client.AttestationCriterion) []interf
 	return result
 }
 
-func flattenDeliveryConfig(config client.DeliveryConfig) []interface{} {
-	items := make([]interface{}, len(config.Items))
+func flattenDeliveryConfig(config client.DeliveryConfig) []any {
+	items := make([]any, len(config.Items))
 	for i, item := range config.Items {
-		items[i] = map[string]interface{}{
+		items[i] = map[string]any{
 			"key":  item.Key,
 			"name": item.Name,
 		}
 	}
 
-	return []interface{}{
-		map[string]interface{}{
+	return []any{
+		map[string]any{
 			"type":  string(config.Type),
 			"items": items,
 		},
