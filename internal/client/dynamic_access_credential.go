@@ -12,6 +12,7 @@ const (
 	AccessCredentialTypeMySQL    AccessCredentialType = "mysql"
 	AccessCredentialTypeMariaDB  AccessCredentialType = "mariadb"
 	AccessCredentialTypeOpenAI   AccessCredentialType = "openai"
+	AccessCredentialTypeGemini   AccessCredentialType = "gemini"
 )
 
 // Postgres
@@ -410,4 +411,71 @@ func UpdateOpenAIAccessCredential(ctx context.Context, c *Client, id string, inp
 
 func (o OpenAIAccessCredential) statusFields() (string, string) {
 	return o.Status, o.StatusDetail
+}
+
+// Gemini
+
+type GeminiAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	ProjectID     string               `json:"project_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateGeminiAccessCredentialInput struct {
+	Name              string   `json:"name"`
+	Description       string   `json:"description,omitempty"`
+	DeploymentIDs     []string `json:"deployment_ids"`
+	ServiceAccountKey string   `json:"service_account_key,omitempty"`
+	ProjectID         string   `json:"project_id"`
+}
+
+type UpdateGeminiAccessCredentialInput struct {
+	Name              *string   `json:"name,omitempty"`
+	Description       *string   `json:"description,omitempty"`
+	DeploymentIDs     *[]string `json:"deployment_ids,omitempty"`
+	ServiceAccountKey *string   `json:"service_account_key,omitempty"`
+	ProjectID         *string   `json:"project_id,omitempty"`
+}
+
+func CreateGeminiAccessCredential(ctx context.Context, c *Client, input *CreateGeminiAccessCredentialInput) (*GeminiAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/gemini"
+	var resp GeminiAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetGeminiAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGeminiAccessCredential(ctx context.Context, c *Client, id string) (*GeminiAccessCredential, error) {
+	path := fmt.Sprintf("%s/gemini/%s", accessCredentialsEndpoint, id)
+	var resp GeminiAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGeminiAccessCredential(ctx context.Context, c *Client, id string, input *UpdateGeminiAccessCredentialInput) (*GeminiAccessCredential, error) {
+	path := fmt.Sprintf("%s/gemini/%s", accessCredentialsEndpoint, id)
+	var resp GeminiAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetGeminiAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (g GeminiAccessCredential) statusFields() (string, string) {
+	return g.Status, g.StatusDetail
 }
