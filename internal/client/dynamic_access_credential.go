@@ -10,6 +10,7 @@ const (
 	AccessCredentialTypePostgres AccessCredentialType = "postgres"
 	AccessCredentialTypeMongoDB  AccessCredentialType = "mongodb"
 	AccessCredentialTypeMySQL    AccessCredentialType = "mysql"
+	AccessCredentialTypeMariaDB  AccessCredentialType = "mariadb"
 	AccessCredentialTypeOpenAI   AccessCredentialType = "openai"
 )
 
@@ -259,6 +260,88 @@ func UpdateMySQLAccessCredential(ctx context.Context, c *Client, id string, inpu
 }
 
 func (m MySQLAccessCredential) statusFields() (string, string) {
+	return m.Status, m.StatusDetail
+}
+
+// MariaDB
+
+type MariaDBAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	DBName        string               `json:"db_name,omitempty"`
+	Host          string               `json:"host,omitempty"`
+	Port          int                  `json:"port,omitempty"`
+	SSLMode       string               `json:"ssl_mode,omitempty"`
+	SSLCA         string               `json:"ssl_ca,omitempty"`
+	Username      string               `json:"username,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateMariaDBAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	DBName        string   `json:"db_name"`
+	Host          string   `json:"host"`
+	Port          int      `json:"port,omitempty"`
+	SSLMode       string   `json:"ssl_mode,omitempty"`
+	SSLCA         string   `json:"ssl_ca,omitempty"`
+	Username      string   `json:"username"`
+	Password      string   `json:"password"`
+}
+
+type UpdateMariaDBAccessCredentialInput struct {
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
+	DBName        *string   `json:"db_name,omitempty"`
+	Host          *string   `json:"host,omitempty"`
+	Port          *int      `json:"port,omitempty"`
+	SSLMode       *string   `json:"ssl_mode,omitempty"`
+	SSLCA         *string   `json:"ssl_ca,omitempty"`
+	Username      *string   `json:"username,omitempty"`
+	Password      *string   `json:"password,omitempty"`
+}
+
+func CreateMariaDBAccessCredential(ctx context.Context, c *Client, input *CreateMariaDBAccessCredentialInput) (*MariaDBAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/mariadb"
+	var resp MariaDBAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetMariaDBAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetMariaDBAccessCredential(ctx context.Context, c *Client, id string) (*MariaDBAccessCredential, error) {
+	path := fmt.Sprintf("%s/mariadb/%s", accessCredentialsEndpoint, id)
+	var resp MariaDBAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateMariaDBAccessCredential(ctx context.Context, c *Client, id string, input *UpdateMariaDBAccessCredentialInput) (*MariaDBAccessCredential, error) {
+	path := fmt.Sprintf("%s/mariadb/%s", accessCredentialsEndpoint, id)
+	var resp MariaDBAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetMariaDBAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (m MariaDBAccessCredential) statusFields() (string, string) {
 	return m.Status, m.StatusDetail
 }
 
