@@ -9,6 +9,7 @@ import (
 const (
 	AccessCredentialTypePostgres AccessCredentialType = "postgres"
 	AccessCredentialTypeMongoDB  AccessCredentialType = "mongodb"
+	AccessCredentialTypeMySQL    AccessCredentialType = "mysql"
 )
 
 // Postgres
@@ -175,5 +176,87 @@ func UpdateMongoDBAccessCredential(ctx context.Context, c *Client, id string, in
 }
 
 func (m MongoDBAccessCredential) statusFields() (string, string) {
+	return m.Status, m.StatusDetail
+}
+
+// MySQL
+
+type MySQLAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	DBName        string               `json:"db_name,omitempty"`
+	Host          string               `json:"host,omitempty"`
+	Port          int                  `json:"port,omitempty"`
+	SSLMode       string               `json:"ssl_mode,omitempty"`
+	SSLCA         string               `json:"ssl_ca,omitempty"`
+	Username      string               `json:"username,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateMySQLAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	DBName        string   `json:"db_name"`
+	Host          string   `json:"host"`
+	Port          int      `json:"port,omitempty"`
+	SSLMode       string   `json:"ssl_mode,omitempty"`
+	SSLCA         string   `json:"ssl_ca,omitempty"`
+	Username      string   `json:"username"`
+	Password      string   `json:"password"`
+}
+
+type UpdateMySQLAccessCredentialInput struct {
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
+	DBName        *string   `json:"db_name,omitempty"`
+	Host          *string   `json:"host,omitempty"`
+	Port          *int      `json:"port,omitempty"`
+	SSLMode       *string   `json:"ssl_mode,omitempty"`
+	SSLCA         *string   `json:"ssl_ca,omitempty"`
+	Username      *string   `json:"username,omitempty"`
+	Password      *string   `json:"password,omitempty"`
+}
+
+func CreateMySQLAccessCredential(ctx context.Context, c *Client, input *CreateMySQLAccessCredentialInput) (*MySQLAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/mysql"
+	var resp MySQLAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetMySQLAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetMySQLAccessCredential(ctx context.Context, c *Client, id string) (*MySQLAccessCredential, error) {
+	path := fmt.Sprintf("%s/mysql/%s", accessCredentialsEndpoint, id)
+	var resp MySQLAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateMySQLAccessCredential(ctx context.Context, c *Client, id string, input *UpdateMySQLAccessCredentialInput) (*MySQLAccessCredential, error) {
+	path := fmt.Sprintf("%s/mysql/%s", accessCredentialsEndpoint, id)
+	var resp MySQLAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetMySQLAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (m MySQLAccessCredential) statusFields() (string, string) {
 	return m.Status, m.StatusDetail
 }
