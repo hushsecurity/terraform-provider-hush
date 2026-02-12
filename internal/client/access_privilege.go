@@ -65,6 +65,61 @@ func UpdatePostgresAccessPrivilege(ctx context.Context, c *Client, id string, in
 	return &resp, nil
 }
 
+// MongoDB
+
+type MongoDBGrant struct {
+	Privileges    []string `json:"privileges"`
+	ResourceType  string   `json:"resource_type"`
+	ResourceNames []string `json:"resource_names,omitempty"`
+}
+
+type MongoDBAccessPrivilege struct {
+	ID          string         `json:"id,omitempty"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Type        string         `json:"type,omitempty"`
+	Grants      []MongoDBGrant `json:"grants"`
+}
+
+type CreateMongoDBAccessPrivilegeInput struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Grants      []MongoDBGrant `json:"grants"`
+}
+
+type UpdateMongoDBAccessPrivilegeInput struct {
+	Name        *string         `json:"name,omitempty"`
+	Description *string         `json:"description,omitempty"`
+	Grants      *[]MongoDBGrant `json:"grants,omitempty"`
+}
+
+func CreateMongoDBAccessPrivilege(ctx context.Context, c *Client, input *CreateMongoDBAccessPrivilegeInput) (*MongoDBAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/mongodb"
+	var resp MongoDBAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetMongoDBAccessPrivilege(ctx context.Context, c *Client, id string) (*MongoDBAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/mongodb/%s", accessPrivilegesEndpoint, id)
+	var resp MongoDBAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateMongoDBAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateMongoDBAccessPrivilegeInput) (*MongoDBAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/mongodb/%s", accessPrivilegesEndpoint, id)
+	var resp MongoDBAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
