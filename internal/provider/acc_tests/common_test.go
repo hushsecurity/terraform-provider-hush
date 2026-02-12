@@ -82,6 +82,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetOpenAIAccessCredential(context.Background(), c, resourceId)
 			case "openai_access_privilege":
 				_, err = client.GetOpenAIAccessPrivilege(context.Background(), c, resourceId)
+			case "mariadb_access_credential":
+				_, err = client.GetMariaDBAccessCredential(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}

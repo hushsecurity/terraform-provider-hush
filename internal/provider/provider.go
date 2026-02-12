@@ -13,6 +13,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mariadb_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mysql_access_credential"
@@ -71,6 +72,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mysql_access_privilege":      mysql_access_privilege.Resource(),
 				"hush_openai_access_credential":    openai_access_credential.Resource(),
 				"hush_openai_access_privilege":     openai_access_privilege.Resource(),
+				"hush_mariadb_access_credential":   mariadb_access_credential.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -87,6 +89,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mysql_access_privilege":      mysql_access_privilege.DataSource(),
 				"hush_openai_access_credential":    openai_access_credential.DataSource(),
 				"hush_openai_access_privilege":     openai_access_privilege.DataSource(),
+				"hush_mariadb_access_credential":   mariadb_access_credential.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
