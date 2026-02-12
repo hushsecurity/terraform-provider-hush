@@ -70,6 +70,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetPostgresAccessCredential(context.Background(), c, resourceId)
 			case "postgres_access_privilege":
 				_, err = client.GetPostgresAccessPrivilege(context.Background(), c, resourceId)
+			case "mongodb_access_credential":
+				_, err = client.GetMongoDBAccessCredential(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
