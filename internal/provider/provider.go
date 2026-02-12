@@ -17,6 +17,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_configuration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_privilege"
 )
 
 const (
@@ -57,6 +58,7 @@ func New(version string) func() *schema.Provider {
 				"hush_kv_access_credential":        kv_access_credential.Resource(),
 				"hush_access_policy":               access_policy.Resource(),
 				"hush_postgres_access_credential":  postgres_access_credential.Resource(),
+				"hush_postgres_access_privilege":   postgres_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -66,6 +68,7 @@ func New(version string) func() *schema.Provider {
 				"hush_kv_access_credential":        kv_access_credential.DataSource(),
 				"hush_access_policy":               access_policy.DataSource(),
 				"hush_postgres_access_credential":  postgres_access_credential.DataSource(),
+				"hush_postgres_access_privilege":   postgres_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
