@@ -1,0 +1,76 @@
+package client
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+)
+
+const accessPrivilegesEndpoint = "/v1/access_privileges"
+
+// Postgres
+
+type PostgresGrant struct {
+	Privileges  []string `json:"privileges"`
+	ObjectType  string   `json:"object_type"`
+	ObjectNames []string `json:"object_names,omitempty"`
+	ColumnNames []string `json:"column_names,omitempty"`
+	AllInSchema bool     `json:"all_in_schema,omitempty"`
+}
+
+type PostgresAccessPrivilege struct {
+	ID          string          `json:"id,omitempty"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Type        string          `json:"type,omitempty"`
+	Grants      []PostgresGrant `json:"grants"`
+}
+
+type CreatePostgresAccessPrivilegeInput struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Grants      []PostgresGrant `json:"grants"`
+}
+
+type UpdatePostgresAccessPrivilegeInput struct {
+	Name        *string          `json:"name,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Grants      *[]PostgresGrant `json:"grants,omitempty"`
+}
+
+func CreatePostgresAccessPrivilege(ctx context.Context, c *Client, input *CreatePostgresAccessPrivilegeInput) (*PostgresAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/postgres"
+	var resp PostgresAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetPostgresAccessPrivilege(ctx context.Context, c *Client, id string) (*PostgresAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/postgres/%s", accessPrivilegesEndpoint, id)
+	var resp PostgresAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdatePostgresAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdatePostgresAccessPrivilegeInput) (*PostgresAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/postgres/%s", accessPrivilegesEndpoint, id)
+	var resp PostgresAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// Shared delete function for all access privileges
+
+func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
+	path := fmt.Sprintf("%s/%s", accessPrivilegesEndpoint, id)
+	if err := c.doRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
+		return err
+	}
+	return nil
+}
