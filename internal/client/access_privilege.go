@@ -175,6 +175,63 @@ func UpdateMySQLAccessPrivilege(ctx context.Context, c *Client, id string, input
 	return &resp, nil
 }
 
+// OpenAI
+
+type OpenAIPermission struct {
+	Name  string `json:"name"`
+	Level string `json:"level"`
+}
+
+type OpenAIAccessPrivilege struct {
+	ID             string             `json:"id,omitempty"`
+	Name           string             `json:"name"`
+	Description    string             `json:"description,omitempty"`
+	Type           string             `json:"type,omitempty"`
+	PermissionType string             `json:"permission_type"`
+	Permissions    []OpenAIPermission `json:"permissions,omitempty"`
+}
+
+type CreateOpenAIAccessPrivilegeInput struct {
+	Name           string             `json:"name"`
+	Description    string             `json:"description,omitempty"`
+	PermissionType string             `json:"permission_type"`
+	Permissions    []OpenAIPermission `json:"permissions,omitempty"`
+}
+
+type UpdateOpenAIAccessPrivilegeInput struct {
+	Name           *string             `json:"name,omitempty"`
+	Description    *string             `json:"description,omitempty"`
+	PermissionType *string             `json:"permission_type,omitempty"`
+	Permissions    *[]OpenAIPermission `json:"permissions,omitempty"`
+}
+
+func CreateOpenAIAccessPrivilege(ctx context.Context, c *Client, input *CreateOpenAIAccessPrivilegeInput) (*OpenAIAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/openai"
+	var resp OpenAIAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetOpenAIAccessPrivilege(ctx context.Context, c *Client, id string) (*OpenAIAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/openai/%s", accessPrivilegesEndpoint, id)
+	var resp OpenAIAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateOpenAIAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateOpenAIAccessPrivilegeInput) (*OpenAIAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/openai/%s", accessPrivilegesEndpoint, id)
+	var resp OpenAIAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

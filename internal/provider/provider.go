@@ -70,6 +70,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mysql_access_credential":     mysql_access_credential.Resource(),
 				"hush_mysql_access_privilege":      mysql_access_privilege.Resource(),
 				"hush_openai_access_credential":    openai_access_credential.Resource(),
+				"hush_openai_access_privilege":     openai_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -85,6 +86,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mysql_access_credential":     mysql_access_credential.DataSource(),
 				"hush_mysql_access_privilege":      mysql_access_privilege.DataSource(),
 				"hush_openai_access_credential":    openai_access_credential.DataSource(),
+				"hush_openai_access_privilege":     openai_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
