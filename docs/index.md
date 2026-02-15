@@ -38,7 +38,7 @@ provider "hush" {
 ### Required
 
 - `api_key_id` (String)
-- `api_key_secret` (String)
+- `api_key_secret` (String, Sensitive)
 
 ### Optional
 

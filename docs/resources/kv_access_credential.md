@@ -69,10 +69,8 @@ output "available_keys" {
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the credential was created
 - `id` (String) The unique identifier of the KV access credential
 - `keys` (List of String) List of keys available in this credential (computed)
-- `modified_at` (String) The timestamp when the credential was last modified
 - `type` (String) The type of access credential (always KV for this resource)
 
 <a id="nestedblock--items"></a>

@@ -60,9 +60,7 @@ output "notification_configuration" {
 ### Read-Only
 
 - `aggregation` (String) The aggregation duration for notifications (read-only)
-- `created_at` (String) The creation timestamp of the notification configuration
 - `description` (String) The description of the notification configuration (read-only)
 - `last_triggered_at` (String) The last trigger timestamp of the notification configuration
-- `modified_at` (String) The last modification timestamp of the notification configuration
 - `name` (String) The name of the notification configuration (read-only)
 - `trigger` (String) The trigger type for notifications (read-only)

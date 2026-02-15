@@ -54,8 +54,6 @@ output "config_by_name" {
 
 - `aggregation` (String) The aggregation duration for notifications
 - `channel_ids` (List of String) The list of notification channel IDs to send notifications to
-- `created_at` (String) The creation timestamp of the notification configuration
 - `description` (String) The description of the notification configuration
 - `enabled` (Boolean) Whether the notification configuration is enabled
 - `last_triggered_at` (String) The last trigger timestamp of the notification configuration
-- `modified_at` (String) The last modification timestamp of the notification configuration

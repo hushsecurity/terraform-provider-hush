@@ -42,11 +42,9 @@ output "channel_by_name" {
 
 ### Read-Only
 
-- `created_at` (String) The creation timestamp of the notification channel
 - `description` (String) The description of the notification channel
 - `email_config` (List of Object) Email notification configuration (see [below for nested schema](#nestedatt--email_config))
 - `enabled` (Boolean) Whether the notification channel is enabled
-- `modified_at` (String) The last modification timestamp of the notification channel
 - `slack_config` (List of Object) Slack notification configuration (see [below for nested schema](#nestedatt--slack_config))
 - `type` (String) The type of notification channel
 - `webhook_config` (List of Object) Webhook notification configuration (see [below for nested schema](#nestedatt--webhook_config))

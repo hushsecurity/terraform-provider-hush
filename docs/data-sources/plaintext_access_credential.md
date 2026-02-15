@@ -45,9 +45,7 @@ output "credential_type" {
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the credential was created
 - `deployment_ids` (List of String) List of deployment IDs that can access this credential
 - `description` (String) The description of the plaintext access credential
-- `modified_at` (String) The timestamp when the credential was last modified
 - `name` (String) The name of the plaintext access credential
 - `type` (String) The type of access credential (always PLAINTEXT for this resource)
