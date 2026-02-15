@@ -16,8 +16,6 @@ type Deployment struct {
 	EnvType     string `json:"env_type"`
 	Status      string `json:"status,omitempty"`
 	Kind        string `json:"kind,omitempty"`
-	CreatedAt   string `json:"created_at,omitempty"`
-	ModifiedAt  string `json:"modified_at,omitempty"`
 }
 
 // CreateDeploymentInput represents the input for creating a deployment

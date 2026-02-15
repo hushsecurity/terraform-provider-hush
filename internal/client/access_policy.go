@@ -50,8 +50,6 @@ type AccessPolicy struct {
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
 	DeploymentIDs       []string               `json:"deployment_ids"`
 	DeliveryConfig      DeliveryConfig         `json:"delivery_config"`
-	CreatedAt           string                 `json:"created_at,omitempty"`
-	ModifiedAt          string                 `json:"modified_at,omitempty"`
 }
 
 type CreateAccessPolicyInput struct {

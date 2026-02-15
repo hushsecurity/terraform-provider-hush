@@ -23,8 +23,6 @@ type AccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	DeploymentIDs []string             `json:"deployment_ids"`
 	Keys          []string             `json:"keys,omitempty"`
-	CreatedAt     string               `json:"created_at,omitempty"`
-	ModifiedAt    string               `json:"modified_at,omitempty"`
 	CreatedBy     string               `json:"created_by,omitempty"`
 }
 

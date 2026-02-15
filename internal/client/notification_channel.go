@@ -66,8 +66,6 @@ type NotificationChannel struct {
 	Enabled     bool                     `json:"enabled"`
 	Type        NotificationChannelType  `json:"type"`
 	Config      []map[string]interface{} `json:"config"`
-	CreatedAt   string                   `json:"created_at,omitempty"`
-	ModifiedAt  string                   `json:"modified_at,omitempty"`
 }
 
 type CreateNotificationChannelInput struct {

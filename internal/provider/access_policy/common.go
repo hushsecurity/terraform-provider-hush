@@ -19,8 +19,6 @@ const (
 	deploymentIDsDesc       = "The list of deployment IDs"
 	attestationCriteriaDesc = "The attestation criteria for the access policy"
 	deliveryConfigDesc      = "The delivery configuration for the access policy"
-	createdAtDesc           = "The creation timestamp"
-	modifiedAtDesc          = "The modification timestamp"
 )
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
@@ -122,16 +120,6 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"created_at": {
-			Type:        schema.TypeString,
-			Computed:    true,
-			Description: createdAtDesc,
-		},
-		"modified_at": {
-			Type:        schema.TypeString,
-			Computed:    true,
-			Description: modifiedAtDesc,
-		},
 	}
 }
 
@@ -227,16 +215,6 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
-		"created_at": {
-			Type:        schema.TypeString,
-			Computed:    true,
-			Description: createdAtDesc,
-		},
-		"modified_at": {
-			Type:        schema.TypeString,
-			Computed:    true,
-			Description: modifiedAtDesc,
-		},
 	}
 }
 
@@ -279,8 +257,6 @@ func setAccessPolicyFields(d *schema.ResourceData, policy *client.AccessPolicy) 
 		"deployment_ids":       policy.DeploymentIDs,
 		"attestation_criteria": flattenAttestationCriteria(policy.AttestationCriteria),
 		"delivery_config":      flattenDeliveryConfig(policy.DeliveryConfig),
-		"created_at":           policy.CreatedAt,
-		"modified_at":          policy.ModifiedAt,
 	}
 
 	for field, value := range fields {
