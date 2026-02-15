@@ -60,7 +60,5 @@ output "credential_type" {
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the credential was created
 - `id` (String) The unique identifier of the plaintext access credential
-- `modified_at` (String) The timestamp when the credential was last modified
 - `type` (String) The type of access credential (always PLAINTEXT for this resource)

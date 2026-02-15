@@ -49,10 +49,8 @@ output "credential_type" {
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the credential was created
 - `deployment_ids` (List of String) List of deployment IDs that can access this credential
 - `description` (String) The description of the KV access credential
 - `keys` (List of String) List of keys available in this credential (computed)
-- `modified_at` (String) The timestamp when the credential was last modified
 - `name` (String) The name of the KV access credential
 - `type` (String) The type of access credential (always KV for this resource)

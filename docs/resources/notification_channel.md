@@ -49,9 +49,7 @@ output "notification_channel" {
 
 ### Read-Only
 
-- `created_at` (String) The creation timestamp of the notification channel
 - `id` (String) The unique identifier of the notification channel
-- `modified_at` (String) The last modification timestamp of the notification channel
 - `type` (String) The type of notification channel
 
 <a id="nestedblock--email_config"></a>
