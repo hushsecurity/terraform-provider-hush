@@ -64,6 +64,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetNotificationConfiguration(context.Background(), c, resourceId)
 			case "deployment":
 				_, err = client.GetDeployment(context.Background(), c, resourceId)
+			case "access_policy":
+				_, err = client.GetAccessPolicy(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
