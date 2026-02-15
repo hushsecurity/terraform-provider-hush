@@ -33,8 +33,6 @@ type NotificationConfiguration struct {
 	ChannelIDs      []string            `json:"channel_ids"`
 	Aggregation     AggregationDuration `json:"aggregation"`
 	Trigger         Trigger             `json:"trigger"`
-	CreatedAt       string              `json:"created_at,omitempty"`
-	ModifiedAt      string              `json:"modified_at,omitempty"`
 	LastTriggeredAt *string             `json:"last_triggered_at,omitempty"`
 }
 
