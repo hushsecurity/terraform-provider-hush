@@ -12,6 +12,13 @@ import (
 	p "github.com/hushsecurity/terraform-provider-hush/internal/provider"
 )
 
+const (
+	envHushAPIKeyID         = "HUSH_API_KEY_ID"
+	envHushAPIKeySecret     = "HUSH_API_KEY_SECRET"
+	envHushRealm            = "HUSH_REALM"
+	envHushTestDeploymentID = "HUSH_TEST_DEPLOYMENT_ID"
+)
+
 var provider *schema.Provider
 
 // providerFactories are used to instantiate a provider during acceptance testing.
@@ -27,14 +34,14 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 }
 
 func testAccPreCheck(t *testing.T) {
-	if os.Getenv("HUSH_API_KEY_ID") == "" {
-		t.Fatalf("HUSH_API_KEY_ID env var must be set")
+	if os.Getenv(envHushAPIKeyID) == "" {
+		t.Fatalf("%s env var must be set", envHushAPIKeyID)
 	}
-	if os.Getenv("HUSH_API_KEY_SECRET") == "" {
-		t.Fatalf("HUSH_API_KEY_SECRET env var must be set")
+	if os.Getenv(envHushAPIKeySecret) == "" {
+		t.Fatalf("%s env var must be set", envHushAPIKeySecret)
 	}
-	if os.Getenv("HUSH_REALM") == "" {
-		t.Fatalf("HUSH_REALM env var must be set")
+	if os.Getenv(envHushRealm) == "" {
+		t.Fatalf("%s env var must be set", envHushRealm)
 	}
 }
 
