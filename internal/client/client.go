@@ -156,3 +156,64 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any, r
 	}
 	return nil
 }
+
+// doRawRequest performs an HTTP request and returns the response body as a raw string.
+// This is used for endpoints that return non-JSON responses (e.g., plain text scripts).
+func (c *Client) doRawRequest(ctx context.Context, method, path string, body any, result *string) error {
+	// Check if token needs refresh (refresh if expiring within 30 seconds)
+	now := time.Now().Unix()
+	c.mu.RLock()
+	needsRefresh := c.Token == nil || c.TokenCreationTime+c.Token.ExpiresIn-now < 30
+	c.mu.RUnlock()
+
+	if needsRefresh {
+		if err := c.refreshToken(ctx); err != nil {
+			return fmt.Errorf("token refresh failed: %w", err)
+		}
+	}
+
+	var bodyReader io.Reader
+	if body != nil {
+		buf, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("marshal request body: %w", err)
+		}
+		bodyReader = bytes.NewBuffer(buf)
+	}
+
+	fullURL := c.BaseURL + path
+	req, err := http.NewRequestWithContext(ctx, method, fullURL, bodyReader)
+	if err != nil {
+		return fmt.Errorf("build request: %w", err)
+	}
+
+	c.mu.RLock()
+	accessToken := c.Token.AccessToken
+	c.mu.RUnlock()
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("do request: %w", err)
+	}
+	defer func() {
+		_ = resp.Body.Close() // Ignore close error
+	}()
+
+	if resp.StatusCode >= 400 {
+		return ParseErrorResponse(resp, method, fullURL)
+	}
+
+	if result != nil {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("read response: %w", err)
+		}
+		*result = string(respBody)
+	}
+	return nil
+}
