@@ -70,7 +70,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 					"type": {
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringInSlice([]string{"k8s:ns", "k8s:sa", "k8s:pod-label", "k8s:pod-name", "k8s:container-name"}, false),
+						ValidateFunc: validation.StringInSlice([]string{string(client.AttestationCriterionTypeK8sNamespace), string(client.AttestationCriterionTypeK8sServiceAccount), string(client.AttestationCriterionTypeK8sPodLabel), string(client.AttestationCriterionTypeK8sPodName), string(client.AttestationCriterionTypeK8sContainerName)}, false),
 						Description:  "The type of attestation criterion (k8s:ns, k8s:sa, k8s:pod-label, k8s:pod-name, or k8s:container-name)",
 					},
 					"value": {
