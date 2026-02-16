@@ -47,6 +47,7 @@ func New(version string) func() *schema.Provider {
 				"api_key_secret": {
 					Type:        schema.TypeString,
 					Required:    true,
+					Sensitive:   true,
 					DefaultFunc: schema.EnvDefaultFunc(envHushAPIKeySecret, nil),
 				},
 				"realm": {
