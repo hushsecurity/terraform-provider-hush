@@ -3,6 +3,7 @@ package access_policy
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -32,14 +33,16 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Description: idDesc,
 		},
 		"name": {
-			Type:        schema.TypeString,
-			Required:    true,
-			Description: nameDesc,
+			Type:         schema.TypeString,
+			Required:     true,
+			Description:  nameDesc,
+			ValidateFunc: validation.StringLenBetween(1, 255),
 		},
 		"description": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: descriptionDesc,
+			Type:         schema.TypeString,
+			Optional:     true,
+			Description:  descriptionDesc,
+			ValidateFunc: validation.StringLenBetween(0, 1000),
 		},
 		"enabled": {
 			Type:        schema.TypeBool,
@@ -68,7 +71,8 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			MinItems:    1,
 			Description: deploymentIDsDesc,
 			Elem: &schema.Schema{
-				Type: schema.TypeString,
+				Type:         schema.TypeString,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
 			},
 		},
 		"attestation_criteria": {
