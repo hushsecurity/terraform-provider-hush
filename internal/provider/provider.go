@@ -12,6 +12,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gcp_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_channel"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_configuration"
@@ -43,6 +44,7 @@ func New(version string) func() *schema.Provider {
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.Resource(),
+				"hush_gcp_integration":             gcp_integration.Resource(),
 				"hush_notification_channel":        notification_channel.Resource(),
 				"hush_notification_configuration":  notification_configuration.Resource(),
 				"hush_plaintext_access_credential": plaintext_access_credential.Resource(),
@@ -51,6 +53,7 @@ func New(version string) func() *schema.Provider {
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
+				"hush_gcp_integration":             gcp_integration.DataSource(),
 				"hush_notification_channel":        notification_channel.DataSource(),
 				"hush_notification_configuration":  notification_configuration.DataSource(),
 				"hush_plaintext_access_credential": plaintext_access_credential.DataSource(),
