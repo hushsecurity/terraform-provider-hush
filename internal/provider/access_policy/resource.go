@@ -18,6 +18,9 @@ func Resource() *schema.Resource {
 		ReadContext:   accessPolicyRead,
 		UpdateContext: resourceAccessPolicyUpdate,
 		DeleteContext: resourceAccessPolicyDelete,
+		Importer: &schema.ResourceImporter{
+			StateContext: schema.ImportStatePassthroughContext,
+		},
 
 		Schema: AccessPolicyResourceSchema(),
 	}
