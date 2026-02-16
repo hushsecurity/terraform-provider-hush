@@ -70,7 +70,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 					"type": {
 						Type:         schema.TypeString,
 						Required:     true,
-						ValidateFunc: validation.StringInSlice([]string{string(client.AttestationCriterionTypeK8sNamespace), string(client.AttestationCriterionTypeK8sServiceAccount), string(client.AttestationCriterionTypeK8sPodLabel), string(client.AttestationCriterionTypeK8sPodName), string(client.AttestationCriterionTypeK8sContainerName)}, false),
+						ValidateFunc: validation.StringInSlice([]string{"k8s:ns", "k8s:sa", "k8s:pod-label", "k8s:pod-name", "k8s:container-name"}, false),
 						Description:  "The type of attestation criterion (k8s:ns, k8s:sa, k8s:pod-label, k8s:pod-name, or k8s:container-name)",
 					},
 					"value": {
@@ -111,10 +111,10 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 									Required:    true,
 									Description: "The key for the delivery item",
 								},
-								"value": {
+								"name": {
 									Type:        schema.TypeString,
 									Required:    true,
-									Description: "The value for the delivery item",
+									Description: "The environment variable name for the delivery item",
 								},
 							},
 						},
@@ -216,10 +216,10 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 									Computed:    true,
 									Description: "The key for the delivery item",
 								},
-								"value": {
+								"name": {
 									Type:        schema.TypeString,
 									Computed:    true,
-									Description: "The value for the delivery item",
+									Description: "The environment variable name for the delivery item",
 								},
 							},
 						},
@@ -331,8 +331,8 @@ func expandDeliveryConfig(list []interface{}) client.DeliveryConfig {
 		for i, item := range items {
 			itemMap := item.(map[string]interface{})
 			config.Items[i] = client.DeliveryItem{
-				Key:  itemMap["key"].(string),   // Credential key field
-				Name: itemMap["value"].(string), // Environment variable name
+				Key:  itemMap["key"].(string),  // Credential key field
+				Name: itemMap["name"].(string), // Environment variable name
 			}
 		}
 	}
@@ -359,8 +359,8 @@ func flattenDeliveryConfig(config client.DeliveryConfig) []interface{} {
 	items := make([]interface{}, len(config.Items))
 	for i, item := range config.Items {
 		items[i] = map[string]interface{}{
-			"key":   item.Key,
-			"value": item.Name,
+			"key":  item.Key,
+			"name": item.Name,
 		}
 	}
 
