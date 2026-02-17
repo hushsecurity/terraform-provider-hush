@@ -6,19 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
-## [1.3.0] - 2025-11-13
+## [1.3.0] - 2026-02-17
 
 ### Added
 
-* **Access Credentials**: Secure secrets management for deployments
-  * `hush_plaintext_access_credential` resource for managing single secret values
-  * `hush_plaintext_access_credential` data source for importing existing credentials
-  * `hush_kv_access_credential` resource for managing key-value secret pairs
-  * `hush_kv_access_credential` data source for importing existing credentials
-  * **Write-Only Secrets**: Enhanced security for plaintext credentials with `secret_wo` and `secret_wo_version` attributes
-    * Secrets stored using `secret_wo` are never persisted in Terraform state
-    * Version-based secret rotation with automatic resource recreation
-    * Backward compatible with standard `secret` attribute for traditional state storage
+* **Static Credential Providers**: Long-lived credentials assigned to workloads via access policies, for systems that do not support dynamic credential issuance
+  * `hush_plaintext_access_credential` resource and data source for managing single secret values
+  * `hush_kv_access_credential` resource and data source for managing key-value secret pairs
+
+* **Dynamic Credential Providers**: Short-lived credentials issued on demand and activated exclusively through access policies, enabling just-in-time access with automatic expiration and safe revocation
+  * `hush_postgres_access_credential` resource and data source for PostgreSQL
+  * `hush_mongodb_access_credential` resource and data source for MongoDB
+  * `hush_mysql_access_credential` resource and data source for MySQL
+  * `hush_mariadb_access_credential` resource and data source for MariaDB
+  * `hush_openai_access_credential` resource and data source for OpenAI
+  * `hush_gemini_access_credential` resource and data source for Google Gemini
+
+* **Access Privileges**: Reusable permission sets that define what actions are granted, decoupled from workloads and credential providers
+  * `hush_postgres_access_privilege` resource with column-level and schema-wide grant support
+  * `hush_mongodb_access_privilege` resource with database and collection-level grants
+  * `hush_mysql_access_privilege` resource with database and table-level grants
+  * `hush_openai_access_privilege` resource with role-based and restricted permission support
+
+* **Access Policies**: Define when access is allowed and how it is issued by combining attestation conditions, a credential provider, and a privilege — evaluated automatically at runtime
+  * `hush_access_policy` resource for binding credentials, privileges, and deployments
+  * Kubernetes attestation criteria support
+  * Environment variable delivery configuration with key mapping and template-based delivery
+
+### Changed
+
+* Renamed delivery item schema field `value` to `name` to match API
+* Marked `api_key_secret` provider attribute as sensitive
+* Removed `created_at`/`modified_at` from existing service resources
 
 ## [1.2.0] - 2025-09-10
 
