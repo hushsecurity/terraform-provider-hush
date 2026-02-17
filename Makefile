@@ -47,3 +47,4 @@ test-acc:
 .PHONY: docs
 docs:
 	@tfplugindocs generate
+	@find docs -name '*.md' -exec sed -i 's/^subcategory: ".*"/subcategory: ""/' {} +
