@@ -52,13 +52,13 @@ func TestAccResourceAccessPolicy(t *testing.T) {
 						"hush_access_policy.test", "attestation_criteria.0.value", "default",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.test", "env_delivery_config.0.item.0.key", "port",
+						"hush_access_policy.test", "env_delivery_config.0.key", "port",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.test", "env_delivery_config.0.item.0.name", "PORT",
+						"hush_access_policy.test", "env_delivery_config.0.name", "PORT",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.test", "env_delivery_config.0.item.0.type", "key",
+						"hush_access_policy.test", "env_delivery_config.0.type", "key",
 					),
 				),
 			},
@@ -93,13 +93,13 @@ func TestAccResourceAccessPolicy_withTemplate(t *testing.T) {
 						"hush_access_policy.template", "id", regexp.MustCompile("^apl-.+$"),
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.template", "env_delivery_config.0.item.0.type", "template",
+						"hush_access_policy.template", "env_delivery_config.0.type", "template",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.template", "env_delivery_config.0.item.0.key", "postgresql://${username}:${password}@host:5432/db",
+						"hush_access_policy.template", "env_delivery_config.0.key", "postgresql://${username}:${password}@host:5432/db",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.template", "env_delivery_config.0.item.0.name", "DATABASE_URL",
+						"hush_access_policy.template", "env_delivery_config.0.name", "DATABASE_URL",
 					),
 				),
 			},
@@ -129,7 +129,7 @@ func TestAccDataSourceAccessPolicy(t *testing.T) {
 						"data.hush_access_policy.test", "attestation_criteria.0.type", "k8s:ns",
 					),
 					resource.TestCheckResourceAttr(
-						"data.hush_access_policy.test", "env_delivery_config.0.item.0.type", "key",
+						"data.hush_access_policy.test", "env_delivery_config.0.type", "key",
 					),
 					resource.TestCheckResourceAttrSet(
 						"data.hush_access_policy.test", "status",
@@ -159,11 +159,9 @@ resource "hush_access_policy" "test" {
   }
 
   env_delivery_config {
-    item {
-      key  = "port"
-      name = "PORT"
-      type = "key"
-    }
+    key  = "port"
+    name = "PORT"
+    type = "key"
   }
 }
 `
@@ -188,11 +186,9 @@ resource "hush_access_policy" "test" {
   }
 
   env_delivery_config {
-    item {
-      key  = "port"
-      name = "PORT"
-      type = "key"
-    }
+    key  = "port"
+    name = "PORT"
+    type = "key"
   }
 }
 `
@@ -216,17 +212,15 @@ resource "hush_access_policy" "template" {
   }
 
   env_delivery_config {
-    item {
-      key  = "postgresql://$${username}:$${password}@host:5432/db"
-      name = "DATABASE_URL"
-      type = "template"
-    }
+    key  = "postgresql://$${username}:$${password}@host:5432/db"
+    name = "DATABASE_URL"
+    type = "template"
+  }
 
-	item {
-	  key  = "port"
-	  name = "PORT"
-	  type = "key"
-    }
+  env_delivery_config {
+    key  = "port"
+    name = "PORT"
+    type = "key"
   }
 }
 `

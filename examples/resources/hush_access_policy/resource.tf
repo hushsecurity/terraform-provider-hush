@@ -19,11 +19,9 @@ resource "hush_access_policy" "postgres_example" {
 
   # Template: postgresql://${username}:${password}@${host}:${port}/${db}
   env_delivery_config {
-    item {
-      name = "DATABASE_URL"
-      type = "template"
-      key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db}"
-    }
+    name = "DATABASE_URL"
+    type = "template"
+    key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db}"
   }
 }
 
@@ -42,11 +40,9 @@ resource "hush_access_policy" "mongodb_example" {
 
   # Template: mongodb://${username}:${password}@${host}:${port}/${db_name}?authSource=${auth_source}
   env_delivery_config {
-    item {
-      name = "MONGODB_URI"
-      type = "template"
-      key  = "mongodb://$${username}:$${password}@$${host}:$${port}/$${db_name}?authSource=$${auth_source}"
-    }
+    name = "MONGODB_URI"
+    type = "template"
+    key  = "mongodb://$${username}:$${password}@$${host}:$${port}/$${db_name}?authSource=$${auth_source}"
   }
 }
 
@@ -66,11 +62,9 @@ resource "hush_access_policy" "mysql_example" {
 
   # Template: mysql://${username}:${password}@${host}:${port}/${db_name}
   env_delivery_config {
-    item {
-      name = "MYSQL_URL"
-      type = "template"
-      key  = "mysql://$${username}:$${password}@$${host}:$${port}/$${db_name}"
-    }
+    name = "MYSQL_URL"
+    type = "template"
+    key  = "mysql://$${username}:$${password}@$${host}:$${port}/$${db_name}"
   }
 }
 
@@ -89,11 +83,9 @@ resource "hush_access_policy" "mariadb_example" {
 
   # Template: mariadb://${username}:${password}@${host}:${port}/${db_name}
   env_delivery_config {
-    item {
-      name = "MARIADB_URL"
-      type = "template"
-      key  = "mariadb://$${username}:$${password}@$${host}:$${port}/$${db_name}"
-    }
+    name = "MARIADB_URL"
+    type = "template"
+    key  = "mariadb://$${username}:$${password}@$${host}:$${port}/$${db_name}"
   }
 }
 
@@ -112,10 +104,8 @@ resource "hush_access_policy" "openai_example" {
   }
 
   env_delivery_config {
-    item {
-      name = "OPENAI_API_KEY"
-      key  = "api_key"
-    }
+    name = "OPENAI_API_KEY"
+    key  = "api_key"
   }
 }
 
@@ -133,9 +123,7 @@ resource "hush_access_policy" "gemini_example" {
   }
 
   env_delivery_config {
-    item {
-      name = "GEMINI_SERVICE_ACCOUNT_KEY"
-      key  = "service_account_key"
-    }
+    name = "GEMINI_SERVICE_ACCOUNT_KEY"
+    key  = "service_account_key"
   }
 }

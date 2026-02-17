@@ -104,36 +104,26 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 		"env_delivery_config": {
 			Type:        schema.TypeList,
 			Required:    true,
-			MaxItems:    1,
+			MinItems:    1,
 			Description: envDeliveryConfigDesc,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"item": {
-						Type:        schema.TypeList,
+					"key": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "The credential key or template string for the delivery item",
+					},
+					"name": {
+						Type:        schema.TypeString,
 						Required:    true,
-						MinItems:    1,
-						Description: "The delivery items",
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"key": {
-									Type:        schema.TypeString,
-									Optional:    true,
-									Description: "The credential key or template string for the delivery item",
-								},
-								"name": {
-									Type:        schema.TypeString,
-									Required:    true,
-									Description: "The environment variable name for the delivery item",
-								},
-								"type": {
-									Type:         schema.TypeString,
-									Optional:     true,
-									Default:      string(client.EnvMappingTypeKey),
-									ValidateFunc: validation.StringInSlice([]string{string(client.EnvMappingTypeKey), string(client.EnvMappingTypeTemplate)}, false),
-									Description:  "The type of delivery item mapping (key or template)",
-								},
-							},
-						},
+						Description: "The environment variable name for the delivery item",
+					},
+					"type": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      string(client.EnvMappingTypeKey),
+						ValidateFunc: validation.StringInSlice([]string{string(client.EnvMappingTypeKey), string(client.EnvMappingTypeTemplate)}, false),
+						Description:  "The type of delivery item mapping (key or template)",
 					},
 				},
 			},
@@ -224,29 +214,20 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 			Description: envDeliveryConfigDesc,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
-					"item": {
-						Type:        schema.TypeList,
+					"key": {
+						Type:        schema.TypeString,
 						Computed:    true,
-						Description: "The delivery items",
-						Elem: &schema.Resource{
-							Schema: map[string]*schema.Schema{
-								"key": {
-									Type:        schema.TypeString,
-									Computed:    true,
-									Description: "The credential key or template string for the delivery item",
-								},
-								"name": {
-									Type:        schema.TypeString,
-									Computed:    true,
-									Description: "The environment variable name for the delivery item",
-								},
-								"type": {
-									Type:        schema.TypeString,
-									Computed:    true,
-									Description: "The type of delivery item mapping (key or template)",
-								},
-							},
-						},
+						Description: "The credential key or template string for the delivery item",
+					},
+					"name": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The environment variable name for the delivery item",
+					},
+					"type": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The type of delivery item mapping (key or template)",
 					},
 				},
 			},
@@ -357,26 +338,23 @@ func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
 		return client.DeliveryConfig{}
 	}
 
-	m := list[0].(map[string]any)
 	config := client.DeliveryConfig{
-		Type: client.DeliveryTypeEnv,
+		Type:  client.DeliveryTypeEnv,
+		Items: make([]any, len(list)),
 	}
 
-	if items, ok := m["item"].([]any); ok {
-		config.Items = make([]any, len(items))
-		for i, item := range items {
-			itemMap := item.(map[string]any)
-			deliveryItem := client.EnvDeliveryItem{
-				Name: itemMap["name"].(string), // Environment variable name
-			}
-			if key, ok := itemMap["key"].(string); ok && key != "" {
-				deliveryItem.Key = key
-			}
-			if t, ok := itemMap["type"].(string); ok && t != "" {
-				deliveryItem.Type = client.EnvMappingType(t)
-			}
-			config.Items[i] = deliveryItem
+	for i, item := range list {
+		itemMap := item.(map[string]any)
+		deliveryItem := client.EnvDeliveryItem{
+			Name: itemMap["name"].(string),
 		}
+		if key, ok := itemMap["key"].(string); ok && key != "" {
+			deliveryItem.Key = key
+		}
+		if t, ok := itemMap["type"].(string); ok && t != "" {
+			deliveryItem.Type = client.EnvMappingType(t)
+		}
+		config.Items[i] = deliveryItem
 	}
 
 	return config
@@ -400,7 +378,7 @@ func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
 func flattenDeliveryConfig(d *schema.ResourceData, config client.DeliveryConfig) diag.Diagnostics {
 	switch config.Type {
 	case client.DeliveryTypeEnv:
-		if err := d.Set("env_delivery_config", []any{map[string]any{"item": config.Items}}); err != nil {
+		if err := d.Set("env_delivery_config", config.Items); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set env_delivery_config: %w", err))
 		}
 	}
