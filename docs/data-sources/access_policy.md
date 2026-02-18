@@ -53,13 +53,6 @@ Read-Only:
 
 Read-Only:
 
-- `item` (List of Object) (see [below for nested schema](#nestedobjatt--env_delivery_config--item))
-
-<a id="nestedobjatt--env_delivery_config--item"></a>
-### Nested Schema for `env_delivery_config.item`
-
-Read-Only:
-
 - `key` (String)
 - `name` (String)
 - `type` (String)
