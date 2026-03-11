@@ -97,7 +97,7 @@ func CreateAccessPolicy(ctx context.Context, c *Client, input *CreateAccessPolic
 		return nil, err
 	}
 	if err := waitForResourceStatus(ctx, c, result.ID, GetAccessPolicy); err != nil {
-		return nil, err
+		return &result, err
 	}
 	return &result, nil
 }

@@ -47,11 +47,12 @@ func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	policy, err := client.CreateAccessPolicy(ctx, c, input)
+	if policy != nil {
+		d.SetId(policy.ID)
+	}
 	if err != nil {
 		return diag.FromErr(err)
 	}
-
-	d.SetId(policy.ID)
 
 	return accessPolicyRead(ctx, d, meta)
 }
