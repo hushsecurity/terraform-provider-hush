@@ -92,6 +92,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetGrokAccessPrivilege(context.Background(), c, resourceId)
 			case "redis_access_credential":
 				_, err = client.GetRedisAccessCredential(context.Background(), c, resourceId)
+			case "redis_access_privilege":
+				_, err = client.GetRedisAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}

@@ -28,11 +28,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_privilege"
-<<<<<<< Updated upstream
-=======
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
->>>>>>> Stashed changes
 )
 
 const (
