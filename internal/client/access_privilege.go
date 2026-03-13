@@ -284,6 +284,67 @@ func UpdateGrokAccessPrivilege(ctx context.Context, c *Client, id string, input 
 	return &resp, nil
 }
 
+// Redis
+
+type RedisGrant struct {
+	Type   string `json:"type"`
+	Action string `json:"action"`
+	Name   string `json:"name"`
+}
+
+type RedisAccessPrivilege struct {
+	ID          string       `json:"id,omitempty"`
+	Name        string       `json:"name"`
+	Description string       `json:"description,omitempty"`
+	Type        string       `json:"type,omitempty"`
+	Grants      []RedisGrant `json:"grants"`
+	Keys        []string     `json:"keys"`
+	Channels    []string     `json:"channels,omitempty"`
+}
+
+type CreateRedisAccessPrivilegeInput struct {
+	Name        string       `json:"name"`
+	Description string       `json:"description,omitempty"`
+	Grants      []RedisGrant `json:"grants"`
+	Keys        []string     `json:"keys"`
+	Channels    []string     `json:"channels,omitempty"`
+}
+
+type UpdateRedisAccessPrivilegeInput struct {
+	Name        *string       `json:"name,omitempty"`
+	Description *string       `json:"description,omitempty"`
+	Grants      *[]RedisGrant `json:"grants,omitempty"`
+	Keys        *[]string     `json:"keys,omitempty"`
+	Channels    *[]string     `json:"channels,omitempty"`
+}
+
+func CreateRedisAccessPrivilege(ctx context.Context, c *Client, input *CreateRedisAccessPrivilegeInput) (*RedisAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/redis"
+	var resp RedisAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetRedisAccessPrivilege(ctx context.Context, c *Client, id string) (*RedisAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/redis/%s", accessPrivilegesEndpoint, id)
+	var resp RedisAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateRedisAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateRedisAccessPrivilegeInput) (*RedisAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/redis/%s", accessPrivilegesEndpoint, id)
+	var resp RedisAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
