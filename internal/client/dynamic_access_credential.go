@@ -14,6 +14,7 @@ const (
 	AccessCredentialTypeOpenAI   AccessCredentialType = "openai"
 	AccessCredentialTypeGemini   AccessCredentialType = "gemini"
 	AccessCredentialTypeGrok     AccessCredentialType = "grok"
+	AccessCredentialTypeRedis    AccessCredentialType = "redis"
 )
 
 // Postgres
@@ -540,4 +541,86 @@ func UpdateGrokAccessCredential(ctx context.Context, c *Client, id string, input
 
 func (g GrokAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
+}
+
+// Redis
+
+type RedisAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Host          string               `json:"host,omitempty"`
+	Port          int                  `json:"port,omitempty"`
+	Username      string               `json:"username,omitempty"`
+	Database      int                  `json:"database"`
+	TLS           bool                 `json:"tls,omitempty"`
+	TLSCA         string               `json:"tls_ca,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateRedisAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	Host          string   `json:"host"`
+	Port          int      `json:"port,omitempty"`
+	Username      string   `json:"username,omitempty"`
+	Password      string   `json:"password"`
+	Database      *int     `json:"database,omitempty"`
+	TLS           bool     `json:"tls,omitempty"`
+	TLSCA         string   `json:"tls_ca,omitempty"`
+}
+
+type UpdateRedisAccessCredentialInput struct {
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
+	Host          *string   `json:"host,omitempty"`
+	Port          *int      `json:"port,omitempty"`
+	Username      *string   `json:"username,omitempty"`
+	Password      *string   `json:"password,omitempty"`
+	Database      *int      `json:"database,omitempty"`
+	TLS           *bool     `json:"tls,omitempty"`
+	TLSCA         *string   `json:"tls_ca,omitempty"`
+}
+
+func CreateRedisAccessCredential(ctx context.Context, c *Client, input *CreateRedisAccessCredentialInput) (*RedisAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/redis"
+	var resp RedisAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetRedisAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetRedisAccessCredential(ctx context.Context, c *Client, id string) (*RedisAccessCredential, error) {
+	path := fmt.Sprintf("%s/redis/%s", accessCredentialsEndpoint, id)
+	var resp RedisAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateRedisAccessCredential(ctx context.Context, c *Client, id string, input *UpdateRedisAccessCredentialInput) (*RedisAccessCredential, error) {
+	path := fmt.Sprintf("%s/redis/%s", accessCredentialsEndpoint, id)
+	var resp RedisAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetRedisAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (r RedisAccessCredential) statusFields() (string, string) {
+	return r.Status, r.StatusDetail
 }

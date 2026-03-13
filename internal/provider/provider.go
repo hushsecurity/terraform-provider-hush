@@ -28,6 +28,11 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_privilege"
+<<<<<<< Updated upstream
+=======
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
+>>>>>>> Stashed changes
 )
 
 const (
@@ -79,6 +84,8 @@ func New(version string) func() *schema.Provider {
 				"hush_gemini_access_credential":    gemini_access_credential.Resource(),
 				"hush_grok_access_credential":      grok_access_credential.Resource(),
 				"hush_grok_access_privilege":       grok_access_privilege.Resource(),
+				"hush_redis_access_credential":     redis_access_credential.Resource(),
+				"hush_redis_access_privilege":      redis_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -99,6 +106,8 @@ func New(version string) func() *schema.Provider {
 				"hush_gemini_access_credential":    gemini_access_credential.DataSource(),
 				"hush_grok_access_credential":      grok_access_credential.DataSource(),
 				"hush_grok_access_privilege":       grok_access_privilege.DataSource(),
+				"hush_redis_access_credential":     redis_access_credential.DataSource(),
+				"hush_redis_access_privilege":      redis_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
