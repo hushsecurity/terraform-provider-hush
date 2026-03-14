@@ -412,6 +412,65 @@ func UpdateApigeeAccessPrivilege(ctx context.Context, c *Client, id string, inpu
 
 // Shared delete function for all access privileges
 
+// Elasticsearch
+
+type ElasticsearchIndexPrivilege struct {
+	Names      []string `json:"names"`
+	Privileges []string `json:"privileges"`
+}
+
+type ElasticsearchGrant struct {
+	Cluster []string                      `json:"cluster,omitempty"`
+	Indices []ElasticsearchIndexPrivilege `json:"indices,omitempty"`
+}
+
+type ElasticsearchAccessPrivilege struct {
+	ID          string             `json:"id,omitempty"`
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	Type        string             `json:"type,omitempty"`
+	Grant       ElasticsearchGrant `json:"grant"`
+}
+
+type CreateElasticsearchAccessPrivilegeInput struct {
+	Name        string             `json:"name"`
+	Description string             `json:"description,omitempty"`
+	Grant       ElasticsearchGrant `json:"grant"`
+}
+
+type UpdateElasticsearchAccessPrivilegeInput struct {
+	Name        *string             `json:"name,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Grant       *ElasticsearchGrant `json:"grant,omitempty"`
+}
+
+func CreateElasticsearchAccessPrivilege(ctx context.Context, c *Client, input *CreateElasticsearchAccessPrivilegeInput) (*ElasticsearchAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/elasticsearch"
+	var resp ElasticsearchAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetElasticsearchAccessPrivilege(ctx context.Context, c *Client, id string) (*ElasticsearchAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/elasticsearch/%s", accessPrivilegesEndpoint, id)
+	var resp ElasticsearchAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateElasticsearchAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateElasticsearchAccessPrivilegeInput) (*ElasticsearchAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/elasticsearch/%s", accessPrivilegesEndpoint, id)
+	var resp ElasticsearchAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
 	path := fmt.Sprintf("%s/%s", accessPrivilegesEndpoint, id)
 	if err := c.doRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
