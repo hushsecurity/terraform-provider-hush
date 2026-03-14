@@ -116,6 +116,10 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetAzureAppAccessCredential(context.Background(), c, resourceId)
 			case "azure_app_access_privilege":
 				_, err = client.GetAzureAppAccessPrivilege(context.Background(), c, resourceId)
+			case "aws_access_key_access_credential":
+				_, err = client.GetAWSAccessKeyAccessCredential(context.Background(), c, resourceId)
+			case "aws_access_key_access_privilege":
+				_, err = client.GetAWSAccessKeyAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}

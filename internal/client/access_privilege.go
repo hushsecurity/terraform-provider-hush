@@ -652,6 +652,55 @@ func UpdateAzureAppAccessPrivilege(ctx context.Context, c *Client, id string, in
 	return &resp, nil
 }
 
+// AWS Access Key
+
+type AWSAccessKeyAccessPrivilege struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Policies    []string `json:"policies"`
+}
+
+type CreateAWSAccessKeyAccessPrivilegeInput struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Policies    []string `json:"policies"`
+}
+
+type UpdateAWSAccessKeyAccessPrivilegeInput struct {
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Policies    *[]string `json:"policies,omitempty"`
+}
+
+func CreateAWSAccessKeyAccessPrivilege(ctx context.Context, c *Client, input *CreateAWSAccessKeyAccessPrivilegeInput) (*AWSAccessKeyAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/aws_access_key"
+	var resp AWSAccessKeyAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAWSAccessKeyAccessPrivilege(ctx context.Context, c *Client, id string) (*AWSAccessKeyAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/aws_access_key/%s", accessPrivilegesEndpoint, id)
+	var resp AWSAccessKeyAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAWSAccessKeyAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateAWSAccessKeyAccessPrivilegeInput) (*AWSAccessKeyAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/aws_access_key/%s", accessPrivilegesEndpoint, id)
+	var resp AWSAccessKeyAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

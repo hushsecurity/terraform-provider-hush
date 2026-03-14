@@ -21,6 +21,7 @@ const (
 	AccessCredentialTypeRabbitmq      AccessCredentialType = "rabbitmq"
 	AccessCredentialTypeGCPSA         AccessCredentialType = "gcp_service_account"
 	AccessCredentialTypeAzureApp      AccessCredentialType = "azure_app"
+	AccessCredentialTypeAWSAccessKey  AccessCredentialType = "aws_access_key"
 )
 
 // Postgres
@@ -1060,5 +1061,71 @@ func UpdateAzureAppAccessCredential(ctx context.Context, c *Client, id string, i
 }
 
 func (a AzureAppAccessCredential) statusFields() (string, string) {
+	return a.Status, a.StatusDetail
+}
+
+// AWS Access Key
+
+type AWSAccessKeyAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	AccessKeyID   string               `json:"access_key_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateAWSAccessKeyAccessCredentialInput struct {
+	Name            string   `json:"name"`
+	Description     string   `json:"description,omitempty"`
+	DeploymentIDs   []string `json:"deployment_ids"`
+	AccessKeyID     string   `json:"access_key_id"`
+	SecretAccessKey string   `json:"secret_access_key"`
+}
+
+type UpdateAWSAccessKeyAccessCredentialInput struct {
+	Name            *string `json:"name,omitempty"`
+	Description     *string `json:"description,omitempty"`
+	AccessKeyID     *string `json:"access_key_id,omitempty"`
+	SecretAccessKey *string `json:"secret_access_key,omitempty"`
+}
+
+func CreateAWSAccessKeyAccessCredential(ctx context.Context, c *Client, input *CreateAWSAccessKeyAccessCredentialInput) (*AWSAccessKeyAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/aws_access_key"
+	var resp AWSAccessKeyAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetAWSAccessKeyAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAWSAccessKeyAccessCredential(ctx context.Context, c *Client, id string) (*AWSAccessKeyAccessCredential, error) {
+	path := fmt.Sprintf("%s/aws_access_key/%s", accessCredentialsEndpoint, id)
+	var resp AWSAccessKeyAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAWSAccessKeyAccessCredential(ctx context.Context, c *Client, id string, input *UpdateAWSAccessKeyAccessCredentialInput) (*AWSAccessKeyAccessCredential, error) {
+	path := fmt.Sprintf("%s/aws_access_key/%s", accessCredentialsEndpoint, id)
+	var resp AWSAccessKeyAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetAWSAccessKeyAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (a AWSAccessKeyAccessCredential) statusFields() (string, string) {
 	return a.Status, a.StatusDetail
 }
