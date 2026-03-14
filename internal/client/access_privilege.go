@@ -232,6 +232,58 @@ func UpdateOpenAIAccessPrivilege(ctx context.Context, c *Client, id string, inpu
 	return &resp, nil
 }
 
+// Grok
+
+type GrokAccessPrivilege struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Endpoints   []string `json:"endpoints,omitempty"`
+	Models      []string `json:"models,omitempty"`
+}
+
+type CreateGrokAccessPrivilegeInput struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Endpoints   []string `json:"endpoints,omitempty"`
+	Models      []string `json:"models,omitempty"`
+}
+
+type UpdateGrokAccessPrivilegeInput struct {
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Endpoints   *[]string `json:"endpoints,omitempty"`
+	Models      *[]string `json:"models,omitempty"`
+}
+
+func CreateGrokAccessPrivilege(ctx context.Context, c *Client, input *CreateGrokAccessPrivilegeInput) (*GrokAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/grok"
+	var resp GrokAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGrokAccessPrivilege(ctx context.Context, c *Client, id string) (*GrokAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/grok/%s", accessPrivilegesEndpoint, id)
+	var resp GrokAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGrokAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateGrokAccessPrivilegeInput) (*GrokAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/grok/%s", accessPrivilegesEndpoint, id)
+	var resp GrokAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

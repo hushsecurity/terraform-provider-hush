@@ -14,6 +14,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gemini_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/grok_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/grok_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mariadb_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_credential"
@@ -77,6 +78,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mariadb_access_credential":   mariadb_access_credential.Resource(),
 				"hush_gemini_access_credential":    gemini_access_credential.Resource(),
 				"hush_grok_access_credential":      grok_access_credential.Resource(),
+				"hush_grok_access_privilege":       grok_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                  deployment.DataSource(),
@@ -96,6 +98,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mariadb_access_credential":   mariadb_access_credential.DataSource(),
 				"hush_gemini_access_credential":    gemini_access_credential.DataSource(),
 				"hush_grok_access_credential":      grok_access_credential.DataSource(),
+				"hush_grok_access_privilege":       grok_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
