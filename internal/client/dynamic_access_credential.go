@@ -7,16 +7,17 @@ import (
 )
 
 const (
-	AccessCredentialTypePostgres AccessCredentialType = "postgres"
-	AccessCredentialTypeMongoDB  AccessCredentialType = "mongodb"
-	AccessCredentialTypeMySQL    AccessCredentialType = "mysql"
-	AccessCredentialTypeMariaDB  AccessCredentialType = "mariadb"
-	AccessCredentialTypeOpenAI   AccessCredentialType = "openai"
-	AccessCredentialTypeGemini   AccessCredentialType = "gemini"
-	AccessCredentialTypeGrok     AccessCredentialType = "grok"
-	AccessCredentialTypeRedis    AccessCredentialType = "redis"
-	AccessCredentialTypeBedrock  AccessCredentialType = "bedrock"
-	AccessCredentialTypeApigee   AccessCredentialType = "apigee"
+	AccessCredentialTypePostgres      AccessCredentialType = "postgres"
+	AccessCredentialTypeMongoDB       AccessCredentialType = "mongodb"
+	AccessCredentialTypeMySQL         AccessCredentialType = "mysql"
+	AccessCredentialTypeMariaDB       AccessCredentialType = "mariadb"
+	AccessCredentialTypeOpenAI        AccessCredentialType = "openai"
+	AccessCredentialTypeGemini        AccessCredentialType = "gemini"
+	AccessCredentialTypeGrok          AccessCredentialType = "grok"
+	AccessCredentialTypeRedis         AccessCredentialType = "redis"
+	AccessCredentialTypeBedrock       AccessCredentialType = "bedrock"
+	AccessCredentialTypeApigee        AccessCredentialType = "apigee"
+	AccessCredentialTypeElasticsearch AccessCredentialType = "elasticsearch"
 )
 
 // Postgres
@@ -761,4 +762,83 @@ func UpdateApigeeAccessCredential(ctx context.Context, c *Client, id string, inp
 
 func (a ApigeeAccessCredential) statusFields() (string, string) {
 	return a.Status, a.StatusDetail
+}
+
+// Elasticsearch
+
+type ElasticsearchAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Host          string               `json:"host,omitempty"`
+	Port          int                  `json:"port,omitempty"`
+	Username      string               `json:"username,omitempty"`
+	TLS           bool                 `json:"tls,omitempty"`
+	TLSCA         string               `json:"tls_ca,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateElasticsearchAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	Host          string   `json:"host"`
+	Port          int      `json:"port,omitempty"`
+	Username      string   `json:"username"`
+	Password      string   `json:"password"`
+	TLS           bool     `json:"tls,omitempty"`
+	TLSCA         string   `json:"tls_ca,omitempty"`
+}
+
+type UpdateElasticsearchAccessCredentialInput struct {
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
+	Host          *string   `json:"host,omitempty"`
+	Port          *int      `json:"port,omitempty"`
+	Username      *string   `json:"username,omitempty"`
+	Password      *string   `json:"password,omitempty"`
+	TLS           *bool     `json:"tls,omitempty"`
+	TLSCA         *string   `json:"tls_ca,omitempty"`
+}
+
+func CreateElasticsearchAccessCredential(ctx context.Context, c *Client, input *CreateElasticsearchAccessCredentialInput) (*ElasticsearchAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/elasticsearch"
+	var resp ElasticsearchAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetElasticsearchAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetElasticsearchAccessCredential(ctx context.Context, c *Client, id string) (*ElasticsearchAccessCredential, error) {
+	path := fmt.Sprintf("%s/elasticsearch/%s", accessCredentialsEndpoint, id)
+	var resp ElasticsearchAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateElasticsearchAccessCredential(ctx context.Context, c *Client, id string, input *UpdateElasticsearchAccessCredentialInput) (*ElasticsearchAccessCredential, error) {
+	path := fmt.Sprintf("%s/elasticsearch/%s", accessCredentialsEndpoint, id)
+	var resp ElasticsearchAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetElasticsearchAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (e ElasticsearchAccessCredential) statusFields() (string, string) {
+	return e.Status, e.StatusDetail
 }

@@ -100,6 +100,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetApigeeAccessCredential(context.Background(), c, resourceId)
 			case "apigee_access_privilege":
 				_, err = client.GetApigeeAccessPrivilege(context.Background(), c, resourceId)
+			case "elasticsearch_access_credential":
+				_, err = client.GetElasticsearchAccessCredential(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
