@@ -88,6 +88,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetGeminiAccessCredential(context.Background(), c, resourceId)
 			case "grok_access_credential":
 				_, err = client.GetGrokAccessCredential(context.Background(), c, resourceId)
+			case "grok_access_privilege":
+				_, err = client.GetGrokAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
