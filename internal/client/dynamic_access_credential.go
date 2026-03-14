@@ -19,6 +19,7 @@ const (
 	AccessCredentialTypeApigee        AccessCredentialType = "apigee"
 	AccessCredentialTypeElasticsearch AccessCredentialType = "elasticsearch"
 	AccessCredentialTypeRabbitmq      AccessCredentialType = "rabbitmq"
+	AccessCredentialTypeGCPSA        AccessCredentialType = "gcp_service_account"
 )
 
 // Postgres
@@ -927,4 +928,67 @@ func UpdateRabbitmqAccessCredential(ctx context.Context, c *Client, id string, i
 
 func (r RabbitmqAccessCredential) statusFields() (string, string) {
 	return r.Status, r.StatusDetail
+}
+
+// GCP SA
+
+type GCPSAAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateGCPSAAccessCredentialInput struct {
+	Name              string   `json:"name"`
+	Description       string   `json:"description,omitempty"`
+	DeploymentIDs     []string `json:"deployment_ids"`
+	ServiceAccountKey string   `json:"service_account_key,omitempty"`
+}
+
+type UpdateGCPSAAccessCredentialInput struct {
+	Name              *string `json:"name,omitempty"`
+	Description       *string `json:"description,omitempty"`
+	ServiceAccountKey *string `json:"service_account_key,omitempty"`
+}
+
+func CreateGCPSAAccessCredential(ctx context.Context, c *Client, input *CreateGCPSAAccessCredentialInput) (*GCPSAAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/gcp_sa"
+	var resp GCPSAAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetGCPSAAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGCPSAAccessCredential(ctx context.Context, c *Client, id string) (*GCPSAAccessCredential, error) {
+	path := fmt.Sprintf("%s/gcp_sa/%s", accessCredentialsEndpoint, id)
+	var resp GCPSAAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGCPSAAccessCredential(ctx context.Context, c *Client, id string, input *UpdateGCPSAAccessCredentialInput) (*GCPSAAccessCredential, error) {
+	path := fmt.Sprintf("%s/gcp_sa/%s", accessCredentialsEndpoint, id)
+	var resp GCPSAAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetGCPSAAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (g GCPSAAccessCredential) statusFields() (string, string) {
+	return g.Status, g.StatusDetail
 }

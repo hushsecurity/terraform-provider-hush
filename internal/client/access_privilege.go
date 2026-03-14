@@ -530,6 +530,68 @@ func UpdateRabbitmqAccessPrivilege(ctx context.Context, c *Client, id string, in
 	return &resp, nil
 }
 
+// GCP SA
+
+type GCPSaConf struct {
+	DisplayName string   `json:"display_name"`
+	Roles       []string `json:"roles"`
+}
+
+type GCPSAAccessPrivilege struct {
+	ID          string     `json:"id,omitempty"`
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	Type        string     `json:"type,omitempty"`
+	ProjectID   string     `json:"project_id,omitempty"`
+	SaEmail     string     `json:"sa_email,omitempty"`
+	SaConf      *GCPSaConf `json:"sa_conf,omitempty"`
+}
+
+type CreateGCPSAAccessPrivilegeInput struct {
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	ProjectID   string     `json:"project_id"`
+	SaEmail     string     `json:"sa_email,omitempty"`
+	SaConf      *GCPSaConf `json:"sa_conf,omitempty"`
+}
+
+type UpdateGCPSAAccessPrivilegeInput struct {
+	Name        *string    `json:"name,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	ProjectID   *string    `json:"project_id,omitempty"`
+	SaEmail     *string    `json:"sa_email,omitempty"`
+	SaConf      *GCPSaConf `json:"sa_conf,omitempty"`
+}
+
+func CreateGCPSAAccessPrivilege(ctx context.Context, c *Client, input *CreateGCPSAAccessPrivilegeInput) (*GCPSAAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/gcp_sa"
+	var resp GCPSAAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGCPSAAccessPrivilege(ctx context.Context, c *Client, id string) (*GCPSAAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/gcp_sa/%s", accessPrivilegesEndpoint, id)
+	var resp GCPSAAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGCPSAAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateGCPSAAccessPrivilegeInput) (*GCPSAAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/gcp_sa/%s", accessPrivilegesEndpoint, id)
+	var resp GCPSAAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// Shared delete function for all access privileges
+
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
 	path := fmt.Sprintf("%s/%s", accessPrivilegesEndpoint, id)
 	if err := c.doRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
