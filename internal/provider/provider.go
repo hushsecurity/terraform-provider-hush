@@ -53,7 +53,6 @@ func New(version string) func() *schema.Provider {
 				"realm": {
 					Type:         schema.TypeString,
 					Optional:     true,
-					Default:      "US",
 					DefaultFunc:  schema.EnvDefaultFunc(envHushRealm, "US"),
 					Description:  "The Hush realm",
 					ValidateFunc: validation.StringInSlice([]string{"US", "EU"}, false),
