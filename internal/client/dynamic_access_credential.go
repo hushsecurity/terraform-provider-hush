@@ -15,6 +15,7 @@ const (
 	AccessCredentialTypeGemini   AccessCredentialType = "gemini"
 	AccessCredentialTypeGrok     AccessCredentialType = "grok"
 	AccessCredentialTypeRedis    AccessCredentialType = "redis"
+	AccessCredentialTypeBedrock  AccessCredentialType = "bedrock"
 )
 
 // Postgres
@@ -623,4 +624,75 @@ func UpdateRedisAccessCredential(ctx context.Context, c *Client, id string, inpu
 
 func (r RedisAccessCredential) statusFields() (string, string) {
 	return r.Status, r.StatusDetail
+}
+
+// Bedrock
+
+type BedrockAccessCredential struct {
+	ID                     string               `json:"id,omitempty"`
+	Name                   string               `json:"name"`
+	Description            string               `json:"description,omitempty"`
+	Type                   AccessCredentialType `json:"type"`
+	Kind                   string               `json:"kind,omitempty"`
+	DeploymentIDs          []string             `json:"deployment_ids"`
+	Region                 string               `json:"region"`
+	AccessKeyID            *string              `json:"access_key_id,omitempty"`
+	HasProviderCredentials bool                 `json:"has_provider_credentials"`
+	Status                 string               `json:"status,omitempty"`
+	StatusDetail           string               `json:"status_detail,omitempty"`
+}
+
+type CreateBedrockAccessCredentialInput struct {
+	Name            string   `json:"name"`
+	Description     string   `json:"description,omitempty"`
+	DeploymentIDs   []string `json:"deployment_ids"`
+	Region          string   `json:"region"`
+	AccessKeyID     *string  `json:"access_key_id,omitempty"`
+	SecretAccessKey *string  `json:"secret_access_key,omitempty"`
+}
+
+type UpdateBedrockAccessCredentialInput struct {
+	Name            *string   `json:"name,omitempty"`
+	Description     *string   `json:"description,omitempty"`
+	DeploymentIDs   *[]string `json:"deployment_ids,omitempty"`
+	Region          *string   `json:"region,omitempty"`
+	AccessKeyID     *string   `json:"access_key_id,omitempty"`
+	SecretAccessKey *string   `json:"secret_access_key,omitempty"`
+}
+
+func CreateBedrockAccessCredential(ctx context.Context, c *Client, input *CreateBedrockAccessCredentialInput) (*BedrockAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/bedrock"
+	var resp BedrockAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetBedrockAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetBedrockAccessCredential(ctx context.Context, c *Client, id string) (*BedrockAccessCredential, error) {
+	path := fmt.Sprintf("%s/bedrock/%s", accessCredentialsEndpoint, id)
+	var resp BedrockAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateBedrockAccessCredential(ctx context.Context, c *Client, id string, input *UpdateBedrockAccessCredentialInput) (*BedrockAccessCredential, error) {
+	path := fmt.Sprintf("%s/bedrock/%s", accessCredentialsEndpoint, id)
+	var resp BedrockAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetBedrockAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (b BedrockAccessCredential) statusFields() (string, string) {
+	return b.Status, b.StatusDetail
 }
