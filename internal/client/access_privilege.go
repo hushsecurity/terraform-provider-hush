@@ -345,6 +345,71 @@ func UpdateRedisAccessPrivilege(ctx context.Context, c *Client, id string, input
 	return &resp, nil
 }
 
+// Apigee
+
+type ApigeeAppConfig struct {
+	DisplayName string `json:"display_name"`
+}
+
+type ApigeeAccessPrivilege struct {
+	ID             string           `json:"id,omitempty"`
+	Name           string           `json:"name"`
+	Description    string           `json:"description,omitempty"`
+	Type           string           `json:"type"`
+	DeveloperEmail string           `json:"developer_email"`
+	ProjectID      string           `json:"project_id"`
+	APIProducts    []string         `json:"api_products"`
+	AppName        *string          `json:"app_name,omitempty"`
+	AppConfig      *ApigeeAppConfig `json:"app_config,omitempty"`
+}
+
+type CreateApigeeAccessPrivilegeInput struct {
+	Name           string           `json:"name"`
+	Description    string           `json:"description,omitempty"`
+	DeveloperEmail string           `json:"developer_email"`
+	ProjectID      string           `json:"project_id"`
+	APIProducts    []string         `json:"api_products"`
+	AppName        *string          `json:"app_name,omitempty"`
+	AppConfig      *ApigeeAppConfig `json:"app_config,omitempty"`
+}
+
+type UpdateApigeeAccessPrivilegeInput struct {
+	Name           *string          `json:"name,omitempty"`
+	Description    *string          `json:"description,omitempty"`
+	DeveloperEmail *string          `json:"developer_email,omitempty"`
+	ProjectID      *string          `json:"project_id,omitempty"`
+	APIProducts    *[]string        `json:"api_products,omitempty"`
+	AppName        *string          `json:"app_name,omitempty"`
+	AppConfig      *ApigeeAppConfig `json:"app_config,omitempty"`
+}
+
+func CreateApigeeAccessPrivilege(ctx context.Context, c *Client, input *CreateApigeeAccessPrivilegeInput) (*ApigeeAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/apigee"
+	var resp ApigeeAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetApigeeAccessPrivilege(ctx context.Context, c *Client, id string) (*ApigeeAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/apigee/%s", accessPrivilegesEndpoint, id)
+	var resp ApigeeAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateApigeeAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateApigeeAccessPrivilegeInput) (*ApigeeAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/apigee/%s", accessPrivilegesEndpoint, id)
+	var resp ApigeeAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
