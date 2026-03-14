@@ -118,14 +118,6 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		v := d.Get("description").(string)
 		input.Description = &v
 	}
-	if d.HasChange("deployment_ids") {
-		list := d.Get("deployment_ids").([]any)
-		ids := make([]string, len(list))
-		for i, item := range list {
-			ids[i] = item.(string)
-		}
-		input.DeploymentIDs = &ids
-	}
 	if d.HasChange("project_id") {
 		v := d.Get("project_id").(string)
 		input.ProjectID = &v

@@ -48,16 +48,15 @@ type CreatePostgresAccessCredentialInput struct {
 }
 
 type UpdatePostgresAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	DBName        *string   `json:"db_name,omitempty"`
-	Host          *string   `json:"host,omitempty"`
-	Port          *int      `json:"port,omitempty"`
-	SSLMode       *string   `json:"ssl_mode,omitempty"`
-	SSLCA         *string   `json:"ssl_ca,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	DBName      *string `json:"db_name,omitempty"`
+	Host        *string `json:"host,omitempty"`
+	Port        *int    `json:"port,omitempty"`
+	SSLMode     *string `json:"ssl_mode,omitempty"`
+	SSLCA       *string `json:"ssl_ca,omitempty"`
+	Username    *string `json:"username,omitempty"`
+	Password    *string `json:"password,omitempty"`
 }
 
 func CreatePostgresAccessCredential(ctx context.Context, c *Client, input *CreatePostgresAccessCredentialInput) (*PostgresAccessCredential, error) {
@@ -132,17 +131,16 @@ type CreateMongoDBAccessCredentialInput struct {
 }
 
 type UpdateMongoDBAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	DBName        *string   `json:"db_name,omitempty"`
-	Host          *string   `json:"host,omitempty"`
-	Port          *int      `json:"port,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
-	AuthSource    *string   `json:"auth_source,omitempty"`
-	TLS           *bool     `json:"tls,omitempty"`
-	TLSCA         *string   `json:"tls_ca,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	DBName      *string `json:"db_name,omitempty"`
+	Host        *string `json:"host,omitempty"`
+	Port        *int    `json:"port,omitempty"`
+	Username    *string `json:"username,omitempty"`
+	Password    *string `json:"password,omitempty"`
+	AuthSource  *string `json:"auth_source,omitempty"`
+	TLS         *bool   `json:"tls,omitempty"`
+	TLSCA       *string `json:"tls_ca,omitempty"`
 }
 
 func CreateMongoDBAccessCredential(ctx context.Context, c *Client, input *CreateMongoDBAccessCredentialInput) (*MongoDBAccessCredential, error) {
@@ -215,16 +213,15 @@ type CreateMySQLAccessCredentialInput struct {
 }
 
 type UpdateMySQLAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	DBName        *string   `json:"db_name,omitempty"`
-	Host          *string   `json:"host,omitempty"`
-	Port          *int      `json:"port,omitempty"`
-	SSLMode       *string   `json:"ssl_mode,omitempty"`
-	SSLCA         *string   `json:"ssl_ca,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	DBName      *string `json:"db_name,omitempty"`
+	Host        *string `json:"host,omitempty"`
+	Port        *int    `json:"port,omitempty"`
+	SSLMode     *string `json:"ssl_mode,omitempty"`
+	SSLCA       *string `json:"ssl_ca,omitempty"`
+	Username    *string `json:"username,omitempty"`
+	Password    *string `json:"password,omitempty"`
 }
 
 func CreateMySQLAccessCredential(ctx context.Context, c *Client, input *CreateMySQLAccessCredentialInput) (*MySQLAccessCredential, error) {
@@ -297,16 +294,15 @@ type CreateMariaDBAccessCredentialInput struct {
 }
 
 type UpdateMariaDBAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	DBName        *string   `json:"db_name,omitempty"`
-	Host          *string   `json:"host,omitempty"`
-	Port          *int      `json:"port,omitempty"`
-	SSLMode       *string   `json:"ssl_mode,omitempty"`
-	SSLCA         *string   `json:"ssl_ca,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	DBName      *string `json:"db_name,omitempty"`
+	Host        *string `json:"host,omitempty"`
+	Port        *int    `json:"port,omitempty"`
+	SSLMode     *string `json:"ssl_mode,omitempty"`
+	SSLCA       *string `json:"ssl_ca,omitempty"`
+	Username    *string `json:"username,omitempty"`
+	Password    *string `json:"password,omitempty"`
 }
 
 func CreateMariaDBAccessCredential(ctx context.Context, c *Client, input *CreateMariaDBAccessCredentialInput) (*MariaDBAccessCredential, error) {
@@ -369,11 +365,10 @@ type CreateOpenAIAccessCredentialInput struct {
 }
 
 type UpdateOpenAIAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	APIKey        *string   `json:"api_key,omitempty"`
-	ProjectID     *string   `json:"project_id,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	APIKey      *string `json:"api_key,omitempty"`
+	ProjectID   *string `json:"project_id,omitempty"`
 }
 
 func CreateOpenAIAccessCredential(ctx context.Context, c *Client, input *CreateOpenAIAccessCredentialInput) (*OpenAIAccessCredential, error) {
@@ -436,11 +431,10 @@ type CreateGeminiAccessCredentialInput struct {
 }
 
 type UpdateGeminiAccessCredentialInput struct {
-	Name              *string   `json:"name,omitempty"`
-	Description       *string   `json:"description,omitempty"`
-	DeploymentIDs     *[]string `json:"deployment_ids,omitempty"`
-	ServiceAccountKey *string   `json:"service_account_key,omitempty"`
-	ProjectID         *string   `json:"project_id,omitempty"`
+	Name              *string `json:"name,omitempty"`
+	Description       *string `json:"description,omitempty"`
+	ServiceAccountKey *string `json:"service_account_key,omitempty"`
+	ProjectID         *string `json:"project_id,omitempty"`
 }
 
 func CreateGeminiAccessCredential(ctx context.Context, c *Client, input *CreateGeminiAccessCredentialInput) (*GeminiAccessCredential, error) {
