@@ -13,6 +13,7 @@ const (
 	AccessCredentialTypeMariaDB  AccessCredentialType = "mariadb"
 	AccessCredentialTypeOpenAI   AccessCredentialType = "openai"
 	AccessCredentialTypeGemini   AccessCredentialType = "gemini"
+	AccessCredentialTypeGrok     AccessCredentialType = "grok"
 )
 
 // Postgres
@@ -471,5 +472,72 @@ func UpdateGeminiAccessCredential(ctx context.Context, c *Client, id string, inp
 }
 
 func (g GeminiAccessCredential) statusFields() (string, string) {
+	return g.Status, g.StatusDetail
+}
+
+// Grok
+
+type GrokAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	TeamID        string               `json:"team_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateGrokAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	APIKey        string   `json:"api_key"`
+	TeamID        string   `json:"team_id"`
+}
+
+type UpdateGrokAccessCredentialInput struct {
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
+	APIKey        *string   `json:"api_key,omitempty"`
+	TeamID        *string   `json:"team_id,omitempty"`
+}
+
+func CreateGrokAccessCredential(ctx context.Context, c *Client, input *CreateGrokAccessCredentialInput) (*GrokAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/grok"
+	var resp GrokAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetGrokAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGrokAccessCredential(ctx context.Context, c *Client, id string) (*GrokAccessCredential, error) {
+	path := fmt.Sprintf("%s/grok/%s", accessCredentialsEndpoint, id)
+	var resp GrokAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGrokAccessCredential(ctx context.Context, c *Client, id string, input *UpdateGrokAccessCredentialInput) (*GrokAccessCredential, error) {
+	path := fmt.Sprintf("%s/grok/%s", accessCredentialsEndpoint, id)
+	var resp GrokAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetGrokAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (g GrokAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
 }
