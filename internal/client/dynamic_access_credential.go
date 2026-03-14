@@ -16,6 +16,7 @@ const (
 	AccessCredentialTypeGrok     AccessCredentialType = "grok"
 	AccessCredentialTypeRedis    AccessCredentialType = "redis"
 	AccessCredentialTypeBedrock  AccessCredentialType = "bedrock"
+	AccessCredentialTypeApigee   AccessCredentialType = "apigee"
 )
 
 // Postgres
@@ -695,4 +696,69 @@ func UpdateBedrockAccessCredential(ctx context.Context, c *Client, id string, in
 
 func (b BedrockAccessCredential) statusFields() (string, string) {
 	return b.Status, b.StatusDetail
+}
+
+// Apigee
+
+type ApigeeAccessCredential struct {
+	ID                     string               `json:"id,omitempty"`
+	Name                   string               `json:"name"`
+	Description            string               `json:"description,omitempty"`
+	Type                   AccessCredentialType `json:"type"`
+	Kind                   string               `json:"kind,omitempty"`
+	DeploymentIDs          []string             `json:"deployment_ids"`
+	HasProviderCredentials bool                 `json:"has_provider_credentials"`
+	Status                 string               `json:"status,omitempty"`
+	StatusDetail           string               `json:"status_detail,omitempty"`
+}
+
+type CreateApigeeAccessCredentialInput struct {
+	Name              string   `json:"name"`
+	Description       string   `json:"description,omitempty"`
+	DeploymentIDs     []string `json:"deployment_ids"`
+	ServiceAccountKey *string  `json:"service_account_key,omitempty"`
+}
+
+type UpdateApigeeAccessCredentialInput struct {
+	Name              *string   `json:"name,omitempty"`
+	Description       *string   `json:"description,omitempty"`
+	DeploymentIDs     *[]string `json:"deployment_ids,omitempty"`
+	ServiceAccountKey *string   `json:"service_account_key,omitempty"`
+}
+
+func CreateApigeeAccessCredential(ctx context.Context, c *Client, input *CreateApigeeAccessCredentialInput) (*ApigeeAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/apigee"
+	var resp ApigeeAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetApigeeAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetApigeeAccessCredential(ctx context.Context, c *Client, id string) (*ApigeeAccessCredential, error) {
+	path := fmt.Sprintf("%s/apigee/%s", accessCredentialsEndpoint, id)
+	var resp ApigeeAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateApigeeAccessCredential(ctx context.Context, c *Client, id string, input *UpdateApigeeAccessCredentialInput) (*ApigeeAccessCredential, error) {
+	path := fmt.Sprintf("%s/apigee/%s", accessCredentialsEndpoint, id)
+	var resp ApigeeAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetApigeeAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (a ApigeeAccessCredential) statusFields() (string, string) {
+	return a.Status, a.StatusDetail
 }
