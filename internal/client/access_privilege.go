@@ -590,6 +590,68 @@ func UpdateGCPSAAccessPrivilege(ctx context.Context, c *Client, id string, input
 	return &resp, nil
 }
 
+// Azure App
+
+type AzureAppRole struct {
+	Name  string `json:"name"`
+	Scope string `json:"scope"`
+}
+
+type AzureAppConfig struct {
+	DisplayName string         `json:"display_name"`
+	Roles       []AzureAppRole `json:"roles,omitempty"`
+}
+
+type AzureAppAccessPrivilege struct {
+	ID          string          `json:"id,omitempty"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Type        string          `json:"type,omitempty"`
+	AppID       string          `json:"app_id,omitempty"`
+	AppConfig   *AzureAppConfig `json:"app_config,omitempty"`
+}
+
+type CreateAzureAppAccessPrivilegeInput struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	AppID       string          `json:"app_id,omitempty"`
+	AppConfig   *AzureAppConfig `json:"app_config,omitempty"`
+}
+
+type UpdateAzureAppAccessPrivilegeInput struct {
+	Name        *string         `json:"name,omitempty"`
+	Description *string         `json:"description,omitempty"`
+	AppID       *string         `json:"app_id,omitempty"`
+	AppConfig   *AzureAppConfig `json:"app_config,omitempty"`
+}
+
+func CreateAzureAppAccessPrivilege(ctx context.Context, c *Client, input *CreateAzureAppAccessPrivilegeInput) (*AzureAppAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/azure_app"
+	var resp AzureAppAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAzureAppAccessPrivilege(ctx context.Context, c *Client, id string) (*AzureAppAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/azure_app/%s", accessPrivilegesEndpoint, id)
+	var resp AzureAppAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAzureAppAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateAzureAppAccessPrivilegeInput) (*AzureAppAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/azure_app/%s", accessPrivilegesEndpoint, id)
+	var resp AzureAppAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

@@ -19,7 +19,8 @@ const (
 	AccessCredentialTypeApigee        AccessCredentialType = "apigee"
 	AccessCredentialTypeElasticsearch AccessCredentialType = "elasticsearch"
 	AccessCredentialTypeRabbitmq      AccessCredentialType = "rabbitmq"
-	AccessCredentialTypeGCPSA        AccessCredentialType = "gcp_service_account"
+	AccessCredentialTypeGCPSA         AccessCredentialType = "gcp_service_account"
+	AccessCredentialTypeAzureApp      AccessCredentialType = "azure_app"
 )
 
 // Postgres
@@ -991,4 +992,73 @@ func UpdateGCPSAAccessCredential(ctx context.Context, c *Client, id string, inpu
 
 func (g GCPSAAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
+}
+
+// Azure App
+
+type AzureAppAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	TenantID      string               `json:"tenant_id,omitempty"`
+	ClientID      string               `json:"client_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateAzureAppAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	TenantID      string   `json:"tenant_id"`
+	ClientID      string   `json:"client_id"`
+	ClientSecret  string   `json:"client_secret"`
+}
+
+type UpdateAzureAppAccessCredentialInput struct {
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	TenantID     *string `json:"tenant_id,omitempty"`
+	ClientID     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+}
+
+func CreateAzureAppAccessCredential(ctx context.Context, c *Client, input *CreateAzureAppAccessCredentialInput) (*AzureAppAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/azure_app"
+	var resp AzureAppAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetAzureAppAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAzureAppAccessCredential(ctx context.Context, c *Client, id string) (*AzureAppAccessCredential, error) {
+	path := fmt.Sprintf("%s/azure_app/%s", accessCredentialsEndpoint, id)
+	var resp AzureAppAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAzureAppAccessCredential(ctx context.Context, c *Client, id string, input *UpdateAzureAppAccessCredentialInput) (*AzureAppAccessCredential, error) {
+	path := fmt.Sprintf("%s/azure_app/%s", accessCredentialsEndpoint, id)
+	var resp AzureAppAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetAzureAppAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (a AzureAppAccessCredential) statusFields() (string, string) {
+	return a.Status, a.StatusDetail
 }

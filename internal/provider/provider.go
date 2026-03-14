@@ -13,6 +13,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/elasticsearch_access_credential"
@@ -101,6 +103,8 @@ func New(version string) func() *schema.Provider {
 				"hush_rabbitmq_access_privilege":       rabbitmq_access_privilege.Resource(),
 				"hush_gcp_sa_access_credential":        gcp_sa_access_credential.Resource(),
 				"hush_gcp_sa_access_privilege":         gcp_sa_access_privilege.Resource(),
+				"hush_azure_app_access_credential":     azure_app_access_credential.Resource(),
+				"hush_azure_app_access_privilege":      azure_app_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                      deployment.DataSource(),
@@ -132,6 +136,8 @@ func New(version string) func() *schema.Provider {
 				"hush_rabbitmq_access_privilege":       rabbitmq_access_privilege.DataSource(),
 				"hush_gcp_sa_access_credential":        gcp_sa_access_credential.DataSource(),
 				"hush_gcp_sa_access_privilege":         gcp_sa_access_privilege.DataSource(),
+				"hush_azure_app_access_credential":     azure_app_access_credential.DataSource(),
+				"hush_azure_app_access_privilege":      azure_app_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
