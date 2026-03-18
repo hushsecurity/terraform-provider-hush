@@ -43,6 +43,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/rabbitmq_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/twilio_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/twilio_access_privilege"
 )
 
 const (
@@ -109,6 +111,8 @@ func New(version string) func() *schema.Provider {
 				"hush_azure_app_access_privilege":       azure_app_access_privilege.Resource(),
 				"hush_aws_access_key_access_credential": aws_access_key_access_credential.Resource(),
 				"hush_aws_access_key_access_privilege":  aws_access_key_access_privilege.Resource(),
+				"hush_twilio_access_credential":         twilio_access_credential.Resource(),
+				"hush_twilio_access_privilege":          twilio_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
@@ -144,6 +148,8 @@ func New(version string) func() *schema.Provider {
 				"hush_azure_app_access_privilege":       azure_app_access_privilege.DataSource(),
 				"hush_aws_access_key_access_credential": aws_access_key_access_credential.DataSource(),
 				"hush_aws_access_key_access_privilege":  aws_access_key_access_privilege.DataSource(),
+				"hush_twilio_access_credential":         twilio_access_credential.DataSource(),
+				"hush_twilio_access_privilege":          twilio_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)

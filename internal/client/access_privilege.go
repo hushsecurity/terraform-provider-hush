@@ -410,8 +410,6 @@ func UpdateApigeeAccessPrivilege(ctx context.Context, c *Client, id string, inpu
 	return &resp, nil
 }
 
-// Shared delete function for all access privileges
-
 // Elasticsearch
 
 type ElasticsearchIndexPrivilege struct {
@@ -695,6 +693,58 @@ func GetAWSAccessKeyAccessPrivilege(ctx context.Context, c *Client, id string) (
 func UpdateAWSAccessKeyAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateAWSAccessKeyAccessPrivilegeInput) (*AWSAccessKeyAccessPrivilege, error) {
 	path := fmt.Sprintf("%s/aws_access_key/%s", accessPrivilegesEndpoint, id)
 	var resp AWSAccessKeyAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// Twilio
+
+type TwilioAccessPrivilege struct {
+	ID             string   `json:"id,omitempty"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	Type           string   `json:"type,omitempty"`
+	PermissionType string   `json:"permission_type"`
+	Permissions    []string `json:"permissions,omitempty"`
+}
+
+type CreateTwilioAccessPrivilegeInput struct {
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	PermissionType string   `json:"permission_type"`
+	Permissions    []string `json:"permissions,omitempty"`
+}
+
+type UpdateTwilioAccessPrivilegeInput struct {
+	Name           *string   `json:"name,omitempty"`
+	Description    *string   `json:"description,omitempty"`
+	PermissionType *string   `json:"permission_type,omitempty"`
+	Permissions    *[]string `json:"permissions,omitempty"`
+}
+
+func CreateTwilioAccessPrivilege(ctx context.Context, c *Client, input *CreateTwilioAccessPrivilegeInput) (*TwilioAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/twilio"
+	var resp TwilioAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetTwilioAccessPrivilege(ctx context.Context, c *Client, id string) (*TwilioAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/twilio/%s", accessPrivilegesEndpoint, id)
+	var resp TwilioAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateTwilioAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateTwilioAccessPrivilegeInput) (*TwilioAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/twilio/%s", accessPrivilegesEndpoint, id)
+	var resp TwilioAccessPrivilege
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
 		return nil, err
 	}

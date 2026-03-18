@@ -22,6 +22,7 @@ const (
 	AccessCredentialTypeGCPSA         AccessCredentialType = "gcp_service_account"
 	AccessCredentialTypeAzureApp      AccessCredentialType = "azure_app"
 	AccessCredentialTypeAWSAccessKey  AccessCredentialType = "aws_access_key"
+	AccessCredentialTypeTwilio        AccessCredentialType = "twilio"
 )
 
 // Postgres
@@ -1128,4 +1129,73 @@ func UpdateAWSAccessKeyAccessCredential(ctx context.Context, c *Client, id strin
 
 func (a AWSAccessKeyAccessCredential) statusFields() (string, string) {
 	return a.Status, a.StatusDetail
+}
+
+// Twilio
+
+type TwilioAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	AccountSID    string               `json:"account_sid"`
+	APIKeySID     string               `json:"api_key_sid"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateTwilioAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	AccountSID    string   `json:"account_sid"`
+	APIKeySID     string   `json:"api_key_sid"`
+	APIKeySecret  string   `json:"api_key_secret"`
+}
+
+type UpdateTwilioAccessCredentialInput struct {
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	AccountSID   *string `json:"account_sid,omitempty"`
+	APIKeySID    *string `json:"api_key_sid,omitempty"`
+	APIKeySecret *string `json:"api_key_secret,omitempty"`
+}
+
+func CreateTwilioAccessCredential(ctx context.Context, c *Client, input *CreateTwilioAccessCredentialInput) (*TwilioAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/twilio"
+	var resp TwilioAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetTwilioAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetTwilioAccessCredential(ctx context.Context, c *Client, id string) (*TwilioAccessCredential, error) {
+	path := fmt.Sprintf("%s/twilio/%s", accessCredentialsEndpoint, id)
+	var resp TwilioAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateTwilioAccessCredential(ctx context.Context, c *Client, id string, input *UpdateTwilioAccessCredentialInput) (*TwilioAccessCredential, error) {
+	path := fmt.Sprintf("%s/twilio/%s", accessCredentialsEndpoint, id)
+	var resp TwilioAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetTwilioAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (t TwilioAccessCredential) statusFields() (string, string) {
+	return t.Status, t.StatusDetail
 }
