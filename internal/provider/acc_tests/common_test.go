@@ -106,6 +106,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetElasticsearchAccessPrivilege(context.Background(), c, resourceId)
 			case "rabbitmq_access_credential":
 				_, err = client.GetRabbitmqAccessCredential(context.Background(), c, resourceId)
+			case "rabbitmq_access_privilege":
+				_, err = client.GetRabbitmqAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
