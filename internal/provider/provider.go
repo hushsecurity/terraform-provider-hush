@@ -33,6 +33,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/rabbitmq_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
 )
@@ -93,6 +94,7 @@ func New(version string) func() *schema.Provider {
 				"hush_apigee_access_privilege":         apigee_access_privilege.Resource(),
 				"hush_elasticsearch_access_credential": elasticsearch_access_credential.Resource(),
 				"hush_elasticsearch_access_privilege":  elasticsearch_access_privilege.Resource(),
+				"hush_rabbitmq_access_credential":      rabbitmq_access_credential.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                      deployment.DataSource(),
@@ -120,6 +122,7 @@ func New(version string) func() *schema.Provider {
 				"hush_apigee_access_privilege":         apigee_access_privilege.DataSource(),
 				"hush_elasticsearch_access_credential": elasticsearch_access_credential.DataSource(),
 				"hush_elasticsearch_access_privilege":  elasticsearch_access_privilege.DataSource(),
+				"hush_rabbitmq_access_credential":      rabbitmq_access_credential.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
