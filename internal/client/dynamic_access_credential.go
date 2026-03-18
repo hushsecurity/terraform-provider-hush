@@ -18,6 +18,7 @@ const (
 	AccessCredentialTypeBedrock       AccessCredentialType = "bedrock"
 	AccessCredentialTypeApigee        AccessCredentialType = "apigee"
 	AccessCredentialTypeElasticsearch AccessCredentialType = "elasticsearch"
+	AccessCredentialTypeRabbitmq      AccessCredentialType = "rabbitmq"
 )
 
 // Postgres
@@ -841,4 +842,89 @@ func UpdateElasticsearchAccessCredential(ctx context.Context, c *Client, id stri
 
 func (e ElasticsearchAccessCredential) statusFields() (string, string) {
 	return e.Status, e.StatusDetail
+}
+
+// RabbitMQ
+
+type RabbitmqAccessCredential struct {
+	ID             string               `json:"id,omitempty"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description,omitempty"`
+	Type           AccessCredentialType `json:"type"`
+	Kind           string               `json:"kind,omitempty"`
+	DeploymentIDs  []string             `json:"deployment_ids"`
+	Host           string               `json:"host,omitempty"`
+	Port           int                  `json:"port,omitempty"`
+	ManagementPort int                  `json:"management_port,omitempty"`
+	Username       string               `json:"username,omitempty"`
+	Vhost          string               `json:"vhost,omitempty"`
+	TLS            bool                 `json:"tls,omitempty"`
+	TLSCA          string               `json:"tls_ca,omitempty"`
+	Status         string               `json:"status,omitempty"`
+	StatusDetail   string               `json:"status_detail,omitempty"`
+}
+
+type CreateRabbitmqAccessCredentialInput struct {
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	DeploymentIDs  []string `json:"deployment_ids"`
+	Host           string   `json:"host"`
+	Port           int      `json:"port,omitempty"`
+	ManagementPort int      `json:"management_port,omitempty"`
+	Username       string   `json:"username,omitempty"`
+	Password       string   `json:"password"`
+	Vhost          string   `json:"vhost,omitempty"`
+	TLS            bool     `json:"tls,omitempty"`
+	TLSCA          string   `json:"tls_ca,omitempty"`
+}
+
+type UpdateRabbitmqAccessCredentialInput struct {
+	Name           *string   `json:"name,omitempty"`
+	Description    *string   `json:"description,omitempty"`
+	DeploymentIDs  *[]string `json:"deployment_ids,omitempty"`
+	Host           *string   `json:"host,omitempty"`
+	Port           *int      `json:"port,omitempty"`
+	ManagementPort *int      `json:"management_port,omitempty"`
+	Username       *string   `json:"username,omitempty"`
+	Password       *string   `json:"password,omitempty"`
+	Vhost          *string   `json:"vhost,omitempty"`
+	TLS            *bool     `json:"tls,omitempty"`
+	TLSCA          *string   `json:"tls_ca,omitempty"`
+}
+
+func CreateRabbitmqAccessCredential(ctx context.Context, c *Client, input *CreateRabbitmqAccessCredentialInput) (*RabbitmqAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/rabbitmq"
+	var resp RabbitmqAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetRabbitmqAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetRabbitmqAccessCredential(ctx context.Context, c *Client, id string) (*RabbitmqAccessCredential, error) {
+	path := fmt.Sprintf("%s/rabbitmq/%s", accessCredentialsEndpoint, id)
+	var resp RabbitmqAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateRabbitmqAccessCredential(ctx context.Context, c *Client, id string, input *UpdateRabbitmqAccessCredentialInput) (*RabbitmqAccessCredential, error) {
+	path := fmt.Sprintf("%s/rabbitmq/%s", accessCredentialsEndpoint, id)
+	var resp RabbitmqAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetRabbitmqAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (r RabbitmqAccessCredential) statusFields() (string, string) {
+	return r.Status, r.StatusDetail
 }
