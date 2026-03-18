@@ -471,6 +471,65 @@ func UpdateElasticsearchAccessPrivilege(ctx context.Context, c *Client, id strin
 	return &resp, nil
 }
 
+// RabbitMQ
+
+type RabbitmqPermissionEntry struct {
+	Vhost     string `json:"vhost"`
+	Configure string `json:"configure"`
+	Write     string `json:"write"`
+	Read      string `json:"read"`
+}
+
+type RabbitmqAccessPrivilege struct {
+	ID          string                    `json:"id,omitempty"`
+	Name        string                    `json:"name"`
+	Description string                    `json:"description,omitempty"`
+	Type        string                    `json:"type,omitempty"`
+	Permissions []RabbitmqPermissionEntry `json:"permissions"`
+	Tags        []string                  `json:"tags,omitempty"`
+}
+
+type CreateRabbitmqAccessPrivilegeInput struct {
+	Name        string                    `json:"name"`
+	Description string                    `json:"description,omitempty"`
+	Permissions []RabbitmqPermissionEntry `json:"permissions"`
+	Tags        []string                  `json:"tags,omitempty"`
+}
+
+type UpdateRabbitmqAccessPrivilegeInput struct {
+	Name        *string                    `json:"name,omitempty"`
+	Description *string                    `json:"description,omitempty"`
+	Permissions *[]RabbitmqPermissionEntry `json:"permissions,omitempty"`
+	Tags        *[]string                  `json:"tags,omitempty"`
+}
+
+func CreateRabbitmqAccessPrivilege(ctx context.Context, c *Client, input *CreateRabbitmqAccessPrivilegeInput) (*RabbitmqAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/rabbitmq"
+	var resp RabbitmqAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetRabbitmqAccessPrivilege(ctx context.Context, c *Client, id string) (*RabbitmqAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/rabbitmq/%s", accessPrivilegesEndpoint, id)
+	var resp RabbitmqAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateRabbitmqAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateRabbitmqAccessPrivilegeInput) (*RabbitmqAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/rabbitmq/%s", accessPrivilegesEndpoint, id)
+	var resp RabbitmqAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
 	path := fmt.Sprintf("%s/%s", accessPrivilegesEndpoint, id)
 	if err := c.doRequest(ctx, http.MethodDelete, path, nil, nil); err != nil {
