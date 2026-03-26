@@ -751,6 +751,61 @@ func UpdateTwilioAccessPrivilege(ctx context.Context, c *Client, id string, inpu
 	return &resp, nil
 }
 
+// Snowflake
+
+type SnowflakeGrant struct {
+	Privileges    []string `json:"privileges"`
+	ResourceType  string   `json:"resource_type"`
+	ResourceNames []string `json:"resource_names,omitempty"`
+}
+
+type SnowflakeAccessPrivilege struct {
+	ID          string           `json:"id,omitempty"`
+	Name        string           `json:"name"`
+	Description string           `json:"description,omitempty"`
+	Type        string           `json:"type,omitempty"`
+	Grants      []SnowflakeGrant `json:"grants"`
+}
+
+type CreateSnowflakeAccessPrivilegeInput struct {
+	Name        string           `json:"name"`
+	Description string           `json:"description,omitempty"`
+	Grants      []SnowflakeGrant `json:"grants"`
+}
+
+type UpdateSnowflakeAccessPrivilegeInput struct {
+	Name        *string           `json:"name,omitempty"`
+	Description *string           `json:"description,omitempty"`
+	Grants      *[]SnowflakeGrant `json:"grants,omitempty"`
+}
+
+func CreateSnowflakeAccessPrivilege(ctx context.Context, c *Client, input *CreateSnowflakeAccessPrivilegeInput) (*SnowflakeAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/snowflake"
+	var resp SnowflakeAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetSnowflakeAccessPrivilege(ctx context.Context, c *Client, id string) (*SnowflakeAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/snowflake/%s", accessPrivilegesEndpoint, id)
+	var resp SnowflakeAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateSnowflakeAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateSnowflakeAccessPrivilegeInput) (*SnowflakeAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/snowflake/%s", accessPrivilegesEndpoint, id)
+	var resp SnowflakeAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

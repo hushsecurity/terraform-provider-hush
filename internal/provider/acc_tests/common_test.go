@@ -120,6 +120,10 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetAWSAccessKeyAccessCredential(context.Background(), c, resourceId)
 			case "aws_access_key_access_privilege":
 				_, err = client.GetAWSAccessKeyAccessPrivilege(context.Background(), c, resourceId)
+			case "snowflake_access_credential":
+				_, err = client.GetSnowflakeAccessCredential(context.Background(), c, resourceId)
+			case "snowflake_access_privilege":
+				_, err = client.GetSnowflakeAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
