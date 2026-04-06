@@ -1,6 +1,6 @@
 module github.com/hushsecurity/terraform-provider-hush
 
-go 1.25.0
+go 1.25.8
 
 require github.com/hashicorp/terraform-plugin-sdk/v2 v2.40.0
 
