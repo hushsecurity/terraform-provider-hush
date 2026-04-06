@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	envHushAPIKeyID         = "HUSH_API_KEY_ID"
-	envHushAPIKeySecret     = "HUSH_API_KEY_SECRET"
-	envHushRealm            = "HUSH_REALM"
-	envHushTestDeploymentID = "HUSH_TEST_DEPLOYMENT_ID"
+	envHushAPIKeyID          = "HUSH_API_KEY_ID"
+	envHushAPIKeySecret      = "HUSH_API_KEY_SECRET"
+	envHushRealm             = "HUSH_REALM"
+	envHushTestDeploymentID  = "HUSH_TEST_DEPLOYMENT_ID"
+	envHushTestDeploymentID2 = "HUSH_TEST_DEPLOYMENT_ID2"
 )
 
 var provider *schema.Provider
@@ -124,6 +125,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetSnowflakeAccessCredential(context.Background(), c, resourceId)
 			case "snowflake_access_privilege":
 				_, err = client.GetSnowflakeAccessPrivilege(context.Background(), c, resourceId)
+			case "aws_wif_access_credential":
+				_, err = client.GetAwsWifAccessCredential(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
