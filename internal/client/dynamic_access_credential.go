@@ -25,6 +25,7 @@ const (
 	AccessCredentialTypeTwilio        AccessCredentialType = "twilio"
 	AccessCredentialTypeSnowflake     AccessCredentialType = "snowflake"
 	AccessCredentialTypeAWSWIF        AccessCredentialType = "aws_wif"
+	AccessCredentialTypeGitlab        AccessCredentialType = "gitlab"
 )
 
 // Postgres
@@ -1350,4 +1351,76 @@ func UpdateAwsWifAccessCredential(ctx context.Context, c *Client, id string, inp
 
 func (a AwsWifAccessCredential) statusFields() (string, string) {
 	return a.Status, a.StatusDetail
+}
+
+// Gitlab
+
+type GitlabAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	BaseURL       string               `json:"base_url"`
+	ResourceType  string               `json:"resource_type"`
+	ResourceID    string               `json:"resource_id"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateGitlabAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	Token         string   `json:"token"`
+	BaseURL       string   `json:"base_url"`
+	ResourceType  string   `json:"resource_type"`
+	ResourceID    string   `json:"resource_id"`
+}
+
+type UpdateGitlabAccessCredentialInput struct {
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	Token        *string `json:"token,omitempty"`
+	BaseURL      *string `json:"base_url,omitempty"`
+	ResourceType *string `json:"resource_type,omitempty"`
+	ResourceID   *string `json:"resource_id,omitempty"`
+}
+
+func CreateGitlabAccessCredential(ctx context.Context, c *Client, input *CreateGitlabAccessCredentialInput) (*GitlabAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/gitlab"
+	var resp GitlabAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetGitlabAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGitlabAccessCredential(ctx context.Context, c *Client, id string) (*GitlabAccessCredential, error) {
+	path := fmt.Sprintf("%s/gitlab/%s", accessCredentialsEndpoint, id)
+	var resp GitlabAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGitlabAccessCredential(ctx context.Context, c *Client, id string, input *UpdateGitlabAccessCredentialInput) (*GitlabAccessCredential, error) {
+	path := fmt.Sprintf("%s/gitlab/%s", accessCredentialsEndpoint, id)
+	var resp GitlabAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetGitlabAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (g GitlabAccessCredential) statusFields() (string, string) {
+	return g.Status, g.StatusDetail
 }

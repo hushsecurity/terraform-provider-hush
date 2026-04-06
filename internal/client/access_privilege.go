@@ -806,6 +806,58 @@ func UpdateSnowflakeAccessPrivilege(ctx context.Context, c *Client, id string, i
 	return &resp, nil
 }
 
+// Gitlab
+
+type GitlabAccessPrivilege struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Scopes      []string `json:"scopes"`
+	AccessLevel string   `json:"access_level"`
+}
+
+type CreateGitlabAccessPrivilegeInput struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Scopes      []string `json:"scopes"`
+	AccessLevel string   `json:"access_level"`
+}
+
+type UpdateGitlabAccessPrivilegeInput struct {
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Scopes      *[]string `json:"scopes,omitempty"`
+	AccessLevel *string   `json:"access_level,omitempty"`
+}
+
+func CreateGitlabAccessPrivilege(ctx context.Context, c *Client, input *CreateGitlabAccessPrivilegeInput) (*GitlabAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/gitlab"
+	var resp GitlabAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGitlabAccessPrivilege(ctx context.Context, c *Client, id string) (*GitlabAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/gitlab/%s", accessPrivilegesEndpoint, id)
+	var resp GitlabAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGitlabAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateGitlabAccessPrivilegeInput) (*GitlabAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/gitlab/%s", accessPrivilegesEndpoint, id)
+	var resp GitlabAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
