@@ -18,7 +18,25 @@ jobs:
       - name: Git Checkout
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
+          fetch-tags: true
           submodules: true
+
+      - name: Linear PR history
+        if: github.event_name == 'pull_request'
+        uses: NexusPHP/no-merge-commits@v2.4.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Linear issue link
+        if: github.event_name == 'pull_request'
+        uses: hushsecurity/commit-message-checker@main
+        with:
+          pattern: "^HUSH-[1-9][0-9]* "
+          error: Linear issue link check failed
+          excludeDescription: true
+          checkAllCommitMessages: true
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Go
         uses: actions/setup-go@v6
