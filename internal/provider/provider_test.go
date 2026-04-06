@@ -58,6 +58,7 @@ func TestProvider(t *testing.T) {
 		"hush_aws_access_key_access_privilege",
 		"hush_twilio_access_credential",
 		"hush_twilio_access_privilege",
+		"hush_aws_wif_access_credential",
 	}
 	for _, resource := range expectedResources {
 		if _, ok := provider.ResourcesMap[resource]; !ok {
@@ -104,6 +105,7 @@ func TestProvider(t *testing.T) {
 		"hush_aws_access_key_access_privilege",
 		"hush_twilio_access_credential",
 		"hush_twilio_access_privilege",
+		"hush_aws_wif_access_credential",
 	}
 	for _, dataSource := range expectedDataSources {
 		if _, ok := provider.DataSourcesMap[dataSource]; !ok {

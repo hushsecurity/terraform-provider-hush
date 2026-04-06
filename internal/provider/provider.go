@@ -15,6 +15,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_access_key_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_access_key_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_wif_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
@@ -117,6 +118,7 @@ func New(version string) func() *schema.Provider {
 				"hush_aws_access_key_access_privilege":  aws_access_key_access_privilege.Resource(),
 				"hush_twilio_access_credential":         twilio_access_credential.Resource(),
 				"hush_twilio_access_privilege":          twilio_access_privilege.Resource(),
+				"hush_aws_wif_access_credential":        aws_wif_access_credential.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
@@ -156,6 +158,7 @@ func New(version string) func() *schema.Provider {
 				"hush_aws_access_key_access_privilege":  aws_access_key_access_privilege.DataSource(),
 				"hush_twilio_access_credential":         twilio_access_credential.DataSource(),
 				"hush_twilio_access_privilege":          twilio_access_privilege.DataSource(),
+				"hush_aws_wif_access_credential":        aws_wif_access_credential.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
