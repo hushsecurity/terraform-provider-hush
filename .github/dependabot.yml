@@ -11,3 +11,15 @@ updates:
       actions:
         patterns:
           - "*"
+  - package-ecosystem: gomod
+    directories:
+      - "/"
+      - "/**/*"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "HUSH-777 "
+    groups:
+      go-deps:
+        patterns:
+          - "*"
