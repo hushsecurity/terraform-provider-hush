@@ -121,8 +121,8 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 					"type": {
 						Type:         schema.TypeString,
 						Optional:     true,
-						Default:      string(client.EnvMappingTypeKey),
-						ValidateFunc: validation.StringInSlice([]string{string(client.EnvMappingTypeKey), string(client.EnvMappingTypeTemplate)}, false),
+						Default:      string(client.DeliveryMappingTypeKey),
+						ValidateFunc: validation.StringInSlice([]string{string(client.DeliveryMappingTypeKey), string(client.DeliveryMappingTypeTemplate)}, false),
 						Description:  "The type of delivery item mapping (key or template)",
 					},
 				},
@@ -352,7 +352,7 @@ func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
 			deliveryItem.Key = key
 		}
 		if t, ok := itemMap["type"].(string); ok && t != "" {
-			deliveryItem.Type = client.EnvMappingType(t)
+			deliveryItem.Type = client.DeliveryMappingType(t)
 		}
 		config.Items[i] = deliveryItem
 	}

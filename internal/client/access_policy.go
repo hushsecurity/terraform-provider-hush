@@ -30,17 +30,17 @@ const (
 	DeliveryTypeEnv DeliveryType = "env"
 )
 
-type EnvMappingType string
+type DeliveryMappingType string
 
 const (
-	EnvMappingTypeKey      EnvMappingType = "key"
-	EnvMappingTypeTemplate EnvMappingType = "template"
+	DeliveryMappingTypeKey      DeliveryMappingType = "key"
+	DeliveryMappingTypeTemplate DeliveryMappingType = "template"
 )
 
 type EnvDeliveryItem struct {
-	Name string         `json:"name"`
-	Key  string         `json:"key,omitempty"`
-	Type EnvMappingType `json:"type,omitempty"`
+	Name string              `json:"name"`
+	Key  string              `json:"key,omitempty"`
+	Type DeliveryMappingType `json:"type,omitempty"`
 }
 
 type DeliveryConfig struct {
