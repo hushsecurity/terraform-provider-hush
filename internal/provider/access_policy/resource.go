@@ -98,8 +98,7 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 	}
 
 	if d.HasChange("env_delivery_config") {
-		deliveryConfig := expandDeliveryConfig(d)
-		input.DeliveryConfig = &deliveryConfig
+		input.DeliveryConfig = expandDeliveryConfig(d)
 	}
 
 	_, err := client.UpdateAccessPolicy(ctx, c, d.Id(), input)

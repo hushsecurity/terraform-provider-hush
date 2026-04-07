@@ -325,24 +325,20 @@ func expandAttestationCriteria(list []any) []client.AttestationCriterion {
 	return result
 }
 
-func expandDeliveryConfig(d *schema.ResourceData) client.DeliveryConfig {
+func expandDeliveryConfig(d *schema.ResourceData) any {
 	if v, ok := d.GetOk("env_delivery_config"); ok {
 		return expandEnvDeliveryConfig(v.([]any))
 	}
 
-	return client.DeliveryConfig{}
+	return nil
 }
 
-func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
+func expandEnvDeliveryConfig(list []any) *client.EnvDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
-		return client.DeliveryConfig{}
+		return nil
 	}
 
-	config := client.DeliveryConfig{
-		Type:  client.DeliveryTypeEnv,
-		Items: make([]any, len(list)),
-	}
-
+	items := make([]client.EnvDeliveryItem, len(list))
 	for i, item := range list {
 		itemMap := item.(map[string]any)
 		deliveryItem := client.EnvDeliveryItem{
@@ -354,10 +350,13 @@ func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
 		if t, ok := itemMap["type"].(string); ok && t != "" {
 			deliveryItem.Type = client.DeliveryMappingType(t)
 		}
-		config.Items[i] = deliveryItem
+		items[i] = deliveryItem
 	}
 
-	return config
+	return &client.EnvDeliveryConfig{
+		Type:  client.DeliveryTypeEnv,
+		Items: items,
+	}
 }
 
 func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
@@ -375,10 +374,17 @@ func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
 	return result
 }
 
-func flattenDeliveryConfig(d *schema.ResourceData, config client.DeliveryConfig) diag.Diagnostics {
-	switch config.Type {
+func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics {
+	configMap, ok := config.(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	deliveryType, _ := configMap["type"].(string)
+
+	switch client.DeliveryType(deliveryType) {
 	case client.DeliveryTypeEnv:
-		if err := d.Set("env_delivery_config", config.Items); err != nil {
+		if err := d.Set("env_delivery_config", configMap["items"]); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set env_delivery_config: %w", err))
 		}
 	}
