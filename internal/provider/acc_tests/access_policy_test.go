@@ -24,14 +24,14 @@ func testAccAccessPolicyPreCheck(t *testing.T) {
 	}
 }
 
-func TestAccResourceAccessPolicy(t *testing.T) {
+func TestAccResourceAccessPolicy_withEnvDelivery(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
 			{
-				Config: accessPolicyStep1(),
+				Config: accessPolicyEnvDeliveryStep1(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
@@ -63,7 +63,7 @@ func TestAccResourceAccessPolicy(t *testing.T) {
 				),
 			},
 			{
-				Config: accessPolicyStep2(),
+				Config: accessPolicyEnvDeliveryStep2(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
@@ -80,14 +80,14 @@ func TestAccResourceAccessPolicy(t *testing.T) {
 	})
 }
 
-func TestAccResourceAccessPolicy_withTemplate(t *testing.T) {
+func TestAccResourceAccessPolicy_withEnvDeliveryTemplate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
 			{
-				Config: accessPolicyTemplateStep(),
+				Config: accessPolicyEnvDeliveryTemplateStep(),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"hush_access_policy.template", "id", regexp.MustCompile("^apl-.+$"),
@@ -107,14 +107,14 @@ func TestAccResourceAccessPolicy_withTemplate(t *testing.T) {
 	})
 }
 
-func TestAccDataSourceAccessPolicy(t *testing.T) {
+func TestAccDataSourceAccessPolicy_withEnvDelivery(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
 			{
-				Config: accessPolicyStep1() + accessPolicyDataSource,
+				Config: accessPolicyEnvDeliveryStep1() + accessPolicyEnvDeliveryDataSource,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"data.hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
@@ -140,7 +140,7 @@ func TestAccDataSourceAccessPolicy(t *testing.T) {
 	})
 }
 
-func accessPolicyStep1() string {
+func accessPolicyEnvDeliveryStep1() string {
 	credID := os.Getenv(envHushTestAccessCredentialID)
 	privID := os.Getenv(envHushTestAccessPrivilegeID)
 	deploymentID := os.Getenv(envHushTestDeploymentID)
@@ -167,7 +167,7 @@ resource "hush_access_policy" "test" {
 `
 }
 
-func accessPolicyStep2() string {
+func accessPolicyEnvDeliveryStep2() string {
 	credID := os.Getenv(envHushTestAccessCredentialID)
 	privID := os.Getenv(envHushTestAccessPrivilegeID)
 	deploymentID := os.Getenv(envHushTestDeploymentID)
@@ -194,7 +194,7 @@ resource "hush_access_policy" "test" {
 `
 }
 
-func accessPolicyTemplateStep() string {
+func accessPolicyEnvDeliveryTemplateStep() string {
 	credID := os.Getenv(envHushTestAccessCredentialID)
 	privID := os.Getenv(envHushTestAccessPrivilegeID)
 	deploymentID := os.Getenv(envHushTestDeploymentID)
@@ -226,7 +226,7 @@ resource "hush_access_policy" "template" {
 `
 }
 
-const accessPolicyDataSource = `
+const accessPolicyEnvDeliveryDataSource = `
 data "hush_access_policy" "test" {
   id = hush_access_policy.test.id
 }
