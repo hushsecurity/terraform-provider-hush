@@ -97,7 +97,7 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 		input.AttestationCriteria = &criteria
 	}
 
-	if d.HasChange("env_delivery_config") {
+	if d.HasChange("env_delivery_config") || d.HasChange("volume_delivery_config") {
 		input.DeliveryConfig = expandDeliveryConfig(d)
 	}
 

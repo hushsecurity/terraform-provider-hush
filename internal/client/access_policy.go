@@ -27,7 +27,8 @@ type AttestationCriterion struct {
 type DeliveryType string
 
 const (
-	DeliveryTypeEnv DeliveryType = "env"
+	DeliveryTypeEnv    DeliveryType = "env"
+	DeliveryTypeVolume DeliveryType = "volume"
 )
 
 type DeliveryMappingType string
@@ -41,6 +42,18 @@ type EnvDeliveryItem struct {
 	Name string              `json:"name"`
 	Key  string              `json:"key,omitempty"`
 	Type DeliveryMappingType `json:"type,omitempty"`
+}
+
+type VolumeDeliveryItem struct {
+	Path string              `json:"path"`
+	Key  string              `json:"key,omitempty"`
+	Type DeliveryMappingType `json:"type,omitempty"`
+}
+
+type VolumeDeliveryConfig struct {
+	Type       DeliveryType         `json:"type"`
+	MountPoint string               `json:"mount_point"`
+	Items      []VolumeDeliveryItem `json:"items"`
 }
 
 type EnvDeliveryConfig struct {
