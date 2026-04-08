@@ -127,3 +127,57 @@ resource "hush_access_policy" "gemini_example" {
     key  = "service_account_key"
   }
 }
+
+# Create an access policy with volume delivery
+resource "hush_access_policy" "volume_example" {
+  name                 = "prod-volume-policy"
+  description          = "Access policy with volume mount delivery"
+  enabled              = true
+  access_credential_id = hush_postgres_access_credential.example.id
+  access_privilege_ids = [hush_postgres_access_privilege.example.id]
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  volume_delivery_config {
+    mount_point = "/etc/secrets"
+
+    item {
+      path = "db_password"
+      key  = "password"
+    }
+
+    item {
+      path = "db_username"
+      key  = "username"
+    }
+  }
+}
+
+# Create an access policy with volume delivery using templates
+resource "hush_access_policy" "volume_template_example" {
+  name                 = "prod-volume-template-policy"
+  description          = "Access policy with volume mount template delivery"
+  enabled              = true
+  access_credential_id = hush_postgres_access_credential.example.id
+  access_privilege_ids = [hush_postgres_access_privilege.example.id]
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  volume_delivery_config {
+    mount_point = "/etc/secrets"
+
+    item {
+      path = "db_url"
+      type = "template"
+      key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db}"
+    }
+  }
+}
