@@ -231,3 +231,329 @@ data "hush_access_policy" "test" {
   id = hush_access_policy.test.id
 }
 `
+
+func TestAccResourceAccessPolicy_withBothDeliveryConfigs(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      accessPolicyBothDeliveryConfigs(),
+				ExpectError: regexp.MustCompile(`"env_delivery_config": only one of`),
+			},
+		},
+	})
+}
+
+func accessPolicyBothDeliveryConfigs() string {
+	credID := os.Getenv(envHushTestAccessCredentialID)
+	privID := os.Getenv(envHushTestAccessPrivilegeID)
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-both"
+  description          = "should fail with both delivery configs"
+  access_credential_id = "` + credID + `"
+  access_privilege_ids = ["` + privID + `"]
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  env_delivery_config {
+    key  = "port"
+    name = "PORT"
+    type = "key"
+  }
+
+  volume_delivery_config {
+    mount_point = "/etc/secrets"
+
+    item {
+      path = "db_password"
+      key  = "password"
+      type = "key"
+    }
+  }
+}
+`
+}
+
+func TestAccResourceAccessPolicy_withNoDeliveryConfig(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      accessPolicyNoDeliveryConfig(),
+				ExpectError: regexp.MustCompile(`"env_delivery_config": one of`),
+			},
+		},
+	})
+}
+
+func accessPolicyNoDeliveryConfig() string {
+	credID := os.Getenv(envHushTestAccessCredentialID)
+	privID := os.Getenv(envHushTestAccessPrivilegeID)
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-no-delivery"
+  description          = "should fail without any delivery config"
+  access_credential_id = "` + credID + `"
+  access_privilege_ids = ["` + privID + `"]
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+}
+`
+}
+
+func TestAccResourceAccessPolicy_withVolumeDelivery(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyVolumeDeliveryStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-volume",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "test volume delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "enabled", "true",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "attestation_criteria.0.type", "k8s:ns",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "attestation_criteria.0.value", "default",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.mount_point", "/etc/secrets",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.item.0.path", "db_password",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.item.0.key", "password",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.item.0.type", "key",
+					),
+				),
+			},
+			{
+				Config: accessPolicyVolumeDeliveryStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-volume-updated",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "updated volume delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.mount_point", "/var/secrets",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.item.0.path", "api_key",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "volume_delivery_config.0.item.0.key", "password",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceAccessPolicy_withVolumeDeliveryTemplate(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyVolumeDeliveryTemplateStep(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.template", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.template", "volume_delivery_config.0.mount_point", "/etc/secrets",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.template", "volume_delivery_config.0.item.0.path", "db_config.json",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.template", "volume_delivery_config.0.item.0.type", "template",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.template", "volume_delivery_config.0.item.0.key", "postgresql://${username}:${password}@host:5432/db",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.template", "volume_delivery_config.0.item.1.path", "port",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.template", "volume_delivery_config.0.item.1.type", "key",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceAccessPolicy_withVolumeDelivery(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyVolumeDeliveryStep1() + accessPolicyVolumeDeliveryDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"data.hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "name", "test-policy-volume",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "description", "test volume delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "attestation_criteria.0.type", "k8s:ns",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "volume_delivery_config.0.mount_point", "/etc/secrets",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "volume_delivery_config.0.item.0.path", "db_password",
+					),
+					resource.TestCheckResourceAttrSet(
+						"data.hush_access_policy.test", "status",
+					),
+				),
+			},
+		},
+	})
+}
+
+func accessPolicyVolumeDeliveryStep1() string {
+	credID := os.Getenv(envHushTestAccessCredentialID)
+	privID := os.Getenv(envHushTestAccessPrivilegeID)
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-volume"
+  description          = "test volume delivery policy"
+  enabled              = true
+  access_credential_id = "` + credID + `"
+  access_privilege_ids = ["` + privID + `"]
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  volume_delivery_config {
+    mount_point = "/etc/secrets"
+
+    item {
+      path = "db_password"
+      key  = "password"
+      type = "key"
+    }
+  }
+}
+`
+}
+
+func accessPolicyVolumeDeliveryStep2() string {
+	credID := os.Getenv(envHushTestAccessCredentialID)
+	privID := os.Getenv(envHushTestAccessPrivilegeID)
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-volume-updated"
+  description          = "updated volume delivery policy"
+  enabled              = true
+  access_credential_id = "` + credID + `"
+  access_privilege_ids = ["` + privID + `"]
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  volume_delivery_config {
+    mount_point = "/var/secrets"
+
+    item {
+      path = "api_key"
+      key  = "password"
+      type = "key"
+    }
+  }
+}
+`
+}
+
+func accessPolicyVolumeDeliveryTemplateStep() string {
+	credID := os.Getenv(envHushTestAccessCredentialID)
+	privID := os.Getenv(envHushTestAccessPrivilegeID)
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_access_policy" "template" {
+  name                 = "test-policy-volume-template"
+  description          = "policy with volume template delivery"
+  access_credential_id = "` + credID + `"
+  access_privilege_ids = ["` + privID + `"]
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  volume_delivery_config {
+    mount_point = "/etc/secrets"
+
+    item {
+      path = "db_config.json"
+      key  = "postgresql://$${username}:$${password}@host:5432/db"
+      type = "template"
+    }
+
+    item {
+      path = "port"
+      key  = "port"
+      type = "key"
+    }
+  }
+}
+`
+}
+
+const accessPolicyVolumeDeliveryDataSource = `
+data "hush_access_policy" "test" {
+  id = hush_access_policy.test.id
+}
+`
