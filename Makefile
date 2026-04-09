@@ -48,3 +48,8 @@ test-acc:
 docs:
 	@tfplugindocs generate
 	@find docs -name '*.md' -exec sed -i 's/^subcategory: ".*"/subcategory: ""/' {} +
+	@sed -i '/^subcategory:/d' docs/index.md
+
+.PHONY: validate-docs
+validate-docs:
+	@tfplugindocs validate
