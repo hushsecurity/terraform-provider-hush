@@ -47,7 +47,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: "1.5.0"
+          terraform_version: "1.14.8"
 
       - name: Install golangci-lint
         uses: golangci/golangci-lint-action@v9
@@ -63,3 +63,14 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Check docs are up to date
+        run: |
+          go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.24.0
+          tfplugindocs --version
+          make docs
+          if ! git diff --quiet docs/; then
+            echo "Documentation is out of sync. Please run 'make docs' and commit the changes."
+            git diff docs/
+            exit 1
+          fi
