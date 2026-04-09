@@ -74,3 +74,4 @@ jobs:
             git diff docs/
             exit 1
           fi
+          make validate-docs
