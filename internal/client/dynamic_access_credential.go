@@ -24,6 +24,7 @@ const (
 	AccessCredentialTypeAWSAccessKey  AccessCredentialType = "aws_access_key"
 	AccessCredentialTypeTwilio        AccessCredentialType = "twilio"
 	AccessCredentialTypeSnowflake     AccessCredentialType = "snowflake"
+	AccessCredentialTypeAWSWIF        AccessCredentialType = "aws_wif"
 )
 
 // Postgres
@@ -1285,4 +1286,68 @@ func UpdateSnowflakeAccessCredential(ctx context.Context, c *Client, id string, 
 
 func (s SnowflakeAccessCredential) statusFields() (string, string) {
 	return s.Status, s.StatusDetail
+}
+
+// AWS WIF
+
+type AwsWifAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Audience      string               `json:"audience,omitempty"`
+	IssuerURL     string               `json:"issuer_url,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateAwsWifAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+}
+
+type UpdateAwsWifAccessCredentialInput struct {
+	Name          *string  `json:"name,omitempty"`
+	Description   *string  `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids,omitempty"`
+}
+
+func CreateAwsWifAccessCredential(ctx context.Context, c *Client, input *CreateAwsWifAccessCredentialInput) (*AwsWifAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/aws_wif"
+	var resp AwsWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetAwsWifAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAwsWifAccessCredential(ctx context.Context, c *Client, id string) (*AwsWifAccessCredential, error) {
+	path := fmt.Sprintf("%s/aws_wif/%s", accessCredentialsEndpoint, id)
+	var resp AwsWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAwsWifAccessCredential(ctx context.Context, c *Client, id string, input *UpdateAwsWifAccessCredentialInput) (*AwsWifAccessCredential, error) {
+	path := fmt.Sprintf("%s/aws_wif/%s", accessCredentialsEndpoint, id)
+	var resp AwsWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetAwsWifAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (a AwsWifAccessCredential) statusFields() (string, string) {
+	return a.Status, a.StatusDetail
 }

@@ -29,6 +29,14 @@ type DeliveryType string
 const (
 	DeliveryTypeEnv    DeliveryType = "env"
 	DeliveryTypeVolume DeliveryType = "volume"
+	DeliveryTypeAwsWif DeliveryType = "aws_wif"
+)
+
+type WifSubjectKind string
+
+const (
+	WifSubjectKindHushSubject    WifSubjectKind = "hush_subject"
+	WifSubjectKindServiceAccount WifSubjectKind = "service_account"
 )
 
 type DeliveryMappingType string
@@ -59,6 +67,13 @@ type VolumeDeliveryConfig struct {
 type EnvDeliveryConfig struct {
 	Type  DeliveryType      `json:"type"`
 	Items []EnvDeliveryItem `json:"items"`
+}
+
+type AwsWifDeliveryConfig struct {
+	Type        DeliveryType   `json:"type"`
+	RoleArn     string         `json:"role_arn"`
+	SubjectKind WifSubjectKind `json:"subject_kind"`
+	Subject     string         `json:"subject,omitempty"`
 }
 
 type AccessPolicy struct {

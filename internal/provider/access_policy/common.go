@@ -22,6 +22,7 @@ const (
 	attestationCriteriaDesc  = "The attestation criteria for the access policy"
 	envDeliveryConfigDesc    = "Environment variable delivery configuration for the access policy"
 	volumeDeliveryConfigDesc = "Volume mount delivery configuration for the access policy"
+	awsWifDeliveryConfigDesc = "AWS WIF delivery configuration for the access policy"
 	statusDesc               = "The status of the access policy (syncing, ok, warning, error, disabled)"
 	statusDetailDesc         = "The status detail of the access policy"
 )
@@ -106,7 +107,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeList,
 			Optional:     true,
 			Description:  envDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config"},
+			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -134,7 +135,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			MaxItems:     1,
 			Description:  volumeDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config"},
+			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"mount_point": {
@@ -167,6 +168,34 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 								},
 							},
 						},
+					},
+				},
+			},
+		},
+		"aws_wif_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  awsWifDeliveryConfigDesc,
+			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"role_arn": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "The AWS IAM role ARN to assume via WIF",
+					},
+					"subject_kind": {
+						Type:         schema.TypeString,
+						Optional:     true,
+						Default:      string(client.WifSubjectKindHushSubject),
+						ValidateFunc: validation.StringInSlice([]string{string(client.WifSubjectKindHushSubject), string(client.WifSubjectKindServiceAccount)}, false),
+						Description:  "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+					},
+					"subject": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "The federation subject identifier (required when subject_kind is hush_subject)",
 					},
 				},
 			},
@@ -312,6 +341,30 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"aws_wif_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: awsWifDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"role_arn": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The AWS IAM role ARN to assume via WIF",
+					},
+					"subject_kind": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+					},
+					"subject": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The subject identifier",
+					},
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -412,6 +465,9 @@ func expandDeliveryConfig(d *schema.ResourceData) any {
 	if v, ok := d.GetOk("volume_delivery_config"); ok {
 		return expandVolumeDeliveryConfig(v.([]any))
 	}
+	if v, ok := d.GetOk("aws_wif_delivery_config"); ok {
+		return expandAwsWifDeliveryConfig(v.([]any))
+	}
 
 	return nil
 }
@@ -472,6 +528,26 @@ func expandVolumeDeliveryConfig(list []any) *client.VolumeDeliveryConfig {
 	}
 }
 
+func expandAwsWifDeliveryConfig(list []any) *client.AwsWifDeliveryConfig {
+	if len(list) == 0 || list[0] == nil {
+		return nil
+	}
+
+	configMap := list[0].(map[string]any)
+
+	config := &client.AwsWifDeliveryConfig{
+		Type:        client.DeliveryTypeAwsWif,
+		RoleArn:     configMap["role_arn"].(string),
+		SubjectKind: client.WifSubjectKind(configMap["subject_kind"].(string)),
+	}
+
+	if subject, ok := configMap["subject"].(string); ok && subject != "" {
+		config.Subject = subject
+	}
+
+	return config
+}
+
 func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
 	result := make([]any, len(criteria))
 	for i, c := range criteria {
@@ -504,6 +580,10 @@ func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics 
 		if err := d.Set("volume_delivery_config", flattenVolumeDeliveryConfig(configMap)); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set volume_delivery_config: %w", err))
 		}
+	case client.DeliveryTypeAwsWif:
+		if err := d.Set("aws_wif_delivery_config", flattenAwsWifDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set aws_wif_delivery_config: %w", err))
+		}
 	}
 
 	return nil
@@ -527,6 +607,17 @@ func flattenVolumeDeliveryConfig(configMap map[string]any) []any {
 			"item":        items,
 		},
 	}
+}
+
+func flattenAwsWifDeliveryConfig(configMap map[string]any) []any {
+	result := map[string]any{
+		"role_arn":     configMap["role_arn"],
+		"subject_kind": configMap["subject_kind"],
+	}
+	if subject, ok := configMap["subject"]; ok {
+		result["subject"] = subject
+	}
+	return []any{result}
 }
 
 func isNotFoundError(err error) bool {

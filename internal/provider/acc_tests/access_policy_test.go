@@ -557,3 +557,214 @@ data "hush_access_policy" "test" {
   id = hush_access_policy.test.id
 }
 `
+
+func TestAccResourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyAwsWifDeliveryStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-aws-wif",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "test AWS WIF delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.role_arn", "arn:aws:iam::123456789012:role/test-role",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.subject_kind", "hush_subject",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.subject", "my-test-subject",
+					),
+				),
+			},
+			{
+				Config: accessPolicyAwsWifDeliveryStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-aws-wif-updated",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "updated AWS WIF delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "deployment_ids.#", "2",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.role_arn", "arn:aws:iam::123456789012:role/updated-role",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.subject", "my-updated-subject",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceAccessPolicy_withAwsWifDeliveryServiceAccount(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyAwsWifDeliveryServiceAccountStep(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.role_arn", "arn:aws:iam::123456789012:role/sa-role",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "aws_wif_delivery_config.0.subject_kind", "service_account",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyAwsWifDeliveryStep1() + accessPolicyAwsWifDeliveryDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"data.hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "name", "test-policy-aws-wif",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "aws_wif_delivery_config.0.role_arn", "arn:aws:iam::123456789012:role/test-role",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "aws_wif_delivery_config.0.subject_kind", "hush_subject",
+					),
+					resource.TestCheckResourceAttrSet(
+						"data.hush_access_policy.test", "status",
+					),
+				),
+			},
+		},
+	})
+}
+
+func accessPolicyAwsWifDeliveryStep1() string {
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_aws_wif_access_credential" "test" {
+  name           = "test-aws-wif-cred"
+  description    = "AWS WIF credential for access policy test"
+  deployment_ids = ["` + deploymentID + `"]
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-aws-wif"
+  description          = "test AWS WIF delivery policy"
+  enabled              = true
+  access_credential_id = hush_aws_wif_access_credential.test.id
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  aws_wif_delivery_config {
+    role_arn     = "arn:aws:iam::123456789012:role/test-role"
+    subject_kind = "hush_subject"
+    subject      = "my-test-subject"
+  }
+}
+`
+}
+
+func accessPolicyAwsWifDeliveryStep2() string {
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	deploymentID2 := os.Getenv(envHushTestDeploymentID2)
+	return `
+resource "hush_aws_wif_access_credential" "test" {
+  name           = "test-aws-wif-cred"
+  description    = "AWS WIF credential for access policy test"
+  deployment_ids = ["` + deploymentID + `", "` + deploymentID2 + `"]
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-aws-wif-updated"
+  description          = "updated AWS WIF delivery policy"
+  enabled              = true
+  access_credential_id = hush_aws_wif_access_credential.test.id
+  deployment_ids       = ["` + deploymentID + `", "` + deploymentID2 + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  aws_wif_delivery_config {
+    role_arn     = "arn:aws:iam::123456789012:role/updated-role"
+    subject_kind = "hush_subject"
+    subject      = "my-updated-subject"
+  }
+}
+`
+}
+
+func accessPolicyAwsWifDeliveryServiceAccountStep() string {
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_aws_wif_access_credential" "test" {
+  name           = "test-aws-wif-cred-sa"
+  description    = "AWS WIF credential for service account test"
+  deployment_ids = ["` + deploymentID + `"]
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-aws-wif-sa"
+  description          = "AWS WIF delivery with service account"
+  enabled              = true
+  access_credential_id = hush_aws_wif_access_credential.test.id
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  attestation_criteria {
+    type  = "k8s:sa"
+    value = "app-service-account"
+  }
+
+  aws_wif_delivery_config {
+    role_arn     = "arn:aws:iam::123456789012:role/sa-role"
+    subject_kind = "service_account"
+  }
+}
+`
+}
+
+const accessPolicyAwsWifDeliveryDataSource = `
+data "hush_access_policy" "test" {
+  id = hush_access_policy.test.id
+}
+`
