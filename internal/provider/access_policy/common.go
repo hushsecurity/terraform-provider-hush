@@ -12,17 +12,18 @@ import (
 )
 
 const (
-	idDesc                  = "The ID of the access policy"
-	nameDesc                = "The name of the access policy"
-	descriptionDesc         = "The description of the access policy"
-	enabledDesc             = "Whether the access policy is enabled"
-	accessCredentialIDDesc  = "The ID of the access credential"
-	accessPrivilegeIDsDesc  = "The list of access privilege IDs"
-	deploymentIDsDesc       = "The list of deployment IDs"
-	attestationCriteriaDesc = "The attestation criteria for the access policy"
-	envDeliveryConfigDesc   = "Environment variable delivery configuration for the access policy"
-	statusDesc              = "The status of the access policy (syncing, ok, warning, error, disabled)"
-	statusDetailDesc        = "The status detail of the access policy"
+	idDesc                   = "The ID of the access policy"
+	nameDesc                 = "The name of the access policy"
+	descriptionDesc          = "The description of the access policy"
+	enabledDesc              = "Whether the access policy is enabled"
+	accessCredentialIDDesc   = "The ID of the access credential"
+	accessPrivilegeIDsDesc   = "The list of access privilege IDs"
+	deploymentIDsDesc        = "The list of deployment IDs"
+	attestationCriteriaDesc  = "The attestation criteria for the access policy"
+	envDeliveryConfigDesc    = "Environment variable delivery configuration for the access policy"
+	volumeDeliveryConfigDesc = "Volume mount delivery configuration for the access policy"
+	statusDesc               = "The status of the access policy (syncing, ok, warning, error, disabled)"
+	statusDetailDesc         = "The status detail of the access policy"
 )
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
@@ -102,10 +103,10 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			},
 		},
 		"env_delivery_config": {
-			Type:        schema.TypeList,
-			Required:    true,
-			MinItems:    1,
-			Description: envDeliveryConfigDesc,
+			Type:         schema.TypeList,
+			Optional:     true,
+			Description:  envDeliveryConfigDesc,
+			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config"},
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -121,9 +122,51 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 					"type": {
 						Type:         schema.TypeString,
 						Optional:     true,
-						Default:      string(client.EnvMappingTypeKey),
-						ValidateFunc: validation.StringInSlice([]string{string(client.EnvMappingTypeKey), string(client.EnvMappingTypeTemplate)}, false),
+						Default:      string(client.DeliveryMappingTypeKey),
+						ValidateFunc: validation.StringInSlice([]string{string(client.DeliveryMappingTypeKey), string(client.DeliveryMappingTypeTemplate)}, false),
 						Description:  "The type of delivery item mapping (key or template)",
+					},
+				},
+			},
+		},
+		"volume_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  volumeDeliveryConfigDesc,
+			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config"},
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"mount_point": {
+						Type:        schema.TypeString,
+						Required:    true,
+						Description: "The absolute path where the volume will be mounted",
+					},
+					"item": {
+						Type:     schema.TypeList,
+						Required: true,
+						MinItems: 1,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"path": {
+									Type:        schema.TypeString,
+									Required:    true,
+									Description: "The relative file path within the mount point",
+								},
+								"key": {
+									Type:        schema.TypeString,
+									Optional:    true,
+									Description: "The credential key or template string for the delivery item",
+								},
+								"type": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									Default:      string(client.DeliveryMappingTypeKey),
+									ValidateFunc: validation.StringInSlice([]string{string(client.DeliveryMappingTypeKey), string(client.DeliveryMappingTypeTemplate)}, false),
+									Description:  "The type of delivery item mapping (key or template)",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -232,6 +275,43 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"volume_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: volumeDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"mount_point": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The absolute path where the volume will be mounted",
+					},
+					"item": {
+						Type:     schema.TypeList,
+						Computed: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"path": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The relative file path within the mount point",
+								},
+								"key": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The credential key or template string for the delivery item",
+								},
+								"type": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The type of delivery item mapping (key or template)",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -325,24 +405,23 @@ func expandAttestationCriteria(list []any) []client.AttestationCriterion {
 	return result
 }
 
-func expandDeliveryConfig(d *schema.ResourceData) client.DeliveryConfig {
+func expandDeliveryConfig(d *schema.ResourceData) any {
 	if v, ok := d.GetOk("env_delivery_config"); ok {
 		return expandEnvDeliveryConfig(v.([]any))
 	}
+	if v, ok := d.GetOk("volume_delivery_config"); ok {
+		return expandVolumeDeliveryConfig(v.([]any))
+	}
 
-	return client.DeliveryConfig{}
+	return nil
 }
 
-func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
+func expandEnvDeliveryConfig(list []any) *client.EnvDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
-		return client.DeliveryConfig{}
+		return nil
 	}
 
-	config := client.DeliveryConfig{
-		Type:  client.DeliveryTypeEnv,
-		Items: make([]any, len(list)),
-	}
-
+	items := make([]client.EnvDeliveryItem, len(list))
 	for i, item := range list {
 		itemMap := item.(map[string]any)
 		deliveryItem := client.EnvDeliveryItem{
@@ -352,12 +431,45 @@ func expandEnvDeliveryConfig(list []any) client.DeliveryConfig {
 			deliveryItem.Key = key
 		}
 		if t, ok := itemMap["type"].(string); ok && t != "" {
-			deliveryItem.Type = client.EnvMappingType(t)
+			deliveryItem.Type = client.DeliveryMappingType(t)
 		}
-		config.Items[i] = deliveryItem
+		items[i] = deliveryItem
 	}
 
-	return config
+	return &client.EnvDeliveryConfig{
+		Type:  client.DeliveryTypeEnv,
+		Items: items,
+	}
+}
+
+func expandVolumeDeliveryConfig(list []any) *client.VolumeDeliveryConfig {
+	if len(list) == 0 || list[0] == nil {
+		return nil
+	}
+
+	configMap := list[0].(map[string]any)
+	rawItems := configMap["item"].([]any)
+
+	items := make([]client.VolumeDeliveryItem, len(rawItems))
+	for i, item := range rawItems {
+		itemMap := item.(map[string]any)
+		deliveryItem := client.VolumeDeliveryItem{
+			Path: itemMap["path"].(string),
+		}
+		if key, ok := itemMap["key"].(string); ok && key != "" {
+			deliveryItem.Key = key
+		}
+		if t, ok := itemMap["type"].(string); ok && t != "" {
+			deliveryItem.Type = client.DeliveryMappingType(t)
+		}
+		items[i] = deliveryItem
+	}
+
+	return &client.VolumeDeliveryConfig{
+		Type:       client.DeliveryTypeVolume,
+		MountPoint: configMap["mount_point"].(string),
+		Items:      items,
+	}
 }
 
 func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
@@ -375,15 +487,46 @@ func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
 	return result
 }
 
-func flattenDeliveryConfig(d *schema.ResourceData, config client.DeliveryConfig) diag.Diagnostics {
-	switch config.Type {
+func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics {
+	configMap, ok := config.(map[string]any)
+	if !ok {
+		return nil
+	}
+
+	deliveryType, _ := configMap["type"].(string)
+
+	switch client.DeliveryType(deliveryType) {
 	case client.DeliveryTypeEnv:
-		if err := d.Set("env_delivery_config", config.Items); err != nil {
+		if err := d.Set("env_delivery_config", configMap["items"]); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set env_delivery_config: %w", err))
+		}
+	case client.DeliveryTypeVolume:
+		if err := d.Set("volume_delivery_config", flattenVolumeDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set volume_delivery_config: %w", err))
 		}
 	}
 
 	return nil
+}
+
+func flattenVolumeDeliveryConfig(configMap map[string]any) []any {
+	rawItems, _ := configMap["items"].([]any)
+	items := make([]any, len(rawItems))
+	for i, item := range rawItems {
+		itemMap, _ := item.(map[string]any)
+		items[i] = map[string]any{
+			"path": itemMap["path"],
+			"key":  itemMap["key"],
+			"type": itemMap["type"],
+		}
+	}
+
+	return []any{
+		map[string]any{
+			"mount_point": configMap["mount_point"],
+			"item":        items,
+		},
+	}
 }
 
 func isNotFoundError(err error) bool {

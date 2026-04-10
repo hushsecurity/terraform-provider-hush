@@ -27,25 +27,38 @@ type AttestationCriterion struct {
 type DeliveryType string
 
 const (
-	DeliveryTypeEnv DeliveryType = "env"
+	DeliveryTypeEnv    DeliveryType = "env"
+	DeliveryTypeVolume DeliveryType = "volume"
 )
 
-type EnvMappingType string
+type DeliveryMappingType string
 
 const (
-	EnvMappingTypeKey      EnvMappingType = "key"
-	EnvMappingTypeTemplate EnvMappingType = "template"
+	DeliveryMappingTypeKey      DeliveryMappingType = "key"
+	DeliveryMappingTypeTemplate DeliveryMappingType = "template"
 )
 
 type EnvDeliveryItem struct {
-	Name string         `json:"name"`
-	Key  string         `json:"key,omitempty"`
-	Type EnvMappingType `json:"type,omitempty"`
+	Name string              `json:"name"`
+	Key  string              `json:"key,omitempty"`
+	Type DeliveryMappingType `json:"type,omitempty"`
 }
 
-type DeliveryConfig struct {
-	Type  DeliveryType `json:"type"`
-	Items []any        `json:"items"`
+type VolumeDeliveryItem struct {
+	Path string              `json:"path"`
+	Key  string              `json:"key,omitempty"`
+	Type DeliveryMappingType `json:"type,omitempty"`
+}
+
+type VolumeDeliveryConfig struct {
+	Type       DeliveryType         `json:"type"`
+	MountPoint string               `json:"mount_point"`
+	Items      []VolumeDeliveryItem `json:"items"`
+}
+
+type EnvDeliveryConfig struct {
+	Type  DeliveryType      `json:"type"`
+	Items []EnvDeliveryItem `json:"items"`
 }
 
 type AccessPolicy struct {
@@ -57,7 +70,7 @@ type AccessPolicy struct {
 	AccessPrivilegeIDs  []string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
 	DeploymentIDs       []string               `json:"deployment_ids"`
-	DeliveryConfig      DeliveryConfig         `json:"delivery_config"`
+	DeliveryConfig      any                    `json:"delivery_config"`
 	Status              string                 `json:"status,omitempty"`
 	StatusDetail        string                 `json:"status_detail,omitempty"`
 }
@@ -70,7 +83,7 @@ type CreateAccessPolicyInput struct {
 	AccessPrivilegeIDs  []string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
 	DeploymentIDs       []string               `json:"deployment_ids"`
-	DeliveryConfig      DeliveryConfig         `json:"delivery_config"`
+	DeliveryConfig      any                    `json:"delivery_config"`
 }
 
 type UpdateAccessPolicyInput struct {
@@ -81,7 +94,7 @@ type UpdateAccessPolicyInput struct {
 	AccessPrivilegeIDs  *[]string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria *[]AttestationCriterion `json:"attestation_criteria,omitempty"`
 	DeploymentIDs       *[]string               `json:"deployment_ids,omitempty"`
-	DeliveryConfig      *DeliveryConfig         `json:"delivery_config,omitempty"`
+	DeliveryConfig      any                     `json:"delivery_config,omitempty"`
 }
 
 type AccessPolicyListResponse struct {

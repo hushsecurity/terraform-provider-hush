@@ -57,6 +57,7 @@ output "status" {
 - `name` (String) The name of the access policy
 - `status` (String) The status of the access policy (syncing, ok, warning, error, disabled)
 - `status_detail` (String) The status detail of the access policy
+- `volume_delivery_config` (List of Object) Volume mount delivery configuration for the access policy (see [below for nested schema](#nestedatt--volume_delivery_config))
 
 <a id="nestedatt--attestation_criteria"></a>
 ### Nested Schema for `attestation_criteria`
@@ -75,4 +76,22 @@ Read-Only:
 
 - `key` (String)
 - `name` (String)
+- `type` (String)
+
+
+<a id="nestedatt--volume_delivery_config"></a>
+### Nested Schema for `volume_delivery_config`
+
+Read-Only:
+
+- `item` (List of Object) (see [below for nested schema](#nestedobjatt--volume_delivery_config--item))
+- `mount_point` (String)
+
+<a id="nestedobjatt--volume_delivery_config--item"></a>
+### Nested Schema for `volume_delivery_config.item`
+
+Read-Only:
+
+- `key` (String)
+- `path` (String)
 - `type` (String)
