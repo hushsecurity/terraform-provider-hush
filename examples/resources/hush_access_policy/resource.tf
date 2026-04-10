@@ -181,3 +181,47 @@ resource "hush_access_policy" "volume_template_example" {
     }
   }
 }
+
+# Create an access policy with AWS WIF delivery (hush_subject)
+resource "hush_access_policy" "aws_wif_example" {
+  name                 = "prod-aws-wif-policy"
+  description          = "Access policy with AWS WIF delivery"
+  enabled              = true
+  access_credential_id = hush_aws_wif_access_credential.example.id
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  aws_wif_delivery_config {
+    role_arn     = "arn:aws:iam::123456789012:role/my-app-role"
+    subject_kind = "hush_subject"
+    subject      = "my-workload-identity"
+  }
+}
+
+# Create an access policy with AWS WIF delivery (service_account)
+resource "hush_access_policy" "aws_wif_sa_example" {
+  name                 = "prod-aws-wif-sa-policy"
+  description          = "Access policy with AWS WIF delivery using service account"
+  enabled              = true
+  access_credential_id = hush_aws_wif_access_credential.example.id
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  attestation_criteria {
+    type  = "k8s:sa"
+    value = "app-service-account"
+  }
+
+  aws_wif_delivery_config {
+    role_arn     = "arn:aws:iam::123456789012:role/my-sa-role"
+    subject_kind = "service_account"
+  }
+}
