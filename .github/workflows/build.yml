@@ -69,9 +69,10 @@ jobs:
           go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.24.0
           tfplugindocs --version
           make docs
-          if ! git diff --quiet docs/; then
+          if ! git diff --quiet docs/ || [ -n "$(git ls-files --others --exclude-standard docs/)" ]; then
             echo "Documentation is out of sync. Please run 'make docs' and commit the changes."
             git diff docs/
+            git ls-files --others --exclude-standard docs/
             exit 1
           fi
           make validate-docs
