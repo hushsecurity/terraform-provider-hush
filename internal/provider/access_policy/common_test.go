@@ -211,3 +211,119 @@ func TestExpandEnvDeliveryConfig_nil(t *testing.T) {
 		t.Errorf("expected nil result for nil element, got %+v", result)
 	}
 }
+
+func TestExpandAwsWifDeliveryConfig(t *testing.T) {
+	input := []any{
+		map[string]any{
+			"role_arn":     "arn:aws:iam::123456789012:role/test-role",
+			"subject_kind": "hush_subject",
+			"subject":      "my-subject",
+		},
+	}
+
+	result := expandAwsWifDeliveryConfig(input)
+
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.Type != client.DeliveryTypeAwsWif {
+		t.Errorf("expected type %q, got %q", client.DeliveryTypeAwsWif, result.Type)
+	}
+	if result.RoleArn != "arn:aws:iam::123456789012:role/test-role" {
+		t.Errorf("expected role_arn %q, got %q", "arn:aws:iam::123456789012:role/test-role", result.RoleArn)
+	}
+	if result.SubjectKind != client.WifSubjectKindHushSubject {
+		t.Errorf("expected subject_kind %q, got %q", client.WifSubjectKindHushSubject, result.SubjectKind)
+	}
+	if result.Subject != "my-subject" {
+		t.Errorf("expected subject %q, got %q", "my-subject", result.Subject)
+	}
+}
+
+func TestExpandAwsWifDeliveryConfig_serviceAccount(t *testing.T) {
+	input := []any{
+		map[string]any{
+			"role_arn":     "arn:aws:iam::123456789012:role/sa-role",
+			"subject_kind": "service_account",
+			"subject":      "",
+		},
+	}
+
+	result := expandAwsWifDeliveryConfig(input)
+
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.SubjectKind != client.WifSubjectKindServiceAccount {
+		t.Errorf("expected subject_kind %q, got %q", client.WifSubjectKindServiceAccount, result.SubjectKind)
+	}
+	if result.Subject != "" {
+		t.Errorf("expected empty subject, got %q", result.Subject)
+	}
+}
+
+func TestExpandAwsWifDeliveryConfig_nil(t *testing.T) {
+	result := expandAwsWifDeliveryConfig([]any{})
+	if result != nil {
+		t.Errorf("expected nil result for empty input, got %+v", result)
+	}
+
+	result = expandAwsWifDeliveryConfig([]any{nil})
+	if result != nil {
+		t.Errorf("expected nil result for nil element, got %+v", result)
+	}
+}
+
+func TestFlattenAwsWifDeliveryConfig(t *testing.T) {
+	input := map[string]any{
+		"type":         "aws_wif",
+		"role_arn":     "arn:aws:iam::123456789012:role/test-role",
+		"subject_kind": "hush_subject",
+		"subject":      "my-subject",
+	}
+
+	result := flattenAwsWifDeliveryConfig(input)
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 config block, got %d", len(result))
+	}
+
+	configMap, ok := result[0].(map[string]any)
+	if !ok {
+		t.Fatal("expected result[0] to be map[string]any")
+	}
+	if configMap["role_arn"] != "arn:aws:iam::123456789012:role/test-role" {
+		t.Errorf("expected role_arn %q, got %q", "arn:aws:iam::123456789012:role/test-role", configMap["role_arn"])
+	}
+	if configMap["subject_kind"] != "hush_subject" {
+		t.Errorf("expected subject_kind %q, got %q", "hush_subject", configMap["subject_kind"])
+	}
+	if configMap["subject"] != "my-subject" {
+		t.Errorf("expected subject %q, got %q", "my-subject", configMap["subject"])
+	}
+}
+
+func TestFlattenAwsWifDeliveryConfig_serviceAccount(t *testing.T) {
+	input := map[string]any{
+		"type":         "aws_wif",
+		"role_arn":     "arn:aws:iam::123456789012:role/sa-role",
+		"subject_kind": "service_account",
+	}
+
+	result := flattenAwsWifDeliveryConfig(input)
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 config block, got %d", len(result))
+	}
+
+	configMap, ok := result[0].(map[string]any)
+	if !ok {
+		t.Fatal("expected result[0] to be map[string]any")
+	}
+	if configMap["role_arn"] != "arn:aws:iam::123456789012:role/sa-role" {
+		t.Errorf("expected role_arn %q, got %q", "arn:aws:iam::123456789012:role/sa-role", configMap["role_arn"])
+	}
+	if _, hasSubject := configMap["subject"]; hasSubject {
+		t.Errorf("expected no subject key for service_account, got %q", configMap["subject"])
+	}
+}
