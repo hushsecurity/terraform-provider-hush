@@ -185,18 +185,8 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 						Required:    true,
 						Description: "The AWS IAM role ARN to assume via WIF",
 					},
-					"subject_kind": {
-						Type:         schema.TypeString,
-						Optional:     true,
-						Default:      string(client.WifSubjectKindHushSubject),
-						ValidateFunc: validation.StringInSlice([]string{string(client.WifSubjectKindHushSubject), string(client.WifSubjectKindServiceAccount)}, false),
-						Description:  "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
-					},
-					"subject": {
-						Type:        schema.TypeString,
-						Optional:    true,
-						Description: "The federation subject identifier (required when subject_kind is hush_subject)",
-					},
+					"subject_kind": wifSubjectKindResourceSchema(),
+					"subject":      wifSubjectResourceSchema(),
 				},
 			},
 		},
@@ -352,16 +342,8 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 						Computed:    true,
 						Description: "The AWS IAM role ARN to assume via WIF",
 					},
-					"subject_kind": {
-						Type:        schema.TypeString,
-						Computed:    true,
-						Description: "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
-					},
-					"subject": {
-						Type:        schema.TypeString,
-						Computed:    true,
-						Description: "The subject identifier",
-					},
+					"subject_kind": wifSubjectKindDataSourceSchema(),
+					"subject":      wifSubjectDataSourceSchema(),
 				},
 			},
 		},
@@ -528,24 +510,72 @@ func expandVolumeDeliveryConfig(list []any) *client.VolumeDeliveryConfig {
 	}
 }
 
+// WIF shared helpers
+
+func wifSubjectKindResourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:         schema.TypeString,
+		Optional:     true,
+		Default:      string(client.WifSubjectKindHushSubject),
+		ValidateFunc: validation.StringInSlice([]string{string(client.WifSubjectKindHushSubject), string(client.WifSubjectKindServiceAccount)}, false),
+		Description:  "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+	}
+}
+
+func wifSubjectResourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "The federation subject identifier (required when subject_kind is hush_subject)",
+	}
+}
+
+func wifSubjectKindDataSourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Computed:    true,
+		Description: "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+	}
+}
+
+func wifSubjectDataSourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Computed:    true,
+		Description: "The federation subject identifier",
+	}
+}
+
+func expandWifSubject(configMap map[string]any) (client.WifSubjectKind, string) {
+	subjectKind := client.WifSubjectKind(configMap["subject_kind"].(string))
+	var subject string
+	if s, ok := configMap["subject"].(string); ok && s != "" {
+		subject = s
+	}
+	return subjectKind, subject
+}
+
+func flattenWifSubject(configMap map[string]any, result map[string]any) {
+	result["subject_kind"] = configMap["subject_kind"]
+	if subject, ok := configMap["subject"]; ok {
+		result["subject"] = subject
+	}
+}
+
 func expandAwsWifDeliveryConfig(list []any) *client.AwsWifDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return nil
 	}
 
 	configMap := list[0].(map[string]any)
+	subjectKind, subject := expandWifSubject(configMap)
 
-	config := &client.AwsWifDeliveryConfig{
+	return &client.AwsWifDeliveryConfig{
 		Type:        client.DeliveryTypeAwsWif,
 		RoleArn:     configMap["role_arn"].(string),
-		SubjectKind: client.WifSubjectKind(configMap["subject_kind"].(string)),
+		SubjectKind: subjectKind,
+		Subject:     subject,
 	}
-
-	if subject, ok := configMap["subject"].(string); ok && subject != "" {
-		config.Subject = subject
-	}
-
-	return config
 }
 
 func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
@@ -611,12 +641,9 @@ func flattenVolumeDeliveryConfig(configMap map[string]any) []any {
 
 func flattenAwsWifDeliveryConfig(configMap map[string]any) []any {
 	result := map[string]any{
-		"role_arn":     configMap["role_arn"],
-		"subject_kind": configMap["subject_kind"],
+		"role_arn": configMap["role_arn"],
 	}
-	if subject, ok := configMap["subject"]; ok {
-		result["subject"] = subject
-	}
+	flattenWifSubject(configMap, result)
 	return []any{result}
 }
 
