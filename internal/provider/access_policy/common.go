@@ -27,6 +27,8 @@ const (
 	statusDetailDesc         = "The status detail of the access policy"
 )
 
+var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"}
+
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"id": {
@@ -107,7 +109,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeList,
 			Optional:     true,
 			Description:  envDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -135,7 +137,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			MaxItems:     1,
 			Description:  volumeDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"mount_point": {
@@ -177,7 +179,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			MaxItems:     1,
 			Description:  awsWifDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"role_arn": {
