@@ -768,3 +768,222 @@ data "hush_access_policy" "test" {
   id = hush_access_policy.test.id
 }
 `
+
+func TestAccResourceAccessPolicy_withGcpWifDelivery(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyGcpWifDeliveryStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-gcp-wif",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "test GCP WIF delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.subject_kind", "hush_subject",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.subject", "my-test-subject",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.service_account_token_lifetime", "3600",
+					),
+				),
+			},
+			{
+				Config: accessPolicyGcpWifDeliveryStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-gcp-wif-updated",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "updated GCP WIF delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.subject", "my-updated-subject",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.service_account_token_lifetime", "7200",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceAccessPolicy_withGcpWifDeliveryServiceAccount(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyGcpWifDeliveryServiceAccountStep(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.subject_kind", "service_account",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.service_account", "my-sa@my-project.iam.gserviceaccount.com",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "gcp_wif_delivery_config.0.service_account_token_lifetime", "7200",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccDataSourceAccessPolicy_withGcpWifDelivery(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyGcpWifDeliveryStep1() + accessPolicyGcpWifDeliveryDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"data.hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "name", "test-policy-gcp-wif",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "gcp_wif_delivery_config.0.subject_kind", "hush_subject",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.test", "gcp_wif_delivery_config.0.subject", "my-test-subject",
+					),
+					resource.TestCheckResourceAttrSet(
+						"data.hush_access_policy.test", "status",
+					),
+				),
+			},
+		},
+	})
+}
+
+func accessPolicyGcpWifDeliveryStep1() string {
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_gcp_wif_access_credential" "test" {
+  name                 = "test-gcp-wif-cred-policy"
+  description          = "GCP WIF credential for access policy test"
+  deployment_ids       = ["` + deploymentID + `"]
+  project_number       = "123456789012"
+  pool_id              = "my-wif-pool"
+  workload_provider_id = "my-wif-provider"
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-gcp-wif"
+  description          = "test GCP WIF delivery policy"
+  enabled              = true
+  access_credential_id = hush_gcp_wif_access_credential.test.id
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  gcp_wif_delivery_config {
+    subject_kind = "hush_subject"
+    subject      = "my-test-subject"
+  }
+}
+`
+}
+
+func accessPolicyGcpWifDeliveryStep2() string {
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_gcp_wif_access_credential" "test" {
+  name                 = "test-gcp-wif-cred-policy"
+  description          = "GCP WIF credential for access policy test"
+  deployment_ids       = ["` + deploymentID + `"]
+  project_number       = "123456789012"
+  pool_id              = "my-wif-pool"
+  workload_provider_id = "my-wif-provider"
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-gcp-wif-updated"
+  description          = "updated GCP WIF delivery policy"
+  enabled              = true
+  access_credential_id = hush_gcp_wif_access_credential.test.id
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  gcp_wif_delivery_config {
+    subject_kind                  = "hush_subject"
+    subject                       = "my-updated-subject"
+    service_account_token_lifetime = 7200
+  }
+}
+`
+}
+
+func accessPolicyGcpWifDeliveryServiceAccountStep() string {
+	deploymentID := os.Getenv(envHushTestDeploymentID)
+	return `
+resource "hush_gcp_wif_access_credential" "test" {
+  name                 = "test-gcp-wif-cred-sa"
+  description          = "GCP WIF credential for service account test"
+  deployment_ids       = ["` + deploymentID + `"]
+  project_number       = "123456789012"
+  pool_id              = "my-wif-pool"
+  workload_provider_id = "my-wif-provider"
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-gcp-wif-sa"
+  description          = "GCP WIF delivery with service account"
+  enabled              = true
+  access_credential_id = hush_gcp_wif_access_credential.test.id
+  deployment_ids       = ["` + deploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  attestation_criteria {
+    type  = "k8s:sa"
+    value = "app-service-account"
+  }
+
+  gcp_wif_delivery_config {
+    subject_kind                  = "service_account"
+    service_account               = "my-sa@my-project.iam.gserviceaccount.com"
+    service_account_token_lifetime = 7200
+  }
+}
+`
+}
+
+const accessPolicyGcpWifDeliveryDataSource = `
+data "hush_access_policy" "test" {
+  id = hush_access_policy.test.id
+}
+`
