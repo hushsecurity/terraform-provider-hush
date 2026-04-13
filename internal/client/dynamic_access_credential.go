@@ -25,6 +25,7 @@ const (
 	AccessCredentialTypeTwilio        AccessCredentialType = "twilio"
 	AccessCredentialTypeSnowflake     AccessCredentialType = "snowflake"
 	AccessCredentialTypeAWSWIF        AccessCredentialType = "aws_wif"
+	AccessCredentialTypeGCPWIF        AccessCredentialType = "gcp_wif"
 	AccessCredentialTypeGitlab        AccessCredentialType = "gitlab"
 )
 
@@ -1422,5 +1423,80 @@ func UpdateGitlabAccessCredential(ctx context.Context, c *Client, id string, inp
 }
 
 func (g GitlabAccessCredential) statusFields() (string, string) {
+	return g.Status, g.StatusDetail
+}
+
+// GCP WIF
+
+type GcpWifAccessCredential struct {
+	ID                 string               `json:"id,omitempty"`
+	Name               string               `json:"name"`
+	Description        string               `json:"description,omitempty"`
+	Type               AccessCredentialType `json:"type"`
+	Kind               string               `json:"kind,omitempty"`
+	DeploymentIDs      []string             `json:"deployment_ids"`
+	ProjectNumber      string               `json:"project_number,omitempty"`
+	PoolID             string               `json:"pool_id,omitempty"`
+	WorkloadProviderID string               `json:"workload_provider_id,omitempty"`
+	Audience           string               `json:"audience,omitempty"`
+	IssuerURL          string               `json:"issuer_url,omitempty"`
+	Status             string               `json:"status,omitempty"`
+	StatusDetail       string               `json:"status_detail,omitempty"`
+}
+
+type CreateGcpWifAccessCredentialInput struct {
+	Name               string   `json:"name"`
+	Description        string   `json:"description,omitempty"`
+	DeploymentIDs      []string `json:"deployment_ids"`
+	ProjectNumber      string   `json:"project_number"`
+	PoolID             string   `json:"pool_id"`
+	WorkloadProviderID string   `json:"workload_provider_id"`
+	Audience           string   `json:"audience,omitempty"`
+}
+
+type UpdateGcpWifAccessCredentialInput struct {
+	Name               *string  `json:"name,omitempty"`
+	Description        *string  `json:"description,omitempty"`
+	DeploymentIDs      []string `json:"deployment_ids,omitempty"`
+	ProjectNumber      *string  `json:"project_number,omitempty"`
+	PoolID             *string  `json:"pool_id,omitempty"`
+	WorkloadProviderID *string  `json:"workload_provider_id,omitempty"`
+	Audience           *string  `json:"audience,omitempty"`
+}
+
+func CreateGcpWifAccessCredential(ctx context.Context, c *Client, input *CreateGcpWifAccessCredentialInput) (*GcpWifAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/gcp_wif"
+	var resp GcpWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetGcpWifAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGcpWifAccessCredential(ctx context.Context, c *Client, id string) (*GcpWifAccessCredential, error) {
+	path := fmt.Sprintf("%s/gcp_wif/%s", accessCredentialsEndpoint, id)
+	var resp GcpWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGcpWifAccessCredential(ctx context.Context, c *Client, id string, input *UpdateGcpWifAccessCredentialInput) (*GcpWifAccessCredential, error) {
+	path := fmt.Sprintf("%s/gcp_wif/%s", accessCredentialsEndpoint, id)
+	var resp GcpWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetGcpWifAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (g GcpWifAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
 }

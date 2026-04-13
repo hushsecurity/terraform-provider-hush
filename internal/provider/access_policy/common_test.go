@@ -327,3 +327,106 @@ func TestFlattenAwsWifDeliveryConfig_serviceAccount(t *testing.T) {
 		t.Errorf("expected no subject key for service_account, got %q", configMap["subject"])
 	}
 }
+
+func TestExpandGcpWifDeliveryConfig(t *testing.T) {
+	input := []any{
+		map[string]any{
+			"subject_kind":                   "hush_subject",
+			"subject":                        "my-subject",
+			"service_account":                "my-sa@my-project.iam.gserviceaccount.com",
+			"service_account_token_lifetime": 7200,
+		},
+	}
+
+	result := expandGcpWifDeliveryConfig(input)
+
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.Type != client.DeliveryTypeGcpWif {
+		t.Errorf("expected type %q, got %q", client.DeliveryTypeGcpWif, result.Type)
+	}
+	if result.SubjectKind != client.WifSubjectKindHushSubject {
+		t.Errorf("expected subject_kind %q, got %q", client.WifSubjectKindHushSubject, result.SubjectKind)
+	}
+	if result.Subject != "my-subject" {
+		t.Errorf("expected subject %q, got %q", "my-subject", result.Subject)
+	}
+	if result.ServiceAccount != "my-sa@my-project.iam.gserviceaccount.com" {
+		t.Errorf("expected service_account %q, got %q", "my-sa@my-project.iam.gserviceaccount.com", result.ServiceAccount)
+	}
+	if result.ServiceAccountTokenLifetime != 7200 {
+		t.Errorf("expected service_account_token_lifetime %d, got %d", 7200, result.ServiceAccountTokenLifetime)
+	}
+}
+
+func TestExpandGcpWifDeliveryConfig_serviceAccount(t *testing.T) {
+	input := []any{
+		map[string]any{
+			"subject_kind":                   "service_account",
+			"subject":                        "",
+			"service_account":                "my-sa@my-project.iam.gserviceaccount.com",
+			"service_account_token_lifetime": 3600,
+		},
+	}
+
+	result := expandGcpWifDeliveryConfig(input)
+
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.SubjectKind != client.WifSubjectKindServiceAccount {
+		t.Errorf("expected subject_kind %q, got %q", client.WifSubjectKindServiceAccount, result.SubjectKind)
+	}
+	if result.Subject != "" {
+		t.Errorf("expected empty subject, got %q", result.Subject)
+	}
+	if result.ServiceAccount != "my-sa@my-project.iam.gserviceaccount.com" {
+		t.Errorf("expected service_account %q, got %q", "my-sa@my-project.iam.gserviceaccount.com", result.ServiceAccount)
+	}
+}
+
+func TestExpandGcpWifDeliveryConfig_nil(t *testing.T) {
+	result := expandGcpWifDeliveryConfig([]any{})
+	if result != nil {
+		t.Errorf("expected nil result for empty input, got %+v", result)
+	}
+
+	result = expandGcpWifDeliveryConfig([]any{nil})
+	if result != nil {
+		t.Errorf("expected nil result for nil element, got %+v", result)
+	}
+}
+
+func TestFlattenGcpWifDeliveryConfig(t *testing.T) {
+	input := map[string]any{
+		"type":                           "gcp_wif",
+		"subject_kind":                   "hush_subject",
+		"subject":                        "my-subject",
+		"service_account":                "my-sa@my-project.iam.gserviceaccount.com",
+		"service_account_token_lifetime": float64(7200),
+	}
+
+	result := flattenGcpWifDeliveryConfig(input)
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 config block, got %d", len(result))
+	}
+
+	configMap, ok := result[0].(map[string]any)
+	if !ok {
+		t.Fatal("expected result[0] to be map[string]any")
+	}
+	if configMap["subject_kind"] != "hush_subject" {
+		t.Errorf("expected subject_kind %q, got %q", "hush_subject", configMap["subject_kind"])
+	}
+	if configMap["subject"] != "my-subject" {
+		t.Errorf("expected subject %q, got %q", "my-subject", configMap["subject"])
+	}
+	if configMap["service_account"] != "my-sa@my-project.iam.gserviceaccount.com" {
+		t.Errorf("expected service_account %q, got %q", "my-sa@my-project.iam.gserviceaccount.com", configMap["service_account"])
+	}
+	if configMap["service_account_token_lifetime"] != 7200 {
+		t.Errorf("expected service_account_token_lifetime %d, got %v", 7200, configMap["service_account_token_lifetime"])
+	}
+}

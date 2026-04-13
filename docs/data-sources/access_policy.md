@@ -55,6 +55,7 @@ output "status" {
 - `description` (String) The description of the access policy
 - `enabled` (Boolean) Whether the access policy is enabled
 - `env_delivery_config` (List of Object) Environment variable delivery configuration for the access policy (see [below for nested schema](#nestedatt--env_delivery_config))
+- `gcp_wif_delivery_config` (List of Object) GCP WIF delivery configuration for the access policy (see [below for nested schema](#nestedatt--gcp_wif_delivery_config))
 - `name` (String) The name of the access policy
 - `status` (String) The status of the access policy (syncing, ok, warning, error, disabled)
 - `status_detail` (String) The status detail of the access policy
@@ -88,6 +89,17 @@ Read-Only:
 - `key` (String)
 - `name` (String)
 - `type` (String)
+
+
+<a id="nestedatt--gcp_wif_delivery_config"></a>
+### Nested Schema for `gcp_wif_delivery_config`
+
+Read-Only:
+
+- `service_account` (String)
+- `service_account_token_lifetime` (Number)
+- `subject` (String)
+- `subject_kind` (String)
 
 
 <a id="nestedatt--volume_delivery_config"></a>

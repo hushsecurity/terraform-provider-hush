@@ -127,6 +127,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetSnowflakeAccessPrivilege(context.Background(), c, resourceId)
 			case "aws_wif_access_credential":
 				_, err = client.GetAwsWifAccessCredential(context.Background(), c, resourceId)
+			case "gcp_wif_access_credential":
+				_, err = client.GetGcpWifAccessCredential(context.Background(), c, resourceId)
 			case "gitlab_access_credential":
 				_, err = client.GetGitlabAccessCredential(context.Background(), c, resourceId)
 			case "gitlab_access_privilege":

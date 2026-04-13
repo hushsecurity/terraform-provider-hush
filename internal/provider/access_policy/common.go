@@ -23,9 +23,12 @@ const (
 	envDeliveryConfigDesc    = "Environment variable delivery configuration for the access policy"
 	volumeDeliveryConfigDesc = "Volume mount delivery configuration for the access policy"
 	awsWifDeliveryConfigDesc = "AWS WIF delivery configuration for the access policy"
+	gcpWifDeliveryConfigDesc = "GCP WIF delivery configuration for the access policy"
 	statusDesc               = "The status of the access policy (syncing, ok, warning, error, disabled)"
 	statusDetailDesc         = "The status detail of the access policy"
 )
+
+var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config"}
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -107,7 +110,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeList,
 			Optional:     true,
 			Description:  envDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"key": {
@@ -135,7 +138,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			MaxItems:     1,
 			Description:  volumeDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"mount_point": {
@@ -177,7 +180,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			MaxItems:     1,
 			Description:  awsWifDeliveryConfigDesc,
-			ExactlyOneOf: []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"},
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
 			Elem: &schema.Resource{
 				Schema: map[string]*schema.Schema{
 					"role_arn": {
@@ -185,17 +188,32 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 						Required:    true,
 						Description: "The AWS IAM role ARN to assume via WIF",
 					},
-					"subject_kind": {
-						Type:         schema.TypeString,
-						Optional:     true,
-						Default:      string(client.WifSubjectKindHushSubject),
-						ValidateFunc: validation.StringInSlice([]string{string(client.WifSubjectKindHushSubject), string(client.WifSubjectKindServiceAccount)}, false),
-						Description:  "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
-					},
-					"subject": {
+					"subject_kind": wifSubjectKindResourceSchema(),
+					"subject":      wifSubjectResourceSchema(),
+				},
+			},
+		},
+		"gcp_wif_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  gcpWifDeliveryConfigDesc,
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"subject_kind": wifSubjectKindResourceSchema(),
+					"subject":      wifSubjectResourceSchema(),
+					"service_account": {
 						Type:        schema.TypeString,
 						Optional:    true,
-						Description: "The federation subject identifier (required when subject_kind is hush_subject)",
+						Description: "The GCP service account email (e.g. my-sa@my-project.iam.gserviceaccount.com)",
+					},
+					"service_account_token_lifetime": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      3600,
+						ValidateFunc: validation.IntAtLeast(1),
+						Description:  "The token lifetime in seconds (default: 3600)",
 					},
 				},
 			},
@@ -352,15 +370,28 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 						Computed:    true,
 						Description: "The AWS IAM role ARN to assume via WIF",
 					},
-					"subject_kind": {
+					"subject_kind": wifSubjectKindDataSourceSchema(),
+					"subject":      wifSubjectDataSourceSchema(),
+				},
+			},
+		},
+		"gcp_wif_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: gcpWifDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"subject_kind": wifSubjectKindDataSourceSchema(),
+					"subject":      wifSubjectDataSourceSchema(),
+					"service_account": {
 						Type:        schema.TypeString,
 						Computed:    true,
-						Description: "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+						Description: "The GCP service account email",
 					},
-					"subject": {
-						Type:        schema.TypeString,
+					"service_account_token_lifetime": {
+						Type:        schema.TypeInt,
 						Computed:    true,
-						Description: "The subject identifier",
+						Description: "The token lifetime in seconds",
 					},
 				},
 			},
@@ -468,6 +499,9 @@ func expandDeliveryConfig(d *schema.ResourceData) any {
 	if v, ok := d.GetOk("aws_wif_delivery_config"); ok {
 		return expandAwsWifDeliveryConfig(v.([]any))
 	}
+	if v, ok := d.GetOk("gcp_wif_delivery_config"); ok {
+		return expandGcpWifDeliveryConfig(v.([]any))
+	}
 
 	return nil
 }
@@ -528,21 +562,91 @@ func expandVolumeDeliveryConfig(list []any) *client.VolumeDeliveryConfig {
 	}
 }
 
+// WIF shared helpers
+
+func wifSubjectKindResourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:         schema.TypeString,
+		Optional:     true,
+		Default:      string(client.WifSubjectKindHushSubject),
+		ValidateFunc: validation.StringInSlice([]string{string(client.WifSubjectKindHushSubject), string(client.WifSubjectKindServiceAccount)}, false),
+		Description:  "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+	}
+}
+
+func wifSubjectResourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Optional:    true,
+		Description: "The federation subject identifier (required when subject_kind is hush_subject)",
+	}
+}
+
+func wifSubjectKindDataSourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Computed:    true,
+		Description: "The subject kind for WIF. hush_subject uses hush:federation:<subject>, service_account uses system:serviceaccount:<namespace>:<serviceaccount>",
+	}
+}
+
+func wifSubjectDataSourceSchema() *schema.Schema {
+	return &schema.Schema{
+		Type:        schema.TypeString,
+		Computed:    true,
+		Description: "The federation subject identifier",
+	}
+}
+
+func expandWifSubject(configMap map[string]any) (client.WifSubjectKind, string) {
+	subjectKind := client.WifSubjectKind(configMap["subject_kind"].(string))
+	var subject string
+	if s, ok := configMap["subject"].(string); ok && s != "" {
+		subject = s
+	}
+	return subjectKind, subject
+}
+
+func flattenWifSubject(configMap map[string]any, result map[string]any) {
+	result["subject_kind"] = configMap["subject_kind"]
+	if subject, ok := configMap["subject"]; ok {
+		result["subject"] = subject
+	}
+}
+
 func expandAwsWifDeliveryConfig(list []any) *client.AwsWifDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return nil
 	}
 
 	configMap := list[0].(map[string]any)
+	subjectKind, subject := expandWifSubject(configMap)
 
-	config := &client.AwsWifDeliveryConfig{
+	return &client.AwsWifDeliveryConfig{
 		Type:        client.DeliveryTypeAwsWif,
 		RoleArn:     configMap["role_arn"].(string),
-		SubjectKind: client.WifSubjectKind(configMap["subject_kind"].(string)),
+		SubjectKind: subjectKind,
+		Subject:     subject,
+	}
+}
+
+func expandGcpWifDeliveryConfig(list []any) *client.GcpWifDeliveryConfig {
+	if len(list) == 0 || list[0] == nil {
+		return nil
 	}
 
-	if subject, ok := configMap["subject"].(string); ok && subject != "" {
-		config.Subject = subject
+	configMap := list[0].(map[string]any)
+	subjectKind, subject := expandWifSubject(configMap)
+
+	config := &client.GcpWifDeliveryConfig{
+		Type:                        client.DeliveryTypeGcpWif,
+		SubjectKind:                 subjectKind,
+		Subject:                     subject,
+		ServiceAccountTokenLifetime: configMap["service_account_token_lifetime"].(int),
+	}
+
+	if sa, ok := configMap["service_account"].(string); ok && sa != "" {
+		config.ServiceAccount = sa
 	}
 
 	return config
@@ -584,6 +688,10 @@ func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics 
 		if err := d.Set("aws_wif_delivery_config", flattenAwsWifDeliveryConfig(configMap)); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set aws_wif_delivery_config: %w", err))
 		}
+	case client.DeliveryTypeGcpWif:
+		if err := d.Set("gcp_wif_delivery_config", flattenGcpWifDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set gcp_wif_delivery_config: %w", err))
+		}
 	}
 
 	return nil
@@ -611,11 +719,25 @@ func flattenVolumeDeliveryConfig(configMap map[string]any) []any {
 
 func flattenAwsWifDeliveryConfig(configMap map[string]any) []any {
 	result := map[string]any{
-		"role_arn":     configMap["role_arn"],
-		"subject_kind": configMap["subject_kind"],
+		"role_arn": configMap["role_arn"],
 	}
-	if subject, ok := configMap["subject"]; ok {
-		result["subject"] = subject
+	flattenWifSubject(configMap, result)
+	return []any{result}
+}
+
+func flattenGcpWifDeliveryConfig(configMap map[string]any) []any {
+	result := map[string]any{}
+	flattenWifSubject(configMap, result)
+	if sa, ok := configMap["service_account"]; ok {
+		result["service_account"] = sa
+	}
+	if lifetime, ok := configMap["service_account_token_lifetime"]; ok {
+		switch v := lifetime.(type) {
+		case float64:
+			result["service_account_token_lifetime"] = int(v)
+		case int:
+			result["service_account_token_lifetime"] = v
+		}
 	}
 	return []any{result}
 }
