@@ -225,3 +225,48 @@ resource "hush_access_policy" "aws_wif_sa_example" {
     subject_kind = "service_account"
   }
 }
+
+# Create an access policy with GCP WIF delivery (hush_subject)
+resource "hush_access_policy" "gcp_wif_example" {
+  name                 = "prod-gcp-wif-policy"
+  description          = "Access policy with GCP WIF delivery"
+  enabled              = true
+  access_credential_id = hush_gcp_wif_access_credential.example.id
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  gcp_wif_delivery_config {
+    subject_kind                  = "hush_subject"
+    subject                       = "my-workload-identity"
+    service_account               = "my-sa@my-project.iam.gserviceaccount.com"
+    service_account_token_lifetime = 7200
+  }
+}
+
+# Create an access policy with GCP WIF delivery (service_account)
+resource "hush_access_policy" "gcp_wif_sa_example" {
+  name                 = "prod-gcp-wif-sa-policy"
+  description          = "Access policy with GCP WIF delivery using service account"
+  enabled              = true
+  access_credential_id = hush_gcp_wif_access_credential.example.id
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  attestation_criteria {
+    type  = "k8s:sa"
+    value = "app-service-account"
+  }
+
+  gcp_wif_delivery_config {
+    subject_kind    = "service_account"
+    service_account = "my-sa@my-project.iam.gserviceaccount.com"
+  }
+}
