@@ -23,11 +23,12 @@ const (
 	envDeliveryConfigDesc    = "Environment variable delivery configuration for the access policy"
 	volumeDeliveryConfigDesc = "Volume mount delivery configuration for the access policy"
 	awsWifDeliveryConfigDesc = "AWS WIF delivery configuration for the access policy"
+	gcpWifDeliveryConfigDesc = "GCP WIF delivery configuration for the access policy"
 	statusDesc               = "The status of the access policy (syncing, ok, warning, error, disabled)"
 	statusDetailDesc         = "The status detail of the access policy"
 )
 
-var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config"}
+var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config"}
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -192,6 +193,31 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"gcp_wif_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  gcpWifDeliveryConfigDesc,
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"subject_kind": wifSubjectKindResourceSchema(),
+					"subject":      wifSubjectResourceSchema(),
+					"service_account": {
+						Type:        schema.TypeString,
+						Optional:    true,
+						Description: "The GCP service account email (e.g. my-sa@my-project.iam.gserviceaccount.com)",
+					},
+					"service_account_token_lifetime": {
+						Type:         schema.TypeInt,
+						Optional:     true,
+						Default:      3600,
+						ValidateFunc: validation.IntAtLeast(1),
+						Description:  "The token lifetime in seconds (default: 3600)",
+					},
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -349,6 +375,27 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"gcp_wif_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: gcpWifDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"subject_kind": wifSubjectKindDataSourceSchema(),
+					"subject":      wifSubjectDataSourceSchema(),
+					"service_account": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The GCP service account email",
+					},
+					"service_account_token_lifetime": {
+						Type:        schema.TypeInt,
+						Computed:    true,
+						Description: "The token lifetime in seconds",
+					},
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -451,6 +498,9 @@ func expandDeliveryConfig(d *schema.ResourceData) any {
 	}
 	if v, ok := d.GetOk("aws_wif_delivery_config"); ok {
 		return expandAwsWifDeliveryConfig(v.([]any))
+	}
+	if v, ok := d.GetOk("gcp_wif_delivery_config"); ok {
+		return expandGcpWifDeliveryConfig(v.([]any))
 	}
 
 	return nil
@@ -580,6 +630,28 @@ func expandAwsWifDeliveryConfig(list []any) *client.AwsWifDeliveryConfig {
 	}
 }
 
+func expandGcpWifDeliveryConfig(list []any) *client.GcpWifDeliveryConfig {
+	if len(list) == 0 || list[0] == nil {
+		return nil
+	}
+
+	configMap := list[0].(map[string]any)
+	subjectKind, subject := expandWifSubject(configMap)
+
+	config := &client.GcpWifDeliveryConfig{
+		Type:                        client.DeliveryTypeGcpWif,
+		SubjectKind:                 subjectKind,
+		Subject:                     subject,
+		ServiceAccountTokenLifetime: configMap["service_account_token_lifetime"].(int),
+	}
+
+	if sa, ok := configMap["service_account"].(string); ok && sa != "" {
+		config.ServiceAccount = sa
+	}
+
+	return config
+}
+
 func flattenAttestationCriteria(criteria []client.AttestationCriterion) []any {
 	result := make([]any, len(criteria))
 	for i, c := range criteria {
@@ -616,6 +688,10 @@ func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics 
 		if err := d.Set("aws_wif_delivery_config", flattenAwsWifDeliveryConfig(configMap)); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set aws_wif_delivery_config: %w", err))
 		}
+	case client.DeliveryTypeGcpWif:
+		if err := d.Set("gcp_wif_delivery_config", flattenGcpWifDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set gcp_wif_delivery_config: %w", err))
+		}
 	}
 
 	return nil
@@ -646,6 +722,23 @@ func flattenAwsWifDeliveryConfig(configMap map[string]any) []any {
 		"role_arn": configMap["role_arn"],
 	}
 	flattenWifSubject(configMap, result)
+	return []any{result}
+}
+
+func flattenGcpWifDeliveryConfig(configMap map[string]any) []any {
+	result := map[string]any{}
+	flattenWifSubject(configMap, result)
+	if sa, ok := configMap["service_account"]; ok {
+		result["service_account"] = sa
+	}
+	if lifetime, ok := configMap["service_account_token_lifetime"]; ok {
+		switch v := lifetime.(type) {
+		case float64:
+			result["service_account_token_lifetime"] = int(v)
+		case int:
+			result["service_account_token_lifetime"] = v
+		}
+	}
 	return []any{result}
 }
 

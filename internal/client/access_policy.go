@@ -30,6 +30,7 @@ const (
 	DeliveryTypeEnv    DeliveryType = "env"
 	DeliveryTypeVolume DeliveryType = "volume"
 	DeliveryTypeAwsWif DeliveryType = "aws_wif"
+	DeliveryTypeGcpWif DeliveryType = "gcp_wif"
 )
 
 type WifSubjectKind string
@@ -74,6 +75,14 @@ type AwsWifDeliveryConfig struct {
 	RoleArn     string         `json:"role_arn"`
 	SubjectKind WifSubjectKind `json:"subject_kind"`
 	Subject     string         `json:"subject,omitempty"`
+}
+
+type GcpWifDeliveryConfig struct {
+	Type                        DeliveryType   `json:"type"`
+	SubjectKind                 WifSubjectKind `json:"subject_kind"`
+	Subject                     string         `json:"subject,omitempty"`
+	ServiceAccount              string         `json:"service_account,omitempty"`
+	ServiceAccountTokenLifetime int            `json:"service_account_token_lifetime,omitempty"`
 }
 
 type AccessPolicy struct {
