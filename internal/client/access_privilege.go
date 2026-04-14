@@ -910,6 +910,58 @@ func UpdateGitlabAccessPrivilege(ctx context.Context, c *Client, id string, inpu
 	return &resp, nil
 }
 
+// Salesforce
+
+type SalesforceAccessPrivilege struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	RunAsUser   string   `json:"run_as_user"`
+	Scopes      []string `json:"scopes"`
+}
+
+type CreateSalesforceAccessPrivilegeInput struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	RunAsUser   string   `json:"run_as_user"`
+	Scopes      []string `json:"scopes"`
+}
+
+type UpdateSalesforceAccessPrivilegeInput struct {
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	RunAsUser   *string   `json:"run_as_user,omitempty"`
+	Scopes      *[]string `json:"scopes,omitempty"`
+}
+
+func CreateSalesforceAccessPrivilege(ctx context.Context, c *Client, input *CreateSalesforceAccessPrivilegeInput) (*SalesforceAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/salesforce"
+	var resp SalesforceAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetSalesforceAccessPrivilege(ctx context.Context, c *Client, id string) (*SalesforceAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/salesforce/%s", accessPrivilegesEndpoint, id)
+	var resp SalesforceAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateSalesforceAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateSalesforceAccessPrivilegeInput) (*SalesforceAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/salesforce/%s", accessPrivilegesEndpoint, id)
+	var resp SalesforceAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

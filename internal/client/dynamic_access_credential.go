@@ -28,6 +28,7 @@ const (
 	AccessCredentialTypeGCPWIF        AccessCredentialType = "gcp_wif"
 	AccessCredentialTypeGitlab        AccessCredentialType = "gitlab"
 	AccessCredentialTypeDatadog       AccessCredentialType = "datadog"
+	AccessCredentialTypeSalesforce    AccessCredentialType = "salesforce"
 )
 
 // Postgres
@@ -1568,4 +1569,73 @@ func UpdateDatadogAccessCredential(ctx context.Context, c *Client, id string, in
 
 func (d DatadogAccessCredential) statusFields() (string, string) {
 	return d.Status, d.StatusDetail
+}
+
+// Salesforce
+
+type SalesforceAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	InstanceURL   string               `json:"instance_url"`
+	ClientID      string               `json:"client_id"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateSalesforceAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	InstanceURL   string   `json:"instance_url"`
+	ClientID      string   `json:"client_id"`
+	ClientSecret  string   `json:"client_secret"`
+}
+
+type UpdateSalesforceAccessCredentialInput struct {
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	InstanceURL  *string `json:"instance_url,omitempty"`
+	ClientID     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+}
+
+func CreateSalesforceAccessCredential(ctx context.Context, c *Client, input *CreateSalesforceAccessCredentialInput) (*SalesforceAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/salesforce"
+	var resp SalesforceAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetSalesforceAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetSalesforceAccessCredential(ctx context.Context, c *Client, id string) (*SalesforceAccessCredential, error) {
+	path := fmt.Sprintf("%s/salesforce/%s", accessCredentialsEndpoint, id)
+	var resp SalesforceAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateSalesforceAccessCredential(ctx context.Context, c *Client, id string, input *UpdateSalesforceAccessCredentialInput) (*SalesforceAccessCredential, error) {
+	path := fmt.Sprintf("%s/salesforce/%s", accessCredentialsEndpoint, id)
+	var resp SalesforceAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetSalesforceAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (s SalesforceAccessCredential) statusFields() (string, string) {
+	return s.Status, s.StatusDetail
 }

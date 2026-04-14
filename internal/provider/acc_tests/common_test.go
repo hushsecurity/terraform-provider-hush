@@ -137,6 +137,10 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetDatadogAccessCredential(context.Background(), c, resourceId)
 			case "datadog_access_privilege":
 				_, err = client.GetDatadogAccessPrivilege(context.Background(), c, resourceId)
+			case "salesforce_access_credential":
+				_, err = client.GetSalesforceAccessCredential(context.Background(), c, resourceId)
+			case "salesforce_access_privilege":
+				_, err = client.GetSalesforceAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
