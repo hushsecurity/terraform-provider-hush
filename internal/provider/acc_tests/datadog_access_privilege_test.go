@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceDatadogAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("datadog_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -62,7 +61,6 @@ func TestAccResourceDatadogAccessPrivilege(t *testing.T) {
 
 func TestAccResourceDatadogAccessPrivilege_noScopes(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("datadog_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -89,7 +87,6 @@ func TestAccResourceDatadogAccessPrivilege_noScopes(t *testing.T) {
 
 func TestAccDataSourceDatadogAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("datadog_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

@@ -1,23 +1,14 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func testAccMariaDBAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-}
-
 func TestAccResourceMariaDBAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccMariaDBAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mariadb_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -70,7 +61,6 @@ func TestAccResourceMariaDBAccessCredential(t *testing.T) {
 
 func TestAccDataSourceMariaDBAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccMariaDBAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mariadb_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -93,12 +83,11 @@ func TestAccDataSourceMariaDBAccessCredential(t *testing.T) {
 }
 
 func mariadbAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_mariadb_access_credential" "test" {
   name           = "test-mariadb-cred"
   description    = "test mariadb credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   db_name        = "testdb"
   host           = "test-mariadb.example.com"
   port           = 3306
@@ -110,12 +99,11 @@ resource "hush_mariadb_access_credential" "test" {
 }
 
 func mariadbAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_mariadb_access_credential" "test" {
   name           = "test-mariadb-cred-updated"
   description    = "updated mariadb credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   db_name        = "testdb"
   host           = "test-mariadb.example.com"
   port           = 3306

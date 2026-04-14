@@ -1,26 +1,25 @@
 package acc_tests
 
 import (
-	"os"
+	"fmt"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
-func testAccGcpWifAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestDeploymentID2) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID2)
-	}
+func init() {
+	registerMockSetup(func(ms *testutil.MockServer) {
+		ms.OnOperation("access_credentials/gcp_wif", testutil.OpCreate, func(op testutil.Operation, obj map[string]any) *testutil.HookError {
+			obj["issuer_url"] = "https://hush-oidc.example.com/" + fmt.Sprintf("%v", obj["id"])
+			return nil
+		})
+	})
 }
 
 func TestAccResourceGcpWifAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccGcpWifAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gcp_wif_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -40,7 +39,7 @@ func TestAccResourceGcpWifAccessCredential(t *testing.T) {
 						"hush_gcp_wif_access_credential.test", "deployment_ids.#", "1",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_gcp_wif_access_credential.test", "deployment_ids.0", os.Getenv(envHushTestDeploymentID),
+						"hush_gcp_wif_access_credential.test", "deployment_ids.0", mockDeploymentID,
 					),
 					resource.TestCheckResourceAttr(
 						"hush_gcp_wif_access_credential.test", "project_number", "123456789012",
@@ -72,10 +71,10 @@ func TestAccResourceGcpWifAccessCredential(t *testing.T) {
 						"hush_gcp_wif_access_credential.test", "deployment_ids.#", "2",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_gcp_wif_access_credential.test", "deployment_ids.0", os.Getenv(envHushTestDeploymentID),
+						"hush_gcp_wif_access_credential.test", "deployment_ids.0", mockDeploymentID,
 					),
 					resource.TestCheckResourceAttr(
-						"hush_gcp_wif_access_credential.test", "deployment_ids.1", os.Getenv(envHushTestDeploymentID2),
+						"hush_gcp_wif_access_credential.test", "deployment_ids.1", mockDeploymentID2,
 					),
 					resource.TestCheckResourceAttr(
 						"hush_gcp_wif_access_credential.test", "project_number", "987654321098",
@@ -94,7 +93,6 @@ func TestAccResourceGcpWifAccessCredential(t *testing.T) {
 
 func TestAccDataSourceGcpWifAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccGcpWifAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gcp_wif_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -123,12 +121,11 @@ func TestAccDataSourceGcpWifAccessCredential(t *testing.T) {
 }
 
 func gcpWifAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred"
   description          = "test gcp wif credential"
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
   project_number       = "123456789012"
   pool_id              = "my-wif-pool"
   workload_provider_id = "my-wif-provider"
@@ -137,13 +134,11 @@ resource "hush_gcp_wif_access_credential" "test" {
 }
 
 func gcpWifAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	deploymentID2 := os.Getenv(envHushTestDeploymentID2)
 	return `
 resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred-updated"
   description          = "updated gcp wif credential"
-  deployment_ids       = ["` + deploymentID + `", "` + deploymentID2 + `"]
+  deployment_ids       = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
   project_number       = "987654321098"
   pool_id              = "my-wif-pool-updated"
   workload_provider_id = "my-wif-provider-updated"

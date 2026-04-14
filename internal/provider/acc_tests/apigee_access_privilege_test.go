@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceApigeeAccessPrivilege_appName(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("apigee_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -59,7 +58,6 @@ func TestAccResourceApigeeAccessPrivilege_appName(t *testing.T) {
 
 func TestAccResourceApigeeAccessPrivilege_appConfig(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("apigee_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -80,7 +78,6 @@ func TestAccResourceApigeeAccessPrivilege_appConfig(t *testing.T) {
 
 func TestAccDataSourceApigeeAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("apigee_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

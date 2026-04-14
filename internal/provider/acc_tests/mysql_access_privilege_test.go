@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceMySQLAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mysql_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -56,7 +55,6 @@ func TestAccResourceMySQLAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceMySQLAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mysql_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

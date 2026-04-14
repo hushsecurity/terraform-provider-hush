@@ -1,28 +1,16 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const envHushTestGCPSAKey = "HUSH_TEST_GCP_SA_KEY"
-
-func testAccGCPSAAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestGCPSAKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestGCPSAKey)
-	}
-}
+const mockGCPSAKey = `{"type":"service_account","project_id":"mock"}`
 
 func TestAccResourceGCPSAAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccGCPSAAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gcp_sa_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -60,7 +48,6 @@ func TestAccResourceGCPSAAccessCredential(t *testing.T) {
 
 func TestAccDataSourceGCPSAAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccGCPSAAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gcp_sa_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -80,27 +67,27 @@ func TestAccDataSourceGCPSAAccessCredential(t *testing.T) {
 }
 
 func gcpSAAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	serviceAccountKey := os.Getenv(envHushTestGCPSAKey)
 	return `
 resource "hush_gcp_sa_access_credential" "test" {
   name                = "test-gcp-sa-cred"
   description         = "test gcp service account credential"
-  deployment_ids      = ["` + deploymentID + `"]
-  service_account_key = "` + serviceAccountKey + `"
+  deployment_ids      = ["` + mockDeploymentID + `"]
+  service_account_key = <<-EOF
+` + mockGCPSAKey + `
+EOF
 }
 `
 }
 
 func gcpSAAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	serviceAccountKey := os.Getenv(envHushTestGCPSAKey)
 	return `
 resource "hush_gcp_sa_access_credential" "test" {
   name                = "test-gcp-sa-cred-updated"
   description         = "updated gcp service account credential"
-  deployment_ids      = ["` + deploymentID + `"]
-  service_account_key = "` + serviceAccountKey + `"
+  deployment_ids      = ["` + mockDeploymentID + `"]
+  service_account_key = <<-EOF
+` + mockGCPSAKey + `
+EOF
 }
 `
 }

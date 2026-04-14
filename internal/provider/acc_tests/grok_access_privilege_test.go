@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceGrokAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("grok_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -77,7 +76,6 @@ func TestAccResourceGrokAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceGrokAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("grok_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

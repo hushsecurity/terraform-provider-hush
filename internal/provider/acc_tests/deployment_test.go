@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceDeployment(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("deployment", "v1/deployments"),
 		Steps: []resource.TestStep{
@@ -47,7 +46,6 @@ func TestAccResourceDeployment(t *testing.T) {
 
 func TestAccDataSourceDeployment(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("deployment", "v1/deployments"),
 		Steps: []resource.TestStep{
@@ -74,6 +72,7 @@ const (
 resource "hush_deployment" "test" {
   name        = "test-deployment"
   description = "test deployment description"
+  kind        = "k8s"
 }
 `
 
@@ -81,6 +80,7 @@ resource "hush_deployment" "test" {
 resource "hush_deployment" "test" {
   name        = "test-deployment-updated"
   description = "updated deployment description"
+  kind        = "k8s"
 }
 `
 

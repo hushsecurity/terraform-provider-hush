@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceGitlabAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gitlab_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -68,7 +67,6 @@ func TestAccResourceGitlabAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceGitlabAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gitlab_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

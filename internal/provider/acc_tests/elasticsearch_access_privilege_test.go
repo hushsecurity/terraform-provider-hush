@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceElasticsearchAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("elasticsearch_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -59,7 +58,6 @@ func TestAccResourceElasticsearchAccessPrivilege(t *testing.T) {
 
 func TestAccResourceElasticsearchAccessPrivilege_indicesOnly(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("elasticsearch_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -83,7 +81,6 @@ func TestAccResourceElasticsearchAccessPrivilege_indicesOnly(t *testing.T) {
 
 func TestAccDataSourceElasticsearchAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("elasticsearch_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

@@ -1,23 +1,14 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func testAccPostgresAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-}
-
 func TestAccResourcePostgresAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPostgresAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("postgres_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -70,7 +61,6 @@ func TestAccResourcePostgresAccessCredential(t *testing.T) {
 
 func TestAccDataSourcePostgresAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPostgresAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("postgres_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -96,12 +86,11 @@ func TestAccDataSourcePostgresAccessCredential(t *testing.T) {
 }
 
 func postgresAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_postgres_access_credential" "test" {
   name           = "test-postgres-cred"
   description    = "test postgres credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   db_name        = "testdb"
   host           = "test-db.example.com"
   port           = 5432
@@ -113,12 +102,11 @@ resource "hush_postgres_access_credential" "test" {
 }
 
 func postgresAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_postgres_access_credential" "test" {
   name           = "test-postgres-cred-updated"
   description    = "updated postgres credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   db_name        = "testdb"
   host           = "test-db.example.com"
   port           = 5432

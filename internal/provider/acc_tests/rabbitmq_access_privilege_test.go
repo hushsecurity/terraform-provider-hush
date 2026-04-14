@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceRabbitmqAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("rabbitmq_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -68,7 +67,6 @@ func TestAccResourceRabbitmqAccessPrivilege(t *testing.T) {
 
 func TestAccResourceRabbitmqAccessPrivilege_multiplePermissions(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("rabbitmq_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -95,7 +93,6 @@ func TestAccResourceRabbitmqAccessPrivilege_multiplePermissions(t *testing.T) {
 
 func TestAccDataSourceRabbitmqAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("rabbitmq_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

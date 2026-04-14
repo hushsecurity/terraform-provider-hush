@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceMongoDBAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mongodb_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -56,7 +55,6 @@ func TestAccResourceMongoDBAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceMongoDBAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mongodb_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
