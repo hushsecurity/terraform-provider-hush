@@ -751,6 +751,58 @@ func UpdateTwilioAccessPrivilege(ctx context.Context, c *Client, id string, inpu
 	return &resp, nil
 }
 
+// Datadog
+
+type DatadogAccessPrivilege struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	KeyType     string   `json:"key_type"`
+	Scopes      []string `json:"scopes,omitempty"`
+}
+
+type CreateDatadogAccessPrivilegeInput struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	KeyType     string   `json:"key_type"`
+	Scopes      []string `json:"scopes,omitempty"`
+}
+
+type UpdateDatadogAccessPrivilegeInput struct {
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	KeyType     *string   `json:"key_type,omitempty"`
+	Scopes      *[]string `json:"scopes,omitempty"`
+}
+
+func CreateDatadogAccessPrivilege(ctx context.Context, c *Client, input *CreateDatadogAccessPrivilegeInput) (*DatadogAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/datadog"
+	var resp DatadogAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetDatadogAccessPrivilege(ctx context.Context, c *Client, id string) (*DatadogAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/datadog/%s", accessPrivilegesEndpoint, id)
+	var resp DatadogAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateDatadogAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateDatadogAccessPrivilegeInput) (*DatadogAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/datadog/%s", accessPrivilegesEndpoint, id)
+	var resp DatadogAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Snowflake
 
 type SnowflakeGrant struct {

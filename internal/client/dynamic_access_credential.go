@@ -27,6 +27,7 @@ const (
 	AccessCredentialTypeAWSWIF        AccessCredentialType = "aws_wif"
 	AccessCredentialTypeGCPWIF        AccessCredentialType = "gcp_wif"
 	AccessCredentialTypeGitlab        AccessCredentialType = "gitlab"
+	AccessCredentialTypeDatadog       AccessCredentialType = "datadog"
 )
 
 // Postgres
@@ -1499,4 +1500,72 @@ func UpdateGcpWifAccessCredential(ctx context.Context, c *Client, id string, inp
 
 func (g GcpWifAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
+}
+
+// Datadog
+
+type DatadogAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Site          string               `json:"site,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateDatadogAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	APIKey        string   `json:"api_key"`
+	AppKey        string   `json:"app_key,omitempty"`
+	Site          string   `json:"site,omitempty"`
+}
+
+type UpdateDatadogAccessCredentialInput struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	APIKey      *string `json:"api_key,omitempty"`
+	AppKey      *string `json:"app_key,omitempty"`
+	Site        *string `json:"site,omitempty"`
+}
+
+func CreateDatadogAccessCredential(ctx context.Context, c *Client, input *CreateDatadogAccessCredentialInput) (*DatadogAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/datadog"
+	var resp DatadogAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetDatadogAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetDatadogAccessCredential(ctx context.Context, c *Client, id string) (*DatadogAccessCredential, error) {
+	path := fmt.Sprintf("%s/datadog/%s", accessCredentialsEndpoint, id)
+	var resp DatadogAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateDatadogAccessCredential(ctx context.Context, c *Client, id string, input *UpdateDatadogAccessCredentialInput) (*DatadogAccessCredential, error) {
+	path := fmt.Sprintf("%s/datadog/%s", accessCredentialsEndpoint, id)
+	var resp DatadogAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetDatadogAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (d DatadogAccessCredential) statusFields() (string, string) {
+	return d.Status, d.StatusDetail
 }
