@@ -14,3 +14,6 @@ terraform.tfstate.backup
 .terraform/
 .terraform.d/
 bin/
+
+# Mock test fixtures (fetched from hush-api repo)
+testdata/

@@ -1,5 +1,7 @@
-PLUGIN_NAME = terraform-provider-hush
-OUT_DIR = bin
+PLUGIN_NAME         = terraform-provider-hush
+OUT_DIR             = bin
+MOCK_FIXTURES_S3    = s3://hush-knowledgebase/openapi/mock_api_fixtures.json
+MOCK_FIXTURES_LOCAL = testdata/mock_api_fixtures.json
 
 .PHONY: all
 all: build
@@ -38,11 +40,11 @@ generate:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -v $$(go list ./... | grep -v /acc_tests)
 
 .PHONY: test-acc
 test-acc:
-	TF_ACC=1 go test -v ./... -timeout 120m
+	go test -v ./internal/provider/acc_tests/... -parallel 10 -count=1 -timeout 30m
 
 .PHONY: docs
 docs:
@@ -53,3 +55,8 @@ docs:
 .PHONY: validate-docs
 validate-docs:
 	@tfplugindocs validate
+
+.PHONY: fetch-mock-fixtures
+fetch-mock-fixtures:
+	@mkdir -p testdata
+	@aws s3 cp $(MOCK_FIXTURES_S3) $(MOCK_FIXTURES_LOCAL)
