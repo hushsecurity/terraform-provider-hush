@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceSendGridAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("sendgrid_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -62,7 +61,6 @@ func TestAccResourceSendGridAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceSendGridAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("sendgrid_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

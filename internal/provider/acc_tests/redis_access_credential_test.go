@@ -1,23 +1,14 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func testAccRedisAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-}
-
 func TestAccResourceRedisAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccRedisAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -67,7 +58,6 @@ func TestAccResourceRedisAccessCredential(t *testing.T) {
 
 func TestAccDataSourceRedisAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccRedisAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -90,12 +80,11 @@ func TestAccDataSourceRedisAccessCredential(t *testing.T) {
 }
 
 func redisAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_redis_access_credential" "test" {
   name           = "test-redis-cred"
   description    = "test redis credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   host           = "test-redis.example.com"
   port           = 6379
   tls            = true
@@ -106,12 +95,11 @@ resource "hush_redis_access_credential" "test" {
 }
 
 func redisAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_redis_access_credential" "test" {
   name           = "test-redis-cred-updated"
   description    = "updated redis credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   host           = "test-redis.example.com"
   port           = 6379
   tls            = true

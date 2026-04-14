@@ -1,23 +1,14 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func testAccSnowflakeAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-}
-
 func TestAccResourceSnowflakeAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccSnowflakeAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("snowflake_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -73,7 +64,6 @@ func TestAccResourceSnowflakeAccessCredential(t *testing.T) {
 
 func TestAccDataSourceSnowflakeAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccSnowflakeAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("snowflake_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -99,12 +89,11 @@ func TestAccDataSourceSnowflakeAccessCredential(t *testing.T) {
 }
 
 func snowflakeAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_snowflake_access_credential" "test" {
   name           = "test-snowflake-cred"
   description    = "test snowflake credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   account        = "TESTORG-TESTACCOUNT"
   warehouse      = "COMPUTE_WH"
   database       = "TESTDB"
@@ -117,12 +106,11 @@ resource "hush_snowflake_access_credential" "test" {
 }
 
 func snowflakeAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_snowflake_access_credential" "test" {
   name           = "test-snowflake-cred-updated"
   description    = "updated snowflake credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   account        = "TESTORG-TESTACCOUNT"
   warehouse      = "COMPUTE_WH"
   database       = "TESTDB"

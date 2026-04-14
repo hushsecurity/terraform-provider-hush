@@ -1,26 +1,26 @@
 package acc_tests
 
 import (
-	"os"
+	"fmt"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
-func testAccAwsWifAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestDeploymentID2) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID2)
-	}
+func init() {
+	registerMockSetup(func(ms *testutil.MockServer) {
+		ms.OnOperation("access_credentials/aws_wif", testutil.OpCreate, func(op testutil.Operation, obj map[string]any) *testutil.HookError {
+			obj["audience"] = "sts.amazonaws.com"
+			obj["issuer_url"] = "https://hush-oidc.example.com/" + fmt.Sprintf("%v", obj["id"])
+			return nil
+		})
+	})
 }
 
 func TestAccResourceAwsWifAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAwsWifAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("aws_wif_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -40,7 +40,7 @@ func TestAccResourceAwsWifAccessCredential(t *testing.T) {
 						"hush_aws_wif_access_credential.test", "deployment_ids.#", "1",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_aws_wif_access_credential.test", "deployment_ids.0", os.Getenv(envHushTestDeploymentID),
+						"hush_aws_wif_access_credential.test", "deployment_ids.0", mockDeploymentID,
 					),
 					resource.TestCheckResourceAttr(
 						"hush_aws_wif_access_credential.test", "audience", "sts.amazonaws.com",
@@ -66,10 +66,10 @@ func TestAccResourceAwsWifAccessCredential(t *testing.T) {
 						"hush_aws_wif_access_credential.test", "deployment_ids.#", "2",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_aws_wif_access_credential.test", "deployment_ids.0", os.Getenv(envHushTestDeploymentID),
+						"hush_aws_wif_access_credential.test", "deployment_ids.0", mockDeploymentID,
 					),
 					resource.TestCheckResourceAttr(
-						"hush_aws_wif_access_credential.test", "deployment_ids.1", os.Getenv(envHushTestDeploymentID2),
+						"hush_aws_wif_access_credential.test", "deployment_ids.1", mockDeploymentID2,
 					),
 				),
 			},
@@ -79,7 +79,6 @@ func TestAccResourceAwsWifAccessCredential(t *testing.T) {
 
 func TestAccDataSourceAwsWifAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccAwsWifAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("aws_wif_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -102,24 +101,21 @@ func TestAccDataSourceAwsWifAccessCredential(t *testing.T) {
 }
 
 func awsWifAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred"
   description    = "test aws wif credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
 }
 `
 }
 
 func awsWifAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	deploymentID2 := os.Getenv(envHushTestDeploymentID2)
 	return `
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred-updated"
   description    = "updated aws wif credential"
-  deployment_ids = ["` + deploymentID + `", "` + deploymentID2 + `"]
+  deployment_ids = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
 }
 `
 }

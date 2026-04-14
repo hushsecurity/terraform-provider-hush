@@ -1,28 +1,28 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
-const envHushTestApigeeServiceAccountKey = "HUSH_TEST_APIGEE_SERVICE_ACCOUNT_KEY"
+const mockApigeeServiceAccountKey = `{"type":"service_account","project_id":"mock"}`
 
-func testAccApigeeAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestApigeeServiceAccountKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestApigeeServiceAccountKey)
-	}
+func init() {
+	registerMockSetup(func(ms *testutil.MockServer) {
+		ms.OnOperation("access_credentials/apigee", testutil.OpCreate, func(op testutil.Operation, obj map[string]any) *testutil.HookError {
+			if _, ok := obj["service_account_key"]; ok {
+				obj["has_provider_credentials"] = true
+			}
+			return nil
+		})
+	})
 }
 
 func TestAccResourceApigeeAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccApigeeAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("apigee_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -63,7 +63,6 @@ func TestAccResourceApigeeAccessCredential(t *testing.T) {
 
 func TestAccDataSourceApigeeAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccApigeeAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("apigee_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -83,30 +82,26 @@ func TestAccDataSourceApigeeAccessCredential(t *testing.T) {
 }
 
 func apigeeAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	serviceAccountKey := os.Getenv(envHushTestApigeeServiceAccountKey)
 	return `
 resource "hush_apigee_access_credential" "test" {
   name              = "test-apigee-cred"
   description       = "test apigee credential"
-  deployment_ids    = ["` + deploymentID + `"]
+  deployment_ids    = ["` + mockDeploymentID + `"]
   service_account_key = <<-EOF
-` + serviceAccountKey + `
+` + mockApigeeServiceAccountKey + `
 EOF
 }
 `
 }
 
 func apigeeAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	serviceAccountKey := os.Getenv(envHushTestApigeeServiceAccountKey)
 	return `
 resource "hush_apigee_access_credential" "test" {
   name              = "test-apigee-cred-updated"
   description       = "updated apigee credential"
-  deployment_ids    = ["` + deploymentID + `"]
+  deployment_ids    = ["` + mockDeploymentID + `"]
   service_account_key = <<-EOF
-` + serviceAccountKey + `
+` + mockApigeeServiceAccountKey + `
 EOF
 }
 `

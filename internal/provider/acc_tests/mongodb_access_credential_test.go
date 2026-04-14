@@ -1,23 +1,14 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-func testAccMongoDBAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-}
-
 func TestAccResourceMongoDBAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccMongoDBAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mongodb_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -73,7 +64,6 @@ func TestAccResourceMongoDBAccessCredential(t *testing.T) {
 
 func TestAccDataSourceMongoDBAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccMongoDBAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("mongodb_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -96,12 +86,11 @@ func TestAccDataSourceMongoDBAccessCredential(t *testing.T) {
 }
 
 func mongodbAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_mongodb_access_credential" "test" {
   name           = "test-mongodb-cred"
   description    = "test mongodb credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   db_name        = "testdb"
   host           = "test-mongo.example.com"
   port           = 27017
@@ -114,12 +103,11 @@ resource "hush_mongodb_access_credential" "test" {
 }
 
 func mongodbAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_mongodb_access_credential" "test" {
   name           = "test-mongodb-cred-updated"
   description    = "updated mongodb credential"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
   db_name        = "testdb"
   host           = "test-mongo.example.com"
   port           = 27017

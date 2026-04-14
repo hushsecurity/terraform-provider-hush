@@ -10,17 +10,32 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	p "github.com/hushsecurity/terraform-provider-hush/internal/provider"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
 const (
-	envHushAPIKeyID          = "HUSH_API_KEY_ID"
-	envHushAPIKeySecret      = "HUSH_API_KEY_SECRET"
-	envHushRealm             = "HUSH_REALM"
-	envHushTestDeploymentID  = "HUSH_TEST_DEPLOYMENT_ID"
-	envHushTestDeploymentID2 = "HUSH_TEST_DEPLOYMENT_ID2"
+	envHushAPIKeyID     = "HUSH_API_KEY_ID"
+	envHushAPIKeySecret = "HUSH_API_KEY_SECRET"
+	envHushRealm        = "HUSH_REALM"
+	envHushDevBaseURL   = "HUSH_DEV_BASE_URL"
+
+	// Mock values used directly in HCL config strings (compile-time concatenation)
+	mockDeploymentID  = "dep-mock-1234"
+	mockDeploymentID2 = "dep-mock-5678"
 )
 
 var provider *schema.Provider
+var mockServer *testutil.MockServer
+
+// mockSetupFuncs collects resource-specific mock setup functions registered
+// via init() in each test file. TestMain calls them after creating the mock server.
+var mockSetupFuncs []func(ms *testutil.MockServer)
+
+// registerMockSetup queues a function to run after the mock server is created.
+// Call from init() in test files to register hooks, seeds, etc.
+func registerMockSetup(fn func(ms *testutil.MockServer)) {
+	mockSetupFuncs = append(mockSetupFuncs, fn)
+}
 
 // providerFactories are used to instantiate a provider during acceptance testing.
 // The factory function will be invoked for every Terraform CLI command executed
@@ -34,15 +49,39 @@ var providerFactories = map[string]func() (*schema.Provider, error){
 	},
 }
 
-func testAccPreCheck(t *testing.T) {
-	if os.Getenv(envHushAPIKeyID) == "" {
-		t.Fatalf("%s env var must be set", envHushAPIKeyID)
+// TestMain sets up the mock server for all acceptance tests.
+func TestMain(m *testing.M) {
+	setEnv("TF_ACC", "1")
+
+	fixtures, err := testutil.LoadFixtures()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load fixtures: %v\n", err)
+		os.Exit(1)
 	}
-	if os.Getenv(envHushAPIKeySecret) == "" {
-		t.Fatalf("%s env var must be set", envHushAPIKeySecret)
+
+	mockServer = testutil.NewMockServer(fixtures)
+
+	// Configure provider to use mock server
+	setEnv(envHushDevBaseURL, mockServer.URL())
+	setEnv(envHushAPIKeyID, "mock-key-id")
+	setEnv(envHushAPIKeySecret, "mock-key-secret")
+	setEnv(envHushRealm, "US")
+
+	// Apply resource-specific mock setups registered via init() in test files
+	for _, fn := range mockSetupFuncs {
+		fn(mockServer)
 	}
-	if os.Getenv(envHushRealm) == "" {
-		t.Fatalf("%s env var must be set", envHushRealm)
+
+	code := m.Run()
+
+	mockServer.Close()
+	os.Exit(code)
+}
+
+// setEnv is a helper that panics on error (acceptable in test setup).
+func setEnv(key, value string) {
+	if err := os.Setenv(key, value); err != nil {
+		panic(fmt.Sprintf("failed to set env %s: %v", key, err))
 	}
 }
 

@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceAWSAccessKeyAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("aws_access_key_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -47,7 +46,6 @@ func TestAccResourceAWSAccessKeyAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceAWSAccessKeyAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("aws_access_key_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

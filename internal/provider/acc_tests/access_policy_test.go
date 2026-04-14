@@ -1,32 +1,17 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const envHushTestAccessCredentialID = "HUSH_TEST_ACCESS_CREDENTIAL_ID"
-const envHushTestAccessPrivilegeID = "HUSH_TEST_ACCESS_PRIVILEGE_ID"
-
-func testAccAccessPolicyPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestAccessCredentialID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestAccessCredentialID)
-	}
-	if os.Getenv(envHushTestAccessPrivilegeID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestAccessPrivilegeID)
-	}
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-}
+const mockAccessCredentialID = "acr-mock-1234"
+const mockAccessPrivilegeID = "apr-mock-1234"
 
 func TestAccResourceAccessPolicy_withEnvDelivery(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -82,7 +67,6 @@ func TestAccResourceAccessPolicy_withEnvDelivery(t *testing.T) {
 
 func TestAccResourceAccessPolicy_withEnvDeliveryTemplate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -109,7 +93,6 @@ func TestAccResourceAccessPolicy_withEnvDeliveryTemplate(t *testing.T) {
 
 func TestAccDataSourceAccessPolicy_withEnvDelivery(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -141,17 +124,14 @@ func TestAccDataSourceAccessPolicy_withEnvDelivery(t *testing.T) {
 }
 
 func accessPolicyEnvDeliveryStep1() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "test" {
   name                 = "test-policy"
   description          = "test policy description"
   enabled              = true
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -168,17 +148,14 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyEnvDeliveryStep2() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "test" {
   name                 = "test-policy-updated"
   description          = "updated policy description"
   enabled              = true
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -195,16 +172,13 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyEnvDeliveryTemplateStep() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "template" {
   name                 = "test-policy-template"
   description          = "policy with template delivery"
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -234,7 +208,6 @@ data "hush_access_policy" "test" {
 
 func TestAccResourceAccessPolicy_withBothDeliveryConfigs(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
@@ -246,16 +219,13 @@ func TestAccResourceAccessPolicy_withBothDeliveryConfigs(t *testing.T) {
 }
 
 func accessPolicyBothDeliveryConfigs() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "test" {
   name                 = "test-policy-both"
   description          = "should fail with both delivery configs"
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -283,7 +253,6 @@ resource "hush_access_policy" "test" {
 
 func TestAccResourceAccessPolicy_withNoDeliveryConfig(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
 			{
@@ -295,16 +264,13 @@ func TestAccResourceAccessPolicy_withNoDeliveryConfig(t *testing.T) {
 }
 
 func accessPolicyNoDeliveryConfig() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "test" {
   name                 = "test-policy-no-delivery"
   description          = "should fail without any delivery config"
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -316,7 +282,6 @@ resource "hush_access_policy" "test" {
 
 func TestAccResourceAccessPolicy_withVolumeDelivery(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -384,7 +349,6 @@ func TestAccResourceAccessPolicy_withVolumeDelivery(t *testing.T) {
 
 func TestAccResourceAccessPolicy_withVolumeDeliveryTemplate(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -420,7 +384,6 @@ func TestAccResourceAccessPolicy_withVolumeDeliveryTemplate(t *testing.T) {
 
 func TestAccDataSourceAccessPolicy_withVolumeDelivery(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -455,17 +418,14 @@ func TestAccDataSourceAccessPolicy_withVolumeDelivery(t *testing.T) {
 }
 
 func accessPolicyVolumeDeliveryStep1() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "test" {
   name                 = "test-policy-volume"
   description          = "test volume delivery policy"
   enabled              = true
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -486,17 +446,14 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyVolumeDeliveryStep2() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "test" {
   name                 = "test-policy-volume-updated"
   description          = "updated volume delivery policy"
   enabled              = true
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -517,16 +474,13 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyVolumeDeliveryTemplateStep() string {
-	credID := os.Getenv(envHushTestAccessCredentialID)
-	privID := os.Getenv(envHushTestAccessPrivilegeID)
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_access_policy" "template" {
   name                 = "test-policy-volume-template"
   description          = "policy with volume template delivery"
-  access_credential_id = "` + credID + `"
-  access_privilege_ids = ["` + privID + `"]
-  deployment_ids       = ["` + deploymentID + `"]
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -560,7 +514,6 @@ data "hush_access_policy" "test" {
 
 func TestAccResourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -616,7 +569,6 @@ func TestAccResourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
 
 func TestAccResourceAccessPolicy_withAwsWifDeliveryServiceAccount(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -640,7 +592,6 @@ func TestAccResourceAccessPolicy_withAwsWifDeliveryServiceAccount(t *testing.T) 
 
 func TestAccDataSourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -669,12 +620,11 @@ func TestAccDataSourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
 }
 
 func accessPolicyAwsWifDeliveryStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred"
   description    = "AWS WIF credential for access policy test"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
 }
 
 resource "hush_access_policy" "test" {
@@ -682,7 +632,7 @@ resource "hush_access_policy" "test" {
   description          = "test AWS WIF delivery policy"
   enabled              = true
   access_credential_id = hush_aws_wif_access_credential.test.id
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -699,13 +649,11 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyAwsWifDeliveryStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	deploymentID2 := os.Getenv(envHushTestDeploymentID2)
 	return `
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred"
   description    = "AWS WIF credential for access policy test"
-  deployment_ids = ["` + deploymentID + `", "` + deploymentID2 + `"]
+  deployment_ids = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
 }
 
 resource "hush_access_policy" "test" {
@@ -713,7 +661,7 @@ resource "hush_access_policy" "test" {
   description          = "updated AWS WIF delivery policy"
   enabled              = true
   access_credential_id = hush_aws_wif_access_credential.test.id
-  deployment_ids       = ["` + deploymentID + `", "` + deploymentID2 + `"]
+  deployment_ids       = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -730,12 +678,11 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyAwsWifDeliveryServiceAccountStep() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred-sa"
   description    = "AWS WIF credential for service account test"
-  deployment_ids = ["` + deploymentID + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
 }
 
 resource "hush_access_policy" "test" {
@@ -743,7 +690,7 @@ resource "hush_access_policy" "test" {
   description          = "AWS WIF delivery with service account"
   enabled              = true
   access_credential_id = hush_aws_wif_access_credential.test.id
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -771,7 +718,6 @@ data "hush_access_policy" "test" {
 
 func TestAccResourceAccessPolicy_withGcpWifDelivery(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -824,7 +770,6 @@ func TestAccResourceAccessPolicy_withGcpWifDelivery(t *testing.T) {
 
 func TestAccResourceAccessPolicy_withGcpWifDeliveryServiceAccount(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -851,7 +796,6 @@ func TestAccResourceAccessPolicy_withGcpWifDeliveryServiceAccount(t *testing.T) 
 
 func TestAccDataSourceAccessPolicy_withGcpWifDelivery(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccAccessPolicyPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
 		Steps: []resource.TestStep{
@@ -880,12 +824,11 @@ func TestAccDataSourceAccessPolicy_withGcpWifDelivery(t *testing.T) {
 }
 
 func accessPolicyGcpWifDeliveryStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred-policy"
   description          = "GCP WIF credential for access policy test"
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
   project_number       = "123456789012"
   pool_id              = "my-wif-pool"
   workload_provider_id = "my-wif-provider"
@@ -896,7 +839,7 @@ resource "hush_access_policy" "test" {
   description          = "test GCP WIF delivery policy"
   enabled              = true
   access_credential_id = hush_gcp_wif_access_credential.test.id
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -912,12 +855,11 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyGcpWifDeliveryStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred-policy"
   description          = "GCP WIF credential for access policy test"
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
   project_number       = "123456789012"
   pool_id              = "my-wif-pool"
   workload_provider_id = "my-wif-provider"
@@ -928,7 +870,7 @@ resource "hush_access_policy" "test" {
   description          = "updated GCP WIF delivery policy"
   enabled              = true
   access_credential_id = hush_gcp_wif_access_credential.test.id
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -945,12 +887,11 @@ resource "hush_access_policy" "test" {
 }
 
 func accessPolicyGcpWifDeliveryServiceAccountStep() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
 	return `
 resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred-sa"
   description          = "GCP WIF credential for service account test"
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
   project_number       = "123456789012"
   pool_id              = "my-wif-pool"
   workload_provider_id = "my-wif-provider"
@@ -961,7 +902,7 @@ resource "hush_access_policy" "test" {
   description          = "GCP WIF delivery with service account"
   enabled              = true
   access_credential_id = hush_gcp_wif_access_credential.test.id
-  deployment_ids       = ["` + deploymentID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"

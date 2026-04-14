@@ -1,28 +1,16 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const envHushTestGeminiServiceAccountKey = "HUSH_TEST_GEMINI_SERVICE_ACCOUNT_KEY"
-
-func testAccGeminiAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestGeminiServiceAccountKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestGeminiServiceAccountKey)
-	}
-}
+const mockGeminiServiceAccountKey = `{"type":"service_account","project_id":"mock"}`
 
 func TestAccResourceGeminiAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccGeminiAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gemini_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -60,7 +48,6 @@ func TestAccResourceGeminiAccessCredential(t *testing.T) {
 
 func TestAccDataSourceGeminiAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccGeminiAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gemini_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -80,29 +67,29 @@ func TestAccDataSourceGeminiAccessCredential(t *testing.T) {
 }
 
 func geminiAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	serviceAccountKey := os.Getenv(envHushTestGeminiServiceAccountKey)
 	return `
 resource "hush_gemini_access_credential" "test" {
   name                = "test-gemini-cred"
   description         = "test gemini credential"
-  deployment_ids      = ["` + deploymentID + `"]
+  deployment_ids      = ["` + mockDeploymentID + `"]
   project_id          = "test-gcp-project-1"
-  service_account_key = "` + serviceAccountKey + `"
+  service_account_key = <<-EOF
+` + mockGeminiServiceAccountKey + `
+EOF
 }
 `
 }
 
 func geminiAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	serviceAccountKey := os.Getenv(envHushTestGeminiServiceAccountKey)
 	return `
 resource "hush_gemini_access_credential" "test" {
   name                = "test-gemini-cred-updated"
   description         = "updated gemini credential"
-  deployment_ids      = ["` + deploymentID + `"]
+  deployment_ids      = ["` + mockDeploymentID + `"]
   project_id          = "test-gcp-project-1"
-  service_account_key = "` + serviceAccountKey + `"
+  service_account_key = <<-EOF
+` + mockGeminiServiceAccountKey + `
+EOF
 }
 `
 }

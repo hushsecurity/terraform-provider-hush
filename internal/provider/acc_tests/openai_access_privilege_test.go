@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceOpenAIAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("openai_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -50,7 +49,6 @@ func TestAccResourceOpenAIAccessPrivilege(t *testing.T) {
 
 func TestAccResourceOpenAIAccessPrivilege_restricted(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("openai_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -77,7 +75,6 @@ func TestAccResourceOpenAIAccessPrivilege_restricted(t *testing.T) {
 
 func TestAccDataSourceOpenAIAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("openai_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

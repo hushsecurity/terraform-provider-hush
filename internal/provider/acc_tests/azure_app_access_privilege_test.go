@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceAzureAppAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("azure_app_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -47,7 +46,6 @@ func TestAccResourceAzureAppAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceAzureAppAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("azure_app_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -71,7 +69,13 @@ func azureAppAccessPrivilegeStep1() string {
 resource "hush_azure_app_access_privilege" "test" {
   name        = "test-azure-priv"
   description = "test azure privilege"
-  roles       = ["Storage Blob Data Reader"]
+  app_config {
+    display_name = "mock-app"
+    roles {
+      name  = "Storage Blob Data Reader"
+      scope = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 `
 }
@@ -81,7 +85,13 @@ func azureAppAccessPrivilegeStep2() string {
 resource "hush_azure_app_access_privilege" "test" {
   name        = "test-azure-priv-updated"
   description = "updated azure privilege"
-  roles       = ["Storage Blob Data Reader"]
+  app_config {
+    display_name = "mock-app"
+    roles {
+      name  = "Storage Blob Data Reader"
+      scope = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 `
 }

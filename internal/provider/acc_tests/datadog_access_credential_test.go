@@ -1,32 +1,14 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const envHushTestDatadogAPIKey = "HUSH_TEST_DATADOG_API_KEY"
-const envHushTestDatadogAppKey = "HUSH_TEST_DATADOG_APP_KEY"
-
-func testAccDatadogAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestDatadogAPIKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDatadogAPIKey)
-	}
-	if os.Getenv(envHushTestDatadogAppKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDatadogAppKey)
-	}
-}
-
 func TestAccResourceDatadogAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccDatadogAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("datadog_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -70,7 +52,6 @@ func TestAccResourceDatadogAccessCredential(t *testing.T) {
 
 func TestAccDataSourceDatadogAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccDatadogAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("datadog_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -93,32 +74,26 @@ func TestAccDataSourceDatadogAccessCredential(t *testing.T) {
 }
 
 func datadogAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	apiKey := os.Getenv(envHushTestDatadogAPIKey)
-	appKey := os.Getenv(envHushTestDatadogAppKey)
 	return `
 resource "hush_datadog_access_credential" "test" {
   name           = "test-datadog-cred"
   description    = "test datadog credential"
-  deployment_ids = ["` + deploymentID + `"]
-  api_key        = "` + apiKey + `"
-  app_key        = "` + appKey + `"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  api_key        = "mock-datadog-api-key"
+  app_key        = "mock-datadog-app-key"
   site           = "us5.datadoghq.com"
 }
 `
 }
 
 func datadogAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	apiKey := os.Getenv(envHushTestDatadogAPIKey)
-	appKey := os.Getenv(envHushTestDatadogAppKey)
 	return `
 resource "hush_datadog_access_credential" "test" {
   name           = "test-datadog-cred-updated"
   description    = "updated datadog credential"
-  deployment_ids = ["` + deploymentID + `"]
-  api_key        = "` + apiKey + `"
-  app_key        = "` + appKey + `"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  api_key        = "mock-datadog-api-key"
+  app_key        = "mock-datadog-app-key"
   site           = "datadoghq.com"
 }
 `

@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceGCPSAAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gcp_sa_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -26,7 +25,13 @@ func TestAccResourceGCPSAAccessPrivilege(t *testing.T) {
 						"hush_gcp_sa_access_privilege.test", "description", "test gcp service account privilege",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_gcp_sa_access_privilege.test", "roles.0", "roles/storage.objectViewer",
+						"hush_gcp_sa_access_privilege.test", "project_id", "mock-project-id",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_gcp_sa_access_privilege.test", "sa_config.0.display_name", "test-sa",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_gcp_sa_access_privilege.test", "sa_config.0.roles.0", "roles/storage.objectViewer",
 					),
 				),
 			},
@@ -50,7 +55,6 @@ func TestAccResourceGCPSAAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceGCPSAAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("gcp_sa_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -64,7 +68,10 @@ func TestAccDataSourceGCPSAAccessPrivilege(t *testing.T) {
 						"data.hush_gcp_sa_access_privilege.test", "name", "test-gcp-sa-priv",
 					),
 					resource.TestCheckResourceAttr(
-						"data.hush_gcp_sa_access_privilege.test", "roles.0", "roles/storage.objectViewer",
+						"data.hush_gcp_sa_access_privilege.test", "project_id", "mock-project-id",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_gcp_sa_access_privilege.test", "sa_config.0.roles.0", "roles/storage.objectViewer",
 					),
 				),
 			},
@@ -77,7 +84,11 @@ func gcpSAAccessPrivilegeStep1() string {
 resource "hush_gcp_sa_access_privilege" "test" {
   name        = "test-gcp-sa-priv"
   description = "test gcp service account privilege"
-  roles       = ["roles/storage.objectViewer"]
+  project_id  = "mock-project-id"
+  sa_config {
+    display_name = "test-sa"
+    roles        = ["roles/storage.objectViewer"]
+  }
 }
 `
 }
@@ -87,7 +98,11 @@ func gcpSAAccessPrivilegeStep2() string {
 resource "hush_gcp_sa_access_privilege" "test" {
   name        = "test-gcp-sa-priv-updated"
   description = "updated gcp service account privilege"
-  roles       = ["roles/storage.objectViewer"]
+  project_id  = "mock-project-id"
+  sa_config {
+    display_name = "test-sa"
+    roles        = ["roles/storage.objectViewer"]
+  }
 }
 `
 }

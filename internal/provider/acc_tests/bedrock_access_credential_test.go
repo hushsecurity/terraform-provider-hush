@@ -1,36 +1,30 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
-const envHushTestBedrockAccessKeyID = "HUSH_TEST_BEDROCK_ACCESS_KEY_ID"
-const envHushTestBedrockSecretAccessKey = "HUSH_TEST_BEDROCK_SECRET_ACCESS_KEY"
-const envHushTestBedrockRegion = "HUSH_TEST_BEDROCK_REGION"
+const mockBedrockAccessKeyID = "AKIAMOCKBEDROCK12345"
+const mockBedrockSecretAccessKey = "mock-bedrock-secret"
+const mockBedrockRegion = "us-east-1"
 
-func testAccBedrockAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestBedrockAccessKeyID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestBedrockAccessKeyID)
-	}
-	if os.Getenv(envHushTestBedrockSecretAccessKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestBedrockSecretAccessKey)
-	}
-	if os.Getenv(envHushTestBedrockRegion) == "" {
-		t.Fatalf("%s env var must be set", envHushTestBedrockRegion)
-	}
+func init() {
+	registerMockSetup(func(ms *testutil.MockServer) {
+		ms.OnOperation("access_credentials/bedrock", testutil.OpCreate, func(op testutil.Operation, obj map[string]any) *testutil.HookError {
+			if _, ok := obj["access_key_id"]; ok {
+				obj["has_provider_credentials"] = true
+			}
+			return nil
+		})
+	})
 }
 
 func TestAccResourceBedrockAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccBedrockAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("bedrock_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -71,7 +65,6 @@ func TestAccResourceBedrockAccessCredential(t *testing.T) {
 
 func TestAccDataSourceBedrockAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccBedrockAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("bedrock_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
@@ -91,37 +84,29 @@ func TestAccDataSourceBedrockAccessCredential(t *testing.T) {
 }
 
 func bedrockAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	accessKeyID := os.Getenv(envHushTestBedrockAccessKeyID)
-	secretAccessKey := os.Getenv(envHushTestBedrockSecretAccessKey)
-	region := os.Getenv(envHushTestBedrockRegion)
 	return `
 resource "hush_bedrock_access_credential" "test" {
   name           = "test-bedrock-cred"
   description    = "test bedrock credential"
-  deployment_ids = ["` + deploymentID + `"]
-  region         = "` + region + `"
-  access_key_id  = "` + accessKeyID + `"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  region         = "` + mockBedrockRegion + `"
+  access_key_id  = "` + mockBedrockAccessKeyID + `"
 
-  secret_access_key = "` + secretAccessKey + `"
+  secret_access_key = "` + mockBedrockSecretAccessKey + `"
 }
 `
 }
 
 func bedrockAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	accessKeyID := os.Getenv(envHushTestBedrockAccessKeyID)
-	secretAccessKey := os.Getenv(envHushTestBedrockSecretAccessKey)
-	region := os.Getenv(envHushTestBedrockRegion)
 	return `
 resource "hush_bedrock_access_credential" "test" {
   name           = "test-bedrock-cred-updated"
   description    = "updated bedrock credential"
-  deployment_ids = ["` + deploymentID + `"]
-  region         = "` + region + `"
-  access_key_id  = "` + accessKeyID + `"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  region         = "` + mockBedrockRegion + `"
+  access_key_id  = "` + mockBedrockAccessKeyID + `"
 
-  secret_access_key = "` + secretAccessKey + `"
+  secret_access_key = "` + mockBedrockSecretAccessKey + `"
 }
 `
 }

@@ -9,7 +9,6 @@ import (
 
 func TestAccResourceSnowflakeAccessPrivilege(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("snowflake_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{
@@ -62,7 +61,6 @@ func TestAccResourceSnowflakeAccessPrivilege(t *testing.T) {
 
 func TestAccDataSourceSnowflakeAccessPrivilege(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("snowflake_access_privilege", "v1/access_privileges"),
 		Steps: []resource.TestStep{

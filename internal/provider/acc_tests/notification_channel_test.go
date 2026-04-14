@@ -5,11 +5,33 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
+
+func init() {
+	registerMockSetup(func(ms *testutil.MockServer) {
+		// The real API infers the channel type from config contents and returns
+		// it in the GET response. The mock must do the same since the provider's
+		// Read function switches on 'type' to map config fields to the schema.
+		ms.OnOperation("notification_channels", testutil.OpCreate, func(op testutil.Operation, obj map[string]any) *testutil.HookError {
+			if configs, ok := obj["config"].([]any); ok && len(configs) > 0 {
+				if first, ok := configs[0].(map[string]any); ok {
+					if _, has := first["address"]; has {
+						obj["type"] = "email"
+					} else if _, has := first["url"]; has {
+						obj["type"] = "webhook"
+					} else if _, has := first["integration_id"]; has {
+						obj["type"] = "slack"
+					}
+				}
+			}
+			return nil
+		})
+	})
+}
 
 func TestAccResourceNotificationChannelEmail(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("notification_channel", "v1/notification_channels"),
 		Steps: []resource.TestStep{
@@ -26,10 +48,10 @@ func TestAccResourceNotificationChannelEmail(t *testing.T) {
 						"hush_notification_channel.email", "description", "email channel description",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_notification_channel.email", "email_config.0.recipients.0", "user1@example.com",
+						"hush_notification_channel.email", "email_config.0.address", "user1@example.com",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_notification_channel.email", "email_config.0.recipients.1", "user2@example.com",
+						"hush_notification_channel.email", "email_config.1.address", "user2@example.com",
 					),
 				),
 			},
@@ -46,7 +68,7 @@ func TestAccResourceNotificationChannelEmail(t *testing.T) {
 						"hush_notification_channel.email", "description", "updated email channel description",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_notification_channel.email", "email_config.0.recipients.0", "user3@example.com",
+						"hush_notification_channel.email", "email_config.0.address", "user3@example.com",
 					),
 				),
 			},
@@ -56,7 +78,6 @@ func TestAccResourceNotificationChannelEmail(t *testing.T) {
 
 func TestAccResourceNotificationChannelWebhook(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("notification_channel", "v1/notification_channels"),
 		Steps: []resource.TestStep{
@@ -77,9 +98,6 @@ func TestAccResourceNotificationChannelWebhook(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"hush_notification_channel.webhook", "webhook_config.0.method", "POST",
-					),
-					resource.TestCheckResourceAttr(
-						"hush_notification_channel.webhook", "webhook_config.0.headers.Content-Type", "application/json",
 					),
 				),
 			},
@@ -106,7 +124,6 @@ func TestAccResourceNotificationChannelWebhook(t *testing.T) {
 
 func TestAccResourceNotificationChannelSlack(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("notification_channel", "v1/notification_channels"),
 		Steps: []resource.TestStep{
@@ -126,7 +143,7 @@ func TestAccResourceNotificationChannelSlack(t *testing.T) {
 						"hush_notification_channel.slack", "slack_config.0.integration_id", "int-euIk8SVlvEGqOzNM5D",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_notification_channel.slack", "slack_config.0.channel_name", "test-channel",
+						"hush_notification_channel.slack", "slack_config.0.channel", "test-channel",
 					),
 				),
 			},
@@ -136,7 +153,6 @@ func TestAccResourceNotificationChannelSlack(t *testing.T) {
 
 func TestAccDataSourceNotificationChannel(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("notification_channel", "v1/notification_channels"),
 		Steps: []resource.TestStep{
@@ -153,10 +169,10 @@ func TestAccDataSourceNotificationChannel(t *testing.T) {
 						"data.hush_notification_channel.channel", "description", "email channel description",
 					),
 					resource.TestCheckResourceAttr(
-						"data.hush_notification_channel.channel", "email_config.0.recipients.0", "user1@example.com",
+						"data.hush_notification_channel.channel", "email_config.0.address", "user1@example.com",
 					),
 					resource.TestCheckResourceAttr(
-						"data.hush_notification_channel.channel", "email_config.0.recipients.1", "user2@example.com",
+						"data.hush_notification_channel.channel", "email_config.1.address", "user2@example.com",
 					),
 				),
 			},
@@ -170,7 +186,10 @@ resource "hush_notification_channel" "email" {
   name        = "email-channel"
   description = "email channel description"
   email_config {
-    recipients = ["user1@example.com", "user2@example.com"]
+    address = "user1@example.com"
+  }
+  email_config {
+    address = "user2@example.com"
   }
 }
 `
@@ -180,7 +199,7 @@ resource "hush_notification_channel" "email" {
   name        = "email-channel-updated"
   description = "updated email channel description"
   email_config {
-    recipients = ["user3@example.com"]
+    address = "user3@example.com"
   }
 }
 `
@@ -192,9 +211,6 @@ resource "hush_notification_channel" "webhook" {
   webhook_config {
     url    = "https://example.com/webhook"
     method = "POST"
-    headers = {
-      "Content-Type" = "application/json"
-    }
   }
 }
 `
@@ -206,10 +222,6 @@ resource "hush_notification_channel" "webhook" {
   webhook_config {
     url    = "https://api.example.com/notifications"
     method = "POST"
-    headers = {
-      "Content-Type" = "application/json"
-      "Authorization" = "Bearer token"
-    }
   }
 }
 `
@@ -220,7 +232,7 @@ resource "hush_notification_channel" "slack" {
   description = "slack channel description"
   slack_config {
     integration_id = "int-euIk8SVlvEGqOzNM5D"
-    channel_name   = "test-channel"
+    channel        = "test-channel"
   }
 }
 `

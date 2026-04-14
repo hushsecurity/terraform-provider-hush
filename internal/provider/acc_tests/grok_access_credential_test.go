@@ -1,37 +1,24 @@
 package acc_tests
 
 import (
-	"os"
 	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
-const envHushTestGrokAPIKey = "HUSH_TEST_GROK_API_KEY"
-const envHushTestGrokTeamID = "HUSH_TEST_GROK_TEAM_ID"
-
-func testAccGrokAccessCredentialPreCheck(t *testing.T) {
-	testAccPreCheck(t)
-	if os.Getenv(envHushTestDeploymentID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestDeploymentID)
-	}
-	if os.Getenv(envHushTestGrokAPIKey) == "" {
-		t.Fatalf("%s env var must be set", envHushTestGrokAPIKey)
-	}
-	if os.Getenv(envHushTestGrokTeamID) == "" {
-		t.Fatalf("%s env var must be set", envHushTestGrokTeamID)
-	}
-}
+const (
+	mockGrokAPIKey = "xai-mock-grok-key"
+	mockGrokTeamID = "mock-team-id"
+)
 
 func TestAccResourceGrokAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
-		PreCheck:          func() { testAccGrokAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("grok_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
 			{
-				Config: grokAccessCredentialStep1(),
+				Config: grokAccessCredentialStep1,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"hush_grok_access_credential.test", "id", regexp.MustCompile(`^acr-.+$`),
@@ -45,7 +32,7 @@ func TestAccResourceGrokAccessCredential(t *testing.T) {
 				),
 			},
 			{
-				Config: grokAccessCredentialStep2(),
+				Config: grokAccessCredentialStep2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"hush_grok_access_credential.test", "id", regexp.MustCompile(`^acr-.+$`),
@@ -64,12 +51,11 @@ func TestAccResourceGrokAccessCredential(t *testing.T) {
 
 func TestAccDataSourceGrokAccessCredential(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:          func() { testAccGrokAccessCredentialPreCheck(t) },
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("grok_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
 			{
-				Config: grokAccessCredentialStep1() + grokAccessCredentialDataSource,
+				Config: grokAccessCredentialStep1 + grokAccessCredentialDataSource,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestMatchResourceAttr(
 						"data.hush_grok_access_credential.test", "id", regexp.MustCompile(`^acr-.+$`),
@@ -83,35 +69,25 @@ func TestAccDataSourceGrokAccessCredential(t *testing.T) {
 	})
 }
 
-func grokAccessCredentialStep1() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	apiKey := os.Getenv(envHushTestGrokAPIKey)
-	teamID := os.Getenv(envHushTestGrokTeamID)
-	return `
+const grokAccessCredentialStep1 = `
 resource "hush_grok_access_credential" "test" {
   name           = "test-grok-cred"
   description    = "test grok credential"
-  deployment_ids = ["` + deploymentID + `"]
-  api_key        = "` + apiKey + `"
-  team_id        = "` + teamID + `"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  api_key        = "` + mockGrokAPIKey + `"
+  team_id        = "` + mockGrokTeamID + `"
 }
 `
-}
 
-func grokAccessCredentialStep2() string {
-	deploymentID := os.Getenv(envHushTestDeploymentID)
-	apiKey := os.Getenv(envHushTestGrokAPIKey)
-	teamID := os.Getenv(envHushTestGrokTeamID)
-	return `
+const grokAccessCredentialStep2 = `
 resource "hush_grok_access_credential" "test" {
   name           = "test-grok-cred-updated"
   description    = "updated grok credential"
-  deployment_ids = ["` + deploymentID + `"]
-  api_key        = "` + apiKey + `"
-  team_id        = "` + teamID + `"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  api_key        = "` + mockGrokAPIKey + `"
+  team_id        = "` + mockGrokTeamID + `"
 }
 `
-}
 
 const grokAccessCredentialDataSource = `
 data "hush_grok_access_credential" "test" {
