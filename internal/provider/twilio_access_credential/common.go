@@ -45,7 +45,6 @@ func ResourceSchema() map[string]*schema.Schema {
 		Description: deploymentIDsDesc,
 		Type:        schema.TypeList,
 		Required:    true,
-		ForceNew:    true,
 		MinItems:    1,
 		Elem: &schema.Schema{
 			Type:         schema.TypeString,
