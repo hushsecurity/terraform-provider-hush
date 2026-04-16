@@ -962,6 +962,55 @@ func UpdateSalesforceAccessPrivilege(ctx context.Context, c *Client, id string, 
 	return &resp, nil
 }
 
+// SendGrid
+
+type SendGridAccessPrivilege struct {
+	ID          string   `json:"id,omitempty"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Type        string   `json:"type,omitempty"`
+	Scopes      []string `json:"scopes"`
+}
+
+type CreateSendGridAccessPrivilegeInput struct {
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Scopes      []string `json:"scopes"`
+}
+
+type UpdateSendGridAccessPrivilegeInput struct {
+	Name        *string   `json:"name,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	Scopes      *[]string `json:"scopes,omitempty"`
+}
+
+func CreateSendGridAccessPrivilege(ctx context.Context, c *Client, input *CreateSendGridAccessPrivilegeInput) (*SendGridAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/sendgrid"
+	var resp SendGridAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetSendGridAccessPrivilege(ctx context.Context, c *Client, id string) (*SendGridAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/sendgrid/%s", accessPrivilegesEndpoint, id)
+	var resp SendGridAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateSendGridAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateSendGridAccessPrivilegeInput) (*SendGridAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/sendgrid/%s", accessPrivilegesEndpoint, id)
+	var resp SendGridAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {

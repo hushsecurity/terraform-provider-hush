@@ -1639,3 +1639,66 @@ func UpdateSalesforceAccessCredential(ctx context.Context, c *Client, id string,
 func (s SalesforceAccessCredential) statusFields() (string, string) {
 	return s.Status, s.StatusDetail
 }
+
+// SendGrid
+
+type SendGridAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateSendGridAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	APIKey        string   `json:"api_key"`
+}
+
+type UpdateSendGridAccessCredentialInput struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	APIKey      *string `json:"api_key,omitempty"`
+}
+
+func CreateSendGridAccessCredential(ctx context.Context, c *Client, input *CreateSendGridAccessCredentialInput) (*SendGridAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/sendgrid"
+	var resp SendGridAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetSendGridAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetSendGridAccessCredential(ctx context.Context, c *Client, id string) (*SendGridAccessCredential, error) {
+	path := fmt.Sprintf("%s/sendgrid/%s", accessCredentialsEndpoint, id)
+	var resp SendGridAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateSendGridAccessCredential(ctx context.Context, c *Client, id string, input *UpdateSendGridAccessCredentialInput) (*SendGridAccessCredential, error) {
+	path := fmt.Sprintf("%s/sendgrid/%s", accessCredentialsEndpoint, id)
+	var resp SendGridAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetSendGridAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (s SendGridAccessCredential) statusFields() (string, string) {
+	return s.Status, s.StatusDetail
+}

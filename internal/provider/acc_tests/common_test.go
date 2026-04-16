@@ -141,6 +141,10 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetSalesforceAccessCredential(context.Background(), c, resourceId)
 			case "salesforce_access_privilege":
 				_, err = client.GetSalesforceAccessPrivilege(context.Background(), c, resourceId)
+			case "sendgrid_access_credential":
+				_, err = client.GetSendGridAccessCredential(context.Background(), c, resourceId)
+			case "sendgrid_access_privilege":
+				_, err = client.GetSendGridAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}

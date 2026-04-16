@@ -51,6 +51,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/salesforce_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/salesforce_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sendgrid_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sendgrid_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/snowflake_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/snowflake_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/twilio_access_credential"
@@ -133,6 +135,8 @@ func New(version string) func() *schema.Provider {
 				"hush_datadog_access_privilege":         datadog_access_privilege.Resource(),
 				"hush_salesforce_access_credential":     salesforce_access_credential.Resource(),
 				"hush_salesforce_access_privilege":      salesforce_access_privilege.Resource(),
+				"hush_sendgrid_access_credential":       sendgrid_access_credential.Resource(),
+				"hush_sendgrid_access_privilege":        sendgrid_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
@@ -180,6 +184,8 @@ func New(version string) func() *schema.Provider {
 				"hush_datadog_access_privilege":         datadog_access_privilege.DataSource(),
 				"hush_salesforce_access_credential":     salesforce_access_credential.DataSource(),
 				"hush_salesforce_access_privilege":      salesforce_access_privilege.DataSource(),
+				"hush_sendgrid_access_credential":       sendgrid_access_credential.DataSource(),
+				"hush_sendgrid_access_privilege":        sendgrid_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)
