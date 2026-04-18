@@ -35,9 +35,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
-* Renamed delivery item schema field `value` to `name` to match API
-* Marked `api_key_secret` provider attribute as sensitive
-* Removed `created_at`/`modified_at` from existing service resources
+* Rename delivery item schema field `value` to `name` to match API
+* Mark `api_key_secret` provider attribute as sensitive
+* Remove `created_at`/`modified_at` from existing service resources
 
 ## [1.2.0] - 2025-09-10
 
@@ -57,32 +57,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
-* **Deployment Data Source**: Added support for looking up deployments by `name` in addition to `id`
+* **Deployment Data Source**: Add support for looking up deployments by `name` in addition to `id`
 
 ## [1.0.3] - 2025-08-13
 
 ### Changed
 
-* **Error Handling**: Improved error handling throughout the provider for better user experience
-  * Centralized error handling with new `APIError` struct providing clear, actionable error messages
-  * Simplified error propagation with clean type assertion patterns
-  * Improved 404 handling for graceful resource state management
+* **Error Handling**: Improve error handling throughout the provider for better user experience
+  * Centralize error handling with new `APIError` struct providing clear, actionable error messages
+  * Simplify error propagation with clean type assertion patterns
+  * Improve 404 handling for graceful resource state management
 
 ### Removed
 
-* **Logging**: Eliminated tflog imports and verbose error logging in provider layer
-  * Streamlined operations for cleaner, more reliable execution
+* **Logging**: Eliminate tflog imports and verbose error logging in provider layer
+  * Streamline operations for cleaner, more reliable execution
 
 ## [1.0.2] - 2025-08-11
 
 ### Fixed
 
-* **Resource `hush_deployment`**: Fixed `kind` field validation to accept lowercase values
-  * Changed validation to accept `k8s`, `ecs`, `serverless` (lowercase) to match API requirements
+* **Resource `hush_deployment`**: Fix `kind` field validation to accept lowercase values
+  * Accept `k8s`, `ecs`, `serverless` (lowercase) to match API requirements
   * Previously required uppercase values (`K8S`, `ECS`, `SERVERLESS`) which caused API errors
-* **Resource `hush_deployment`**: Added validation for `env_type` field
-  * Now validates that `env_type` accepts only `dev` or `prod` values as required by the API
-  * Prevents runtime errors by catching invalid values at plan time
+* **Resource `hush_deployment`**: Add validation for `env_type` field
+  * Accept only `dev` or `prod` values as required by the API
+  * Catch invalid values at plan time to prevent runtime errors
 
 ## [1.0.1] - 2025-08-10
 
@@ -109,6 +109,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   * Each example includes main.tf, variables.tf, terraform.tfvars.example, and README.md
 * **Auto-generated Documentation**: Provider documentation generated from schema definitions using tfplugindocs
 * **Structured Logging**: Enhanced logging using terraform-plugin-log/tflog for better debugging and troubleshooting
-* **Modular Architecture**: Organized provider code into modular structure following Terraform best practices
+* **Modular Architecture**: Organize provider code into modular structure following Terraform best practices
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
