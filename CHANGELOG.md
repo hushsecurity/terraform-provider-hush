@@ -6,6 +6,90 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Sendgrid**: `hush_sendgrid_access_credential` and `hush_sendgrid_access_privilege` resources and data sources
+* **Salesforce**: `hush_salesforce_access_credential` and `hush_salesforce_access_privilege` resources and data sources
+* **Datadog**: `hush_datadog_access_credential` and `hush_datadog_access_privilege` resources and data sources
+
+### Fixed
+
+* **Resources `hush_twilio_access_credential`, `hush_gitlab_access_credential`**: Allow changing `deployment_ids` without forcing resource replacement
+
+## [1.7.0] - 2026-04-13
+
+### Added
+
+* **GCP Workload Identity Federation**: Issue short-lived GCP credentials through WIF, without managing long-lived service account keys
+  * `hush_gcp_wif_access_credential` resource and data source
+  * GCP WIF delivery configuration on `hush_access_policy` for just-in-time credential delivery
+* **GitLab**: `hush_gitlab_access_credential` and `hush_gitlab_access_privilege` resources and data sources
+
+## [1.6.0] - 2026-04-10
+
+### Added
+
+* **AWS Workload Identity Federation**: Issue short-lived AWS credentials through WIF, without managing long-lived IAM access keys
+  * `hush_aws_wif_access_credential` resource and data source
+  * AWS WIF delivery configuration on `hush_access_policy` for just-in-time credential delivery
+
+## [1.5.0] - 2026-04-10
+
+### Added
+
+* **Volume Delivery**: New delivery mode for `hush_access_policy` that writes credentials to a mounted volume instead of environment variables, enabling file-based consumption of secrets
+
+## [1.4.0] - 2026-04-09
+
+### Added
+
+* **Snowflake**: `hush_snowflake_access_credential` and `hush_snowflake_access_privilege` resources and data sources
+
+### Changed
+
+* Build provider binary with the Go 1.25 toolchain (previously Go 1.24)
+
+## [1.3.4] - 2026-03-18
+
+### Added
+
+* **Twilio**: `hush_twilio_access_credential` and `hush_twilio_access_privilege` resources and data sources
+* **AWS Access Keys**: `hush_aws_access_key_access_credential` and `hush_aws_access_key_access_privilege` resources and data sources
+* **Azure App**: `hush_azure_app_access_credential` and `hush_azure_app_access_privilege` resources and data sources
+* **GCP Service Account**: `hush_gcp_sa_access_credential` and `hush_gcp_sa_access_privilege` resources and data sources
+* **RabbitMQ**: `hush_rabbitmq_access_credential` and `hush_rabbitmq_access_privilege` resources and data sources
+
+## [1.3.3] - 2026-03-14
+
+### Added
+
+* **Elasticsearch**: `hush_elasticsearch_access_credential` and `hush_elasticsearch_access_privilege` resources and data sources
+* **Apigee**: `hush_apigee_access_credential` and `hush_apigee_access_privilege` resources and data sources
+* **Bedrock**: `hush_bedrock_access_credential` resource and data source
+* **Redis**: `hush_redis_access_credential` and `hush_redis_access_privilege` resources and data sources
+* **Grok**: `hush_grok_access_credential` and `hush_grok_access_privilege` resources and data sources
+
+### Fixed
+
+* **Dynamic access credentials**: Stop sending `deployment_ids` on update to match API behavior (the field is not updatable server-side)
+* **Resource `hush_access_policy`**: Persist resource ID to state when creation fails partway through, so the next apply can recover instead of orphaning the resource
+* `HUSH_REALM` environment variable handling
+
+## [1.3.2] - 2026-02-18
+
+### Changed
+
+* Update provider documentation to reflect the flattened `env_delivery_config` schema introduced in v1.3.1
+
+## [1.3.1] - 2026-02-17
+
+### Changed
+
+* **Resource `hush_access_policy`**: Flatten `env_delivery_config` schema by removing the nested `item` block for a simpler configuration
+* List documentation under the standard Terraform Registry "Resources" and "Data Sources" groupings (remove subcategory)
+
 ## [1.3.0] - 2026-02-17
 
 ### Added
