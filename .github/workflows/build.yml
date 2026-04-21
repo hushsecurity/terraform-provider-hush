@@ -60,7 +60,7 @@ jobs:
         run: make lint
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::116981795030:role/github-actions/terraform-provider-hush
           aws-region: us-east-1
