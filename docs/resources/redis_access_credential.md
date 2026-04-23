@@ -13,17 +13,37 @@ Manage Redis dynamic access credentials in the Hush Security platform.
 ## Example Usage
 
 ```terraform
-# Create a Redis dynamic access credential
+# Create a Redis dynamic access credential (plain Redis, password auth)
 resource "hush_redis_access_credential" "example" {
-  name           = "prod-redis"
-  description    = "Production Redis credential"
+  name                = "prod-redis"
+  description         = "Production Redis credential"
+  deployment_ids      = [hush_deployment.example.id]
+  host                = "redis.example.com"
+  port                = 6379
+  username            = "default"
+  password_wo         = var.redis_password
+  password_wo_version = "1"
+  tls                 = true
+  database            = 0
+  engine              = "redis"
+}
+
+# Create an AWS ElastiCache dynamic access credential.
+# Provisions ephemeral users via the ElastiCache CreateUser API and adds
+# them to the configured user group. Omit access_key_id/secret_access_key
+# to fall back to the AWS default credential chain (IRSA / instance
+# profile / WIF).
+resource "hush_redis_access_credential" "elasticache_example" {
+  name           = "prod-elasticache"
+  description    = "Production ElastiCache (Valkey) credential"
   deployment_ids = [hush_deployment.example.id]
-  host           = "redis.example.com"
+  host           = "my-cluster.xxxxxx.0001.use1.cache.amazonaws.com"
   port           = 6379
-  username       = "default"
-  password_wo    = var.redis_password
   tls            = true
-  database       = 0
+  engine         = "elasticache"
+  cache_engine   = "valkey"
+  region         = "us-east-1"
+  user_group_id  = "my-elasticache-user-group"
 }
 ```
 
@@ -33,6 +53,7 @@ resource "hush_redis_access_credential" "example" {
 ### Required
 
 - `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `engine` (String) The routing engine for this credential. `redis` connects directly to a Redis server using a password. `elasticache` provisions users via the AWS ElastiCache API.
 - `host` (String) The hostname or IP address of the Redis server
 - `name` (String) The name of the Redis access credential
 
@@ -40,14 +61,21 @@ resource "hush_redis_access_credential" "example" {
 
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
+- `access_key_id` (String) The AWS access key ID used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `secret_access_key`. Omit both to use AWS workload identity federation (IRSA / instance profile / WIF).
+- `cache_engine` (String) The AWS ElastiCache cache engine. Required and only valid when `engine` is `elasticache`. One of `redis`, `valkey`.
 - `database` (Number) The Redis database number (0-15, default: 0)
 - `description` (String) The description of the Redis access credential
-- `password` (String, Sensitive) The password for the Redis connection
-- `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The password for the Redis connection (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file. Either `password` or `password_wo` must be specified.
+- `password` (String, Sensitive) The password for the Redis connection. Required when `engine` is `redis`; must not be set when `engine` is `elasticache`.
+- `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The password for the Redis connection (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file. Required when `engine` is `redis`; must not be set when `engine` is `elasticache`.
 - `password_wo_version` (String) Used to trigger updates for `password_wo`. This value should be changed when the password content changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `port` (Number) The port number of the Redis server (default: 6379)
+- `region` (String) The AWS region of the ElastiCache cluster. Required and only valid when `engine` is `elasticache`.
+- `secret_access_key` (String, Sensitive) The AWS secret access key used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `access_key_id`. Omit both to use AWS workload identity federation.
+- `secret_access_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file.
+- `secret_access_key_wo_version` (String) Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret content changes.
 - `tls` (Boolean) Whether to use TLS for the Redis connection
 - `tls_ca` (String) The TLS CA certificate for the Redis connection
+- `user_group_id` (String) The ElastiCache user group ID to add provisioned users to. Required and only valid when `engine` is `elasticache`.
 - `username` (String) The username for the Redis connection (Redis 6+ ACL)
 
 ### Read-Only
