@@ -50,6 +50,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Password:      password,
 		Database:      &db,
 		TLS:           d.Get("tls").(bool),
+		Engine:        d.Get("engine").(string),
 	}
 
 	if v, ok := d.GetOk("username"); ok {
@@ -58,6 +59,24 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 
 	if v, ok := d.GetOk("tls_ca"); ok {
 		input.TLSCA = v.(string)
+	}
+
+	if v, ok := d.GetOk("cache_engine"); ok {
+		input.CacheEngine = v.(string)
+	}
+	if v, ok := d.GetOk("region"); ok {
+		input.Region = v.(string)
+	}
+	if v, ok := d.GetOk("user_group_id"); ok {
+		input.UserGroupID = v.(string)
+	}
+	if v, ok := d.GetOk("access_key_id"); ok {
+		input.AccessKeyID = v.(string)
+	}
+	if v, ok := d.GetOk("secret_access_key"); ok {
+		input.SecretAccessKey = v.(string)
+	} else if v, ok := d.GetOk("secret_access_key_wo"); ok {
+		input.SecretAccessKey = v.(string)
 	}
 
 	credential, err := client.CreateRedisAccessCredential(ctx, c, input)
@@ -105,6 +124,11 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"database":       credential.Database,
 		"tls":            credential.TLS,
 		"tls_ca":         credential.TLSCA,
+		"engine":         credential.Engine,
+		"cache_engine":   credential.CacheEngine,
+		"region":         credential.Region,
+		"user_group_id":  credential.UserGroupID,
+		"access_key_id":  credential.AccessKeyID,
 		"type":           string(credential.Type),
 		"kind":           credential.Kind,
 	}
@@ -172,6 +196,35 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 			password = v.(string)
 		}
 		input.Password = &password
+	}
+	if d.HasChange("engine") {
+		v := d.Get("engine").(string)
+		input.Engine = &v
+	}
+	if d.HasChange("cache_engine") {
+		v := d.Get("cache_engine").(string)
+		input.CacheEngine = &v
+	}
+	if d.HasChange("region") {
+		v := d.Get("region").(string)
+		input.Region = &v
+	}
+	if d.HasChange("user_group_id") {
+		v := d.Get("user_group_id").(string)
+		input.UserGroupID = &v
+	}
+	if d.HasChange("access_key_id") {
+		v := d.Get("access_key_id").(string)
+		input.AccessKeyID = &v
+	}
+	if d.HasChange("secret_access_key") || d.HasChange("secret_access_key_wo") || d.HasChange("secret_access_key_wo_version") {
+		var secret string
+		if v, ok := d.GetOk("secret_access_key"); ok {
+			secret = v.(string)
+		} else if v, ok := d.GetOk("secret_access_key_wo"); ok {
+			secret = v.(string)
+		}
+		input.SecretAccessKey = &secret
 	}
 
 	_, err := client.UpdateRedisAccessCredential(ctx, c, id, input)

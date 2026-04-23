@@ -560,46 +560,64 @@ func (g GrokAccessCredential) statusFields() (string, string) {
 // Redis
 
 type RedisAccessCredential struct {
-	ID            string               `json:"id,omitempty"`
-	Name          string               `json:"name"`
-	Description   string               `json:"description,omitempty"`
-	Type          AccessCredentialType `json:"type"`
-	Kind          string               `json:"kind,omitempty"`
-	DeploymentIDs []string             `json:"deployment_ids"`
-	Host          string               `json:"host,omitempty"`
-	Port          int                  `json:"port,omitempty"`
-	Username      string               `json:"username,omitempty"`
-	Database      int                  `json:"database"`
-	TLS           bool                 `json:"tls,omitempty"`
-	TLSCA         string               `json:"tls_ca,omitempty"`
-	Status        string               `json:"status,omitempty"`
-	StatusDetail  string               `json:"status_detail,omitempty"`
+	ID              string               `json:"id,omitempty"`
+	Name            string               `json:"name"`
+	Description     string               `json:"description,omitempty"`
+	Type            AccessCredentialType `json:"type"`
+	Kind            string               `json:"kind,omitempty"`
+	DeploymentIDs   []string             `json:"deployment_ids"`
+	Host            string               `json:"host,omitempty"`
+	Port            int                  `json:"port,omitempty"`
+	Username        string               `json:"username,omitempty"`
+	Database        int                  `json:"database"`
+	TLS             bool                 `json:"tls,omitempty"`
+	TLSCA           string               `json:"tls_ca,omitempty"`
+	Engine          string               `json:"engine,omitempty"`
+	CacheEngine     string               `json:"cache_engine,omitempty"`
+	Region          string               `json:"region,omitempty"`
+	UserGroupID     string               `json:"user_group_id,omitempty"`
+	AccessKeyID     string               `json:"access_key_id,omitempty"`
+	SecretAccessKey string               `json:"secret_access_key,omitempty"`
+	Status          string               `json:"status,omitempty"`
+	StatusDetail    string               `json:"status_detail,omitempty"`
 }
 
 type CreateRedisAccessCredentialInput struct {
-	Name          string   `json:"name"`
-	Description   string   `json:"description,omitempty"`
-	DeploymentIDs []string `json:"deployment_ids"`
-	Host          string   `json:"host"`
-	Port          int      `json:"port,omitempty"`
-	Username      string   `json:"username,omitempty"`
-	Password      string   `json:"password"`
-	Database      *int     `json:"database,omitempty"`
-	TLS           bool     `json:"tls,omitempty"`
-	TLSCA         string   `json:"tls_ca,omitempty"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description,omitempty"`
+	DeploymentIDs   []string `json:"deployment_ids"`
+	Host            string   `json:"host"`
+	Port            int      `json:"port,omitempty"`
+	Username        string   `json:"username,omitempty"`
+	Password        string   `json:"password,omitempty"`
+	Database        *int     `json:"database,omitempty"`
+	TLS             bool     `json:"tls,omitempty"`
+	TLSCA           string   `json:"tls_ca,omitempty"`
+	Engine          string   `json:"engine"`
+	CacheEngine     string   `json:"cache_engine,omitempty"`
+	Region          string   `json:"region,omitempty"`
+	UserGroupID     string   `json:"user_group_id,omitempty"`
+	AccessKeyID     string   `json:"access_key_id,omitempty"`
+	SecretAccessKey string   `json:"secret_access_key,omitempty"`
 }
 
 type UpdateRedisAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	Host          *string   `json:"host,omitempty"`
-	Port          *int      `json:"port,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
-	Database      *int      `json:"database,omitempty"`
-	TLS           *bool     `json:"tls,omitempty"`
-	TLSCA         *string   `json:"tls_ca,omitempty"`
+	Name            *string   `json:"name,omitempty"`
+	Description     *string   `json:"description,omitempty"`
+	DeploymentIDs   *[]string `json:"deployment_ids,omitempty"`
+	Host            *string   `json:"host,omitempty"`
+	Port            *int      `json:"port,omitempty"`
+	Username        *string   `json:"username,omitempty"`
+	Password        *string   `json:"password,omitempty"`
+	Database        *int      `json:"database,omitempty"`
+	TLS             *bool     `json:"tls,omitempty"`
+	TLSCA           *string   `json:"tls_ca,omitempty"`
+	Engine          *string   `json:"engine,omitempty"`
+	CacheEngine     *string   `json:"cache_engine,omitempty"`
+	Region          *string   `json:"region,omitempty"`
+	UserGroupID     *string   `json:"user_group_id,omitempty"`
+	AccessKeyID     *string   `json:"access_key_id,omitempty"`
+	SecretAccessKey *string   `json:"secret_access_key,omitempty"`
 }
 
 func CreateRedisAccessCredential(ctx context.Context, c *Client, input *CreateRedisAccessCredentialInput) (*RedisAccessCredential, error) {
