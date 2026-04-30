@@ -16,6 +16,7 @@ const (
 	secretAccessKeyDesc      = "The AWS secret access key"
 	secretAccessKeyWODesc    = "The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file. Either `secret_access_key` or `secret_access_key_wo` must be specified."
 	secretAccessKeyWOVerDesc = "Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret access key content changes. Can be any value (e.g., a timestamp, version number, or hash)."
+	permissionBoundaryDesc   = "Whether the linked Access Privilege policy should be attached to the dynamically created IAM user as a permission boundary instead of as a managed policy. When enabled, the Access Privilege must contain exactly one policy."
 	typeDesc                 = "The type of access credential"
 	kindDesc                 = "The kind of access credential"
 )
@@ -79,6 +80,12 @@ func ResourceSchema() map[string]*schema.Schema {
 		Optional:     true,
 		RequiredWith: []string{"secret_access_key_wo"},
 	}
+	s["permission_boundary"] = &schema.Schema{
+		Description: permissionBoundaryDesc,
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Default:     false,
+	}
 
 	return s
 }
@@ -111,6 +118,11 @@ func DataSourceSchema() map[string]*schema.Schema {
 		"access_key_id_value": {
 			Description: accessKeyIDValueDesc,
 			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"permission_boundary": {
+			Description: permissionBoundaryDesc,
+			Type:        schema.TypeBool,
 			Computed:    true,
 		},
 		"type": {

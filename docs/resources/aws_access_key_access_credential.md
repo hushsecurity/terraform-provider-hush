@@ -37,6 +37,7 @@ resource "hush_aws_access_key_access_credential" "example" {
 
 - `access_key_id_value` (String) The AWS access key ID
 - `description` (String) The description of the AWS access key access credential
+- `permission_boundary` (Boolean) Whether the linked Access Privilege policy should be attached to the dynamically created IAM user as a permission boundary instead of as a managed policy. When enabled, the Access Privilege must contain exactly one policy.
 - `secret_access_key` (String, Sensitive) The AWS secret access key
 - `secret_access_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file. Either `secret_access_key` or `secret_access_key_wo` must be specified.
 - `secret_access_key_wo_version` (String) Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret access key content changes. Can be any value (e.g., a timestamp, version number, or hash).

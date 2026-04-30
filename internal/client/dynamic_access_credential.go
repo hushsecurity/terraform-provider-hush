@@ -1092,30 +1092,33 @@ func (a AzureAppAccessCredential) statusFields() (string, string) {
 // AWS Access Key
 
 type AWSAccessKeyAccessCredential struct {
-	ID            string               `json:"id,omitempty"`
-	Name          string               `json:"name"`
-	Description   string               `json:"description,omitempty"`
-	Type          AccessCredentialType `json:"type"`
-	Kind          string               `json:"kind,omitempty"`
-	DeploymentIDs []string             `json:"deployment_ids"`
-	AccessKeyID   string               `json:"access_key_id,omitempty"`
-	Status        string               `json:"status,omitempty"`
-	StatusDetail  string               `json:"status_detail,omitempty"`
+	ID                 string               `json:"id,omitempty"`
+	Name               string               `json:"name"`
+	Description        string               `json:"description,omitempty"`
+	Type               AccessCredentialType `json:"type"`
+	Kind               string               `json:"kind,omitempty"`
+	DeploymentIDs      []string             `json:"deployment_ids"`
+	AccessKeyID        string               `json:"access_key_id,omitempty"`
+	PermissionBoundary bool                 `json:"permission_boundary,omitempty"`
+	Status             string               `json:"status,omitempty"`
+	StatusDetail       string               `json:"status_detail,omitempty"`
 }
 
 type CreateAWSAccessKeyAccessCredentialInput struct {
-	Name            string   `json:"name"`
-	Description     string   `json:"description,omitempty"`
-	DeploymentIDs   []string `json:"deployment_ids"`
-	AccessKeyID     string   `json:"access_key_id"`
-	SecretAccessKey string   `json:"secret_access_key"`
+	Name               string   `json:"name"`
+	Description        string   `json:"description,omitempty"`
+	DeploymentIDs      []string `json:"deployment_ids"`
+	AccessKeyID        string   `json:"access_key_id"`
+	SecretAccessKey    string   `json:"secret_access_key"`
+	PermissionBoundary bool     `json:"permission_boundary,omitempty"`
 }
 
 type UpdateAWSAccessKeyAccessCredentialInput struct {
-	Name            *string `json:"name,omitempty"`
-	Description     *string `json:"description,omitempty"`
-	AccessKeyID     *string `json:"access_key_id,omitempty"`
-	SecretAccessKey *string `json:"secret_access_key,omitempty"`
+	Name               *string `json:"name,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	AccessKeyID        *string `json:"access_key_id,omitempty"`
+	SecretAccessKey    *string `json:"secret_access_key,omitempty"`
+	PermissionBoundary *bool   `json:"permission_boundary,omitempty"`
 }
 
 func CreateAWSAccessKeyAccessCredential(ctx context.Context, c *Client, input *CreateAWSAccessKeyAccessCredentialInput) (*AWSAccessKeyAccessCredential, error) {

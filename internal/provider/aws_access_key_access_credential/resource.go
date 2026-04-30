@@ -49,11 +49,12 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	secretAccessKey := getSecretAccessKey(d)
 
 	input := &client.CreateAWSAccessKeyAccessCredentialInput{
-		Name:            d.Get("name").(string),
-		Description:     d.Get("description").(string),
-		DeploymentIDs:   deploymentIDs,
-		AccessKeyID:     d.Get("access_key_id_value").(string),
-		SecretAccessKey: secretAccessKey,
+		Name:               d.Get("name").(string),
+		Description:        d.Get("description").(string),
+		DeploymentIDs:      deploymentIDs,
+		AccessKeyID:        d.Get("access_key_id_value").(string),
+		SecretAccessKey:    secretAccessKey,
+		PermissionBoundary: d.Get("permission_boundary").(bool),
 	}
 
 	credential, err := client.CreateAWSAccessKeyAccessCredential(ctx, c, input)
@@ -96,6 +97,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"description":         credential.Description,
 		"deployment_ids":      credential.DeploymentIDs,
 		"access_key_id_value": credential.AccessKeyID,
+		"permission_boundary": credential.PermissionBoundary,
 		"type":                string(credential.Type),
 		"kind":                credential.Kind,
 	}
@@ -130,6 +132,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("secret_access_key") || d.HasChange("secret_access_key_wo") || d.HasChange("secret_access_key_wo_version") {
 		secretAccessKey := getSecretAccessKey(d)
 		input.SecretAccessKey = &secretAccessKey
+	}
+	if d.HasChange("permission_boundary") {
+		v := d.Get("permission_boundary").(bool)
+		input.PermissionBoundary = &v
 	}
 
 	_, err := client.UpdateAWSAccessKeyAccessCredential(ctx, c, id, input)
