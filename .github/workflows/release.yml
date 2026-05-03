@@ -4,7 +4,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -18,11 +18,11 @@ jobs:
         with:
           # Allow goreleaser to access older tag information
           fetch-depth: 0
-      
+
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
           cache: true
       
       - name: Test
@@ -33,12 +33,12 @@ jobs:
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.HUSH_PGP_PRIVATE_KEY }}
-      
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
-          version: '~> v2'
+          version: "~> v2"
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
