@@ -24,10 +24,22 @@ jobs:
         with:
           go-version-file: "go.mod"
           cache: true
-      
-      - name: Test
-        run: go test -v ./...
-      
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::116981795030:role/github-actions/terraform-provider-hush
+          aws-region: us-east-1
+
+      - name: Fetch Mock Fixtures
+        run: make fetch-mock-fixtures
+
+      - name: Unit Tests
+        run: make test
+
+      - name: Acceptance Tests
+        run: make test-acc
+
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v7
         id: import_gpg
