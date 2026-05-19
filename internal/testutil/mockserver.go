@@ -143,6 +143,8 @@ func (ms *MockServer) handleRoute(w http.ResponseWriter, r *http.Request, rt rou
 		}
 	case http.MethodPatch:
 		ms.handleUpdate(w, r, resourceKey, storeKey, id, rt.response)
+	case http.MethodPut:
+		ms.handlePut(w, r, storeKey, id)
 	case http.MethodDelete:
 		ms.handleDelete(w, storeKey, id)
 	default:
@@ -271,6 +273,20 @@ func (ms *MockServer) handleDelete(w http.ResponseWriter, storeKey, id string) {
 	w.WriteHeader(204)
 }
 
+func (ms *MockServer) handlePut(w http.ResponseWriter, r *http.Request, storeKey, id string) {
+	// PUT is used for credential/token replacement - just acknowledge success
+	if id == "" {
+		ms.writeError(w, 400, "missing resource ID")
+		return
+	}
+	if _, ok := ms.store[storeKey][id]; !ok {
+		ms.writeError(w, 404, id+" not found")
+		return
+	}
+	w.WriteHeader(200)
+	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok"})
+}
+
 func (ms *MockServer) runHooks(resourceKey string, op Operation, obj map[string]any) *HookError {
 	// Try exact match first, then base resource type
 	keys := []string{resourceKey, ms.getComputedFieldsKey(resourceKey)}
@@ -348,6 +364,9 @@ func (ms *MockServer) getComputedFieldsKey(resourceKey string) string {
 		return "notification_configuration"
 	}
 	if strings.Contains(resourceKey, "integrations") {
+		if strings.Contains(resourceKey, "gitlab") {
+			return "gitlab_integration"
+		}
 		return "gcp_integration"
 	}
 	return resourceKey
@@ -412,7 +431,7 @@ func extractResourceKey(template string) string {
 // normalizeStoreKey maps subtype-specific paths to a shared store key.
 // E.g. "access_credentials/postgres" and "access_credentials" share one store.
 func normalizeStoreKey(resourceKey string) string {
-	bases := []string{"access_credentials", "access_privileges", "access_policies"}
+	bases := []string{"access_credentials", "access_privileges", "access_policies", "integrations"}
 	for _, base := range bases {
 		if strings.HasPrefix(resourceKey, base) {
 			return base
