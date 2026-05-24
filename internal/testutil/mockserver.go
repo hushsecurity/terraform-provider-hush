@@ -370,6 +370,9 @@ func (ms *MockServer) getComputedFieldsKey(resourceKey string) string {
 		if strings.Contains(resourceKey, "confluence") {
 			return "confluence_integration"
 		}
+		if strings.Contains(resourceKey, "jira") {
+			return "jira_integration"
+		}
 		return "gcp_integration"
 	}
 	return resourceKey

@@ -188,6 +188,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetGitlabIntegration(context.Background(), c, resourceId)
 			case "confluence_integration":
 				_, err = client.GetConfluenceIntegration(context.Background(), c, resourceId)
+			case "jira_integration":
+				_, err = client.GetJiraIntegration(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
