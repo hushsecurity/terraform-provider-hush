@@ -367,6 +367,9 @@ func (ms *MockServer) getComputedFieldsKey(resourceKey string) string {
 		if strings.Contains(resourceKey, "gitlab") {
 			return "gitlab_integration"
 		}
+		if strings.Contains(resourceKey, "confluence") {
+			return "confluence_integration"
+		}
 		return "gcp_integration"
 	}
 	return resourceKey

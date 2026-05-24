@@ -124,3 +124,95 @@ func ReplaceGitlabToken(ctx context.Context, c *Client, id string, input *Replac
 	path := fmt.Sprintf("%s/%s/gitlab/token", integrationsEndpoint, id)
 	return c.doRequest(ctx, http.MethodPut, path, input, nil)
 }
+
+// Confluence Integration
+
+type ConfluenceIntegration struct {
+	ID                 string `json:"id,omitempty"`
+	Name               string `json:"name"`
+	Description        string `json:"description,omitempty"`
+	Status             string `json:"status,omitempty"`
+	StatusMessage      string `json:"status_message,omitempty"`
+	StatusAt           string `json:"status_at,omitempty"`
+	Type               string `json:"type,omitempty"`
+	OrgDomain          string `json:"org_domain"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	CreatedAt          string `json:"created_at,omitempty"`
+	ModifiedAt         string `json:"modified_at,omitempty"`
+	NextRescanAt       string `json:"next_rescan_at,omitempty"`
+}
+
+type CreateConfluenceIntegrationInput struct {
+	Name               string `json:"name"`
+	Description        string `json:"description,omitempty"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	OrgDomain          string `json:"org_domain"`
+	User               string `json:"user"`
+	ApiKey             string `json:"api_key"`
+}
+
+type UpdateConfluenceIntegrationInput struct {
+	Name               *string `json:"name,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	OnpremDeploymentID *string `json:"onprem_deployment_id,omitempty"`
+}
+
+type ReplaceConfluenceApiKeyInput struct {
+	User   string `json:"user"`
+	ApiKey string `json:"api_key"`
+}
+
+type ConfluenceIntegrationListResponse struct {
+	Items        []ConfluenceIntegration `json:"items"`
+	PageNumber   int                     `json:"page_number"`
+	Total        *int                    `json:"total"`
+	PreviousPage *string                 `json:"previous_page"`
+	NextPage     *string                 `json:"next_page"`
+}
+
+func CreateConfluenceIntegration(ctx context.Context, c *Client, input *CreateConfluenceIntegrationInput) (*ConfluenceIntegration, error) {
+	path := fmt.Sprintf("%s/confluence", integrationsEndpoint)
+	var resp ConfluenceIntegration
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetConfluenceIntegration(ctx context.Context, c *Client, id string) (*ConfluenceIntegration, error) {
+	path := fmt.Sprintf("%s/%s/confluence", integrationsEndpoint, id)
+	var resp ConfluenceIntegration
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetConfluenceIntegrationsByName(ctx context.Context, c *Client, name string) ([]ConfluenceIntegration, error) {
+	encodedName := url.QueryEscape(name)
+	path := fmt.Sprintf("%s?name=%s&type=confluence", integrationsEndpoint, encodedName)
+	var resp ConfluenceIntegrationListResponse
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
+}
+
+func UpdateConfluenceIntegration(ctx context.Context, c *Client, id string, input *UpdateConfluenceIntegrationInput) (*ConfluenceIntegration, error) {
+	path := fmt.Sprintf("%s/%s/confluence", integrationsEndpoint, id)
+	var resp ConfluenceIntegration
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func DeleteConfluenceIntegration(ctx context.Context, c *Client, id string) error {
+	path := fmt.Sprintf("%s/%s", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
+}
+
+func ReplaceConfluenceApiKey(ctx context.Context, c *Client, id string, input *ReplaceConfluenceApiKeyInput) error {
+	path := fmt.Sprintf("%s/%s/confluence/api_key", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodPut, path, input, nil)
+}
