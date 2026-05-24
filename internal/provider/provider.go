@@ -19,6 +19,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/confluence_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
@@ -133,6 +134,7 @@ func New(version string) func() *schema.Provider {
 				"hush_gitlab_access_credential":         gitlab_access_credential.Resource(),
 				"hush_gitlab_access_privilege":          gitlab_access_privilege.Resource(),
 				"hush_gitlab_integration":               gitlab_integration.Resource(),
+				"hush_confluence_integration":           confluence_integration.Resource(),
 				"hush_datadog_access_credential":        datadog_access_credential.Resource(),
 				"hush_datadog_access_privilege":         datadog_access_privilege.Resource(),
 				"hush_salesforce_access_credential":     salesforce_access_credential.Resource(),
@@ -183,6 +185,7 @@ func New(version string) func() *schema.Provider {
 				"hush_gitlab_access_credential":         gitlab_access_credential.DataSource(),
 				"hush_gitlab_access_privilege":          gitlab_access_privilege.DataSource(),
 				"hush_gitlab_integration":               gitlab_integration.DataSource(),
+				"hush_confluence_integration":           confluence_integration.DataSource(),
 				"hush_datadog_access_credential":        datadog_access_credential.DataSource(),
 				"hush_datadog_access_privilege":         datadog_access_privilege.DataSource(),
 				"hush_salesforce_access_credential":     salesforce_access_credential.DataSource(),
