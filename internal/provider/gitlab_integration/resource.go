@@ -74,6 +74,12 @@ func gitlabIntegrationCreate(ctx context.Context, d *schema.ResourceData, m any)
 
 	d.SetId(resp.ID)
 
+	if depID := d.Get("onprem_deployment_id").(string); depID != "" {
+		if err := client.WaitForAccessBridge(ctx, c, depID); err != nil {
+			return diag.Errorf("error waiting for on-prem deployment %s to become available: %s", depID, err)
+		}
+	}
+
 	return gitlabIntegrationRead(ctx, d, m)
 }
 
@@ -157,6 +163,14 @@ func gitlabIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m any)
 				return nil
 			}
 			return diag.FromErr(err)
+		}
+	}
+
+	if d.HasChange("onprem_deployment_id") {
+		if depID := d.Get("onprem_deployment_id").(string); depID != "" {
+			if err := client.WaitForAccessBridge(ctx, c, depID); err != nil {
+				return diag.Errorf("error waiting for on-prem deployment %s to become available: %s", depID, err)
+			}
 		}
 	}
 
