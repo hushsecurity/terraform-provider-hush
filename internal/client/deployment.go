@@ -107,3 +107,36 @@ func GetDeploymentsByName(ctx context.Context, c *Client, name string) ([]Deploy
 
 	return resp.Items, nil
 }
+
+// AccessBridgeStatus represents the response from the access_bridge endpoint
+type AccessBridgeStatus struct {
+	Status string `json:"status"`
+}
+
+const AccessBridgeStatusOk = "Ok"
+
+// GetAccessBridgeStatus retrieves the access bridge status for a deployment
+func GetAccessBridgeStatus(ctx context.Context, c *Client, deploymentID string) (*AccessBridgeStatus, error) {
+	path := fmt.Sprintf("%s/%s/access_bridge", deploymentsEndpoint, deploymentID)
+	var resp AccessBridgeStatus
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// WaitForAccessBridge polls the access bridge status until it becomes "Ok" or times out
+func WaitForAccessBridge(ctx context.Context, c *Client, deploymentID string) error {
+	return waitForStatus(ctx, func() (status, statusDetail string, err error) {
+		resp, err := GetAccessBridgeStatus(ctx, c, deploymentID)
+		if err != nil {
+			return "", "", err
+		}
+		// Map bridge status to the waitForStatus terminal states
+		if resp.Status == AccessBridgeStatusOk {
+			return "ok", "", nil
+		}
+		// Non-terminal: keep polling (e.g. "down", "disconnected")
+		return resp.Status, "", nil
+	})
+}
