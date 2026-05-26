@@ -29,10 +29,6 @@ const (
 	botNameDesc            = "The bot name used for GitLab integration (computed by the API)"
 	onpremDeploymentIDDesc = "The ID of the on-premises deployment to associate with this integration"
 	statusDesc             = "The current status of the integration"
-	statusMessageDesc      = "Additional details about the integration status"
-	typeDesc               = "The type of integration (always 'gitlab' for this resource)"
-	createdAtDesc          = "The timestamp when the integration was created"
-	modifiedAtDesc         = "The timestamp when the integration was last modified"
 )
 
 func GitlabIntegrationResourceSchema() map[string]*schema.Schema {
@@ -211,26 +207,6 @@ func GitlabIntegrationDataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"status_message": {
-			Description: statusMessageDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"type": {
-			Description: typeDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"created_at": {
-			Description: createdAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"modified_at": {
-			Description: modifiedAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 	}
 }
 
@@ -303,10 +279,6 @@ func setGitlabIntegrationFields(d *schema.ResourceData, integration *client.Gitl
 		"bot_name":             integration.BotName,
 		"onprem_deployment_id": integration.OnpremDeploymentID,
 		"status":               integration.Status,
-		"status_message":       integration.StatusMessage,
-		"type":                 integration.Type,
-		"created_at":           integration.CreatedAt,
-		"modified_at":          integration.ModifiedAt,
 	}
 
 	if integration.EnablePRScans != nil {

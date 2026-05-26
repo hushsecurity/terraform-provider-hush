@@ -44,9 +44,6 @@ func confluenceIntegrationCreate(ctx context.Context, d *schema.ResourceData, m 
 	if desc := d.Get("description").(string); desc != "" {
 		input.Description = desc
 	}
-	if depID := d.Get("onprem_deployment_id").(string); depID != "" {
-		input.OnpremDeploymentID = depID
-	}
 
 	resp, err := client.CreateConfluenceIntegration(ctx, c, input)
 	if err != nil {
@@ -54,12 +51,6 @@ func confluenceIntegrationCreate(ctx context.Context, d *schema.ResourceData, m 
 	}
 
 	d.SetId(resp.ID)
-
-	if depID := d.Get("onprem_deployment_id").(string); depID != "" {
-		if err := client.WaitForAccessBridge(ctx, c, depID); err != nil {
-			return diag.Errorf("error waiting for on-prem deployment %s to become available: %s", depID, err)
-		}
-	}
 
 	return confluenceIntegrationRead(ctx, d, m)
 }
@@ -104,11 +95,6 @@ func confluenceIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m 
 		input.Description = &desc
 		hasChanges = true
 	}
-	if d.HasChange("onprem_deployment_id") {
-		depID := d.Get("onprem_deployment_id").(string)
-		input.OnpremDeploymentID = &depID
-		hasChanges = true
-	}
 
 	if hasChanges {
 		_, err := client.UpdateConfluenceIntegration(ctx, c, d.Id(), input)
@@ -119,14 +105,6 @@ func confluenceIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m 
 				return nil
 			}
 			return diag.FromErr(err)
-		}
-	}
-
-	if d.HasChange("onprem_deployment_id") {
-		if depID := d.Get("onprem_deployment_id").(string); depID != "" {
-			if err := client.WaitForAccessBridge(ctx, c, depID); err != nil {
-				return diag.Errorf("error waiting for on-prem deployment %s to become available: %s", depID, err)
-			}
 		}
 	}
 

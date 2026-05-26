@@ -143,18 +143,16 @@ type ConfluenceIntegration struct {
 }
 
 type CreateConfluenceIntegrationInput struct {
-	Name               string `json:"name"`
-	Description        string `json:"description,omitempty"`
-	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
-	OrgDomain          string `json:"org_domain"`
-	User               string `json:"user"`
-	ApiKey             string `json:"api_key"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	OrgDomain   string `json:"org_domain"`
+	User        string `json:"user"`
+	ApiKey      string `json:"api_key"`
 }
 
 type UpdateConfluenceIntegrationInput struct {
-	Name               *string `json:"name,omitempty"`
-	Description        *string `json:"description,omitempty"`
-	OnpremDeploymentID *string `json:"onprem_deployment_id,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
 }
 
 type ReplaceConfluenceApiKeyInput struct {
@@ -238,7 +236,6 @@ type JiraIntegration struct {
 type CreateJiraIntegrationInput struct {
 	Name                 string `json:"name"`
 	Description          string `json:"description,omitempty"`
-	OnpremDeploymentID   string `json:"onprem_deployment_id,omitempty"`
 	OrgDomain            string `json:"org_domain"`
 	User                 string `json:"user"`
 	ApiKey               string `json:"api_key"`
@@ -249,7 +246,6 @@ type CreateJiraIntegrationInput struct {
 type UpdateJiraIntegrationInput struct {
 	Name                 *string `json:"name,omitempty"`
 	Description          *string `json:"description,omitempty"`
-	OnpremDeploymentID   *string `json:"onprem_deployment_id,omitempty"`
 	OrgDomain            *string `json:"org_domain,omitempty"`
 	SyncIssuesResolution *bool   `json:"sync_issues_resolution,omitempty"`
 }

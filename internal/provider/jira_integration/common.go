@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -21,15 +20,10 @@ const (
 	apiKeyDesc               = "The API key for Jira authentication"
 	apiKeyWODesc             = "The API key for Jira authentication (write-only). This is more secure than `api_key` because Terraform will not store this value in the state file. Either `api_key` or `api_key_wo` must be specified."
 	apiKeyWOVersionDesc      = "Used to trigger updates for `api_key_wo`. This value should be changed when the API key changes. Can be any value (e.g., a timestamp, version number, or hash)."
-	onpremDeploymentIDDesc   = "The ID of the on-premises deployment to associate with this integration"
 	syncIssuesResolutionDesc = "Whether to sync issue resolution status from Jira. Defaults to `true`."
 	enableScansDesc          = "Whether to enable scanning of Jira issues. Defaults to `true`. Changing this forces a new resource."
 	webhookProvisionedDesc   = "Whether the webhook has been provisioned for this integration"
 	statusDesc               = "The current status of the integration"
-	statusMessageDesc        = "Additional details about the integration status"
-	typeDesc                 = "The type of integration (always 'jira' for this resource)"
-	createdAtDesc            = "The timestamp when the integration was created"
-	modifiedAtDesc           = "The timestamp when the integration was last modified"
 )
 
 func JiraIntegrationResourceSchema() map[string]*schema.Schema {
@@ -86,12 +80,6 @@ func JiraIntegrationResourceSchema() map[string]*schema.Schema {
 		Optional:     true,
 		RequiredWith: []string{"api_key_wo"},
 	}
-	s["onprem_deployment_id"] = &schema.Schema{
-		Description:  onpremDeploymentIDDesc,
-		Type:         schema.TypeString,
-		Optional:     true,
-		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "onprem_deployment_id must start with 'dep-'"),
-	}
 	s["sync_issues_resolution"] = &schema.Schema{
 		Description: syncIssuesResolutionDesc,
 		Type:        schema.TypeBool,
@@ -135,11 +123,6 @@ func JiraIntegrationDataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"onprem_deployment_id": {
-			Description: onpremDeploymentIDDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 		"sync_issues_resolution": {
 			Description: syncIssuesResolutionDesc,
 			Type:        schema.TypeBool,
@@ -157,26 +140,6 @@ func JiraIntegrationDataSourceSchema() map[string]*schema.Schema {
 		},
 		"status": {
 			Description: statusDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"status_message": {
-			Description: statusMessageDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"type": {
-			Description: typeDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"created_at": {
-			Description: createdAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"modified_at": {
-			Description: modifiedAtDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -244,16 +207,11 @@ func jiraIntegrationRead(ctx context.Context, d *schema.ResourceData, m any) dia
 
 func setJiraIntegrationFields(d *schema.ResourceData, integration *client.JiraIntegration) diag.Diagnostics {
 	fields := map[string]any{
-		"name":                 integration.Name,
-		"description":          integration.Description,
-		"org_domain":           integration.OrgDomain,
-		"onprem_deployment_id": integration.OnpremDeploymentID,
-		"webhook_provisioned":  integration.WebhookProvisioned,
-		"status":               integration.Status,
-		"status_message":       integration.StatusMessage,
-		"type":                 integration.Type,
-		"created_at":           integration.CreatedAt,
-		"modified_at":          integration.ModifiedAt,
+		"name":                integration.Name,
+		"description":         integration.Description,
+		"org_domain":          integration.OrgDomain,
+		"webhook_provisioned": integration.WebhookProvisioned,
+		"status":              integration.Status,
 	}
 
 	for field, value := range fields {
