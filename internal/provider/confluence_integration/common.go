@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -13,22 +12,15 @@ import (
 )
 
 const (
-	idDesc                 = "The unique identifier of the Confluence integration"
-	nameDesc               = "The name of the Confluence integration"
-	descriptionDesc        = "The description of the Confluence integration"
-	orgDomainDesc          = "The Confluence organization domain (e.g., mycompany.atlassian.net)"
-	userDesc               = "The email address of the Confluence user for authentication"
-	apiKeyDesc             = "The API key for Confluence authentication"
-	apiKeyWODesc           = "The API key for Confluence authentication (write-only). This is more secure than `api_key` because Terraform will not store this value in the state file. Either `api_key` or `api_key_wo` must be specified."
-	apiKeyWOVersionDesc    = "Used to trigger updates for `api_key_wo`. This value should be changed when the API key changes. Can be any value (e.g., a timestamp, version number, or hash)."
-	onpremDeploymentIDDesc = "The ID of the on-premises deployment to associate with this integration"
-	statusDesc             = "The current status of the integration"
-	statusMessageDesc      = "Additional details about the integration status"
-	statusAtDesc           = "The timestamp of the last status change"
-	typeDesc               = "The type of integration (always 'confluence' for this resource)"
-	createdAtDesc          = "The timestamp when the integration was created"
-	modifiedAtDesc         = "The timestamp when the integration was last modified"
-	nextRescanAtDesc       = "The timestamp of the next scheduled rescan"
+	idDesc              = "The unique identifier of the Confluence integration"
+	nameDesc            = "The name of the Confluence integration"
+	descriptionDesc     = "The description of the Confluence integration"
+	orgDomainDesc       = "The Confluence organization domain (e.g., mycompany.atlassian.net)"
+	userDesc            = "The email address of the Confluence user for authentication"
+	apiKeyDesc          = "The API key for Confluence authentication"
+	apiKeyWODesc        = "The API key for Confluence authentication (write-only). This is more secure than `api_key` because Terraform will not store this value in the state file. Either `api_key` or `api_key_wo` must be specified."
+	apiKeyWOVersionDesc = "Used to trigger updates for `api_key_wo`. This value should be changed when the API key changes. Can be any value (e.g., a timestamp, version number, or hash)."
+	statusDesc          = "The current status of the integration"
 )
 
 func ConfluenceIntegrationResourceSchema() map[string]*schema.Schema {
@@ -86,13 +78,6 @@ func ConfluenceIntegrationResourceSchema() map[string]*schema.Schema {
 		Optional:     true,
 		RequiredWith: []string{"api_key_wo"},
 	}
-	s["onprem_deployment_id"] = &schema.Schema{
-		Description:  onpremDeploymentIDDesc,
-		Type:         schema.TypeString,
-		Optional:     true,
-		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "onprem_deployment_id must start with 'dep-'"),
-	}
-
 	return s
 }
 
@@ -122,43 +107,8 @@ func ConfluenceIntegrationDataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"onprem_deployment_id": {
-			Description: onpremDeploymentIDDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
 		"status": {
 			Description: statusDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"status_message": {
-			Description: statusMessageDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"status_at": {
-			Description: statusAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"type": {
-			Description: typeDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"created_at": {
-			Description: createdAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"modified_at": {
-			Description: modifiedAtDesc,
-			Type:        schema.TypeString,
-			Computed:    true,
-		},
-		"next_rescan_at": {
-			Description: nextRescanAtDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -226,17 +176,10 @@ func confluenceIntegrationRead(ctx context.Context, d *schema.ResourceData, m an
 
 func setConfluenceIntegrationFields(d *schema.ResourceData, integration *client.ConfluenceIntegration) diag.Diagnostics {
 	fields := map[string]any{
-		"name":                 integration.Name,
-		"description":          integration.Description,
-		"org_domain":           integration.OrgDomain,
-		"onprem_deployment_id": integration.OnpremDeploymentID,
-		"status":               integration.Status,
-		"status_message":       integration.StatusMessage,
-		"status_at":            integration.StatusAt,
-		"type":                 integration.Type,
-		"created_at":           integration.CreatedAt,
-		"modified_at":          integration.ModifiedAt,
-		"next_rescan_at":       integration.NextRescanAt,
+		"name":        integration.Name,
+		"description": integration.Description,
+		"org_domain":  integration.OrgDomain,
+		"status":      integration.Status,
 	}
 
 	for field, value := range fields {

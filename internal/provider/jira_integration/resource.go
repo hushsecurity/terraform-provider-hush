@@ -44,9 +44,6 @@ func jiraIntegrationCreate(ctx context.Context, d *schema.ResourceData, m any) d
 	if desc := d.Get("description").(string); desc != "" {
 		input.Description = desc
 	}
-	if depID := d.Get("onprem_deployment_id").(string); depID != "" {
-		input.OnpremDeploymentID = depID
-	}
 
 	syncIssues := d.Get("sync_issues_resolution").(bool)
 	input.SyncIssuesResolution = &syncIssues
@@ -60,12 +57,6 @@ func jiraIntegrationCreate(ctx context.Context, d *schema.ResourceData, m any) d
 	}
 
 	d.SetId(resp.ID)
-
-	if depID := d.Get("onprem_deployment_id").(string); depID != "" {
-		if err := client.WaitForAccessBridge(ctx, c, depID); err != nil {
-			return diag.Errorf("error waiting for on-prem deployment %s to become available: %s", depID, err)
-		}
-	}
 
 	return jiraIntegrationRead(ctx, d, m)
 }
@@ -110,11 +101,6 @@ func jiraIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m any) d
 		input.Description = &desc
 		hasChanges = true
 	}
-	if d.HasChange("onprem_deployment_id") {
-		depID := d.Get("onprem_deployment_id").(string)
-		input.OnpremDeploymentID = &depID
-		hasChanges = true
-	}
 	if d.HasChange("org_domain") {
 		orgDomain := d.Get("org_domain").(string)
 		input.OrgDomain = &orgDomain
@@ -135,14 +121,6 @@ func jiraIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m any) d
 				return nil
 			}
 			return diag.FromErr(err)
-		}
-	}
-
-	if d.HasChange("onprem_deployment_id") {
-		if depID := d.Get("onprem_deployment_id").(string); depID != "" {
-			if err := client.WaitForAccessBridge(ctx, c, depID); err != nil {
-				return diag.Errorf("error waiting for on-prem deployment %s to become available: %s", depID, err)
-			}
 		}
 	}
 
