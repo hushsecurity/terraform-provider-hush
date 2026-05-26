@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -33,12 +34,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		}
 	}
 
-	var password string
-	if v, ok := d.GetOk("password"); ok {
-		password = v.(string)
-	} else if v, ok := d.GetOk("password_wo"); ok {
-		password = v.(string)
-	}
+	password := writeonly.GetString(d, "password", "password_wo")
 
 	input := &client.CreateElasticsearchAccessCredentialInput{
 		Name:          d.Get("name").(string),
@@ -155,12 +151,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.TLSCA = &v
 	}
 	if d.HasChange("password") || d.HasChange("password_wo") || d.HasChange("password_wo_version") {
-		var password string
-		if v, ok := d.GetOk("password"); ok {
-			password = v.(string)
-		} else if v, ok := d.GetOk("password_wo"); ok {
-			password = v.(string)
-		}
+		password := writeonly.GetString(d, "password", "password_wo")
 		input.Password = &password
 	}
 

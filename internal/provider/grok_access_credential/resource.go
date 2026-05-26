@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -33,12 +34,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		}
 	}
 
-	var apiKey string
-	if v, ok := d.GetOk("api_key"); ok {
-		apiKey = v.(string)
-	} else if v, ok := d.GetOk("api_key_wo"); ok {
-		apiKey = v.(string)
-	}
+	apiKey := writeonly.GetString(d, "api_key", "api_key_wo")
 
 	input := &client.CreateGrokAccessCredentialInput{
 		Name:          d.Get("name").(string),
@@ -128,12 +124,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.TeamID = &v
 	}
 	if d.HasChange("api_key") || d.HasChange("api_key_wo") || d.HasChange("api_key_wo_version") {
-		var apiKey string
-		if v, ok := d.GetOk("api_key"); ok {
-			apiKey = v.(string)
-		} else if v, ok := d.GetOk("api_key_wo"); ok {
-			apiKey = v.(string)
-		}
+		apiKey := writeonly.GetString(d, "api_key", "api_key_wo")
 		input.APIKey = &apiKey
 	}
 

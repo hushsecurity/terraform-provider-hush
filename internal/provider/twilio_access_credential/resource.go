@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -24,13 +25,7 @@ func Resource() *schema.Resource {
 }
 
 func getAPIKeySecret(d *schema.ResourceData) string {
-	if v, ok := d.GetOk("api_key_secret"); ok {
-		return v.(string)
-	}
-	if v, ok := d.GetOk("api_key_secret_wo"); ok {
-		return v.(string)
-	}
-	return ""
+	return writeonly.GetString(d, "api_key_secret", "api_key_secret_wo")
 }
 
 func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -28,7 +29,7 @@ func Resource() *schema.Resource {
 func validateKeyPairing(_ context.Context, d *schema.ResourceDiff, _ any) error {
 	_, hasKeyID := d.GetOk("access_key_id_value")
 	_, hasSecret := d.GetOk("secret_access_key")
-	_, hasSecretWO := d.GetOk("secret_access_key_wo")
+	hasSecretWO := writeonly.IsSet(d, "secret_access_key_wo")
 
 	if hasKeyID && !hasSecret && !hasSecretWO && d.Id() == "" {
 		return fmt.Errorf("access_key_id_value requires one of secret_access_key or secret_access_key_wo")
@@ -161,19 +162,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	return nil
 }
 
-// getSecretAccessKey reads the secret access key from either the regular
-// attribute or the write-only attribute via GetRawConfig.
 func getSecretAccessKey(d *schema.ResourceData) string {
-	if v, ok := d.GetOk("secret_access_key"); ok {
-		return v.(string)
-	}
-	rawConfig := d.GetRawConfig()
-	if rawConfig.IsNull() {
-		return ""
-	}
-	v := rawConfig.GetAttr("secret_access_key_wo")
-	if v.IsNull() || !v.IsKnown() {
-		return ""
-	}
-	return v.AsString()
+	return writeonly.GetString(d, "secret_access_key", "secret_access_key_wo")
 }

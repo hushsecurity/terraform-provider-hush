@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -28,7 +29,7 @@ func Resource() *schema.Resource {
 func validateCredentialPairing(_ context.Context, d *schema.ResourceDiff, _ any) error {
 	_, hasClientID := d.GetOk("client_id")
 	_, hasSecret := d.GetOk("client_secret")
-	_, hasSecretWO := d.GetOk("client_secret_wo")
+	hasSecretWO := writeonly.IsSet(d, "client_secret_wo")
 
 	if hasClientID && !hasSecret && !hasSecretWO && d.Id() == "" {
 		return fmt.Errorf("client_id requires one of client_secret or client_secret_wo")
@@ -161,19 +162,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	return nil
 }
 
-// getClientSecret reads the client secret from either the regular
-// attribute or the write-only attribute via GetRawConfig.
 func getClientSecret(d *schema.ResourceData) string {
-	if v, ok := d.GetOk("client_secret"); ok {
-		return v.(string)
-	}
-	rawConfig := d.GetRawConfig()
-	if rawConfig.IsNull() {
-		return ""
-	}
-	v := rawConfig.GetAttr("client_secret_wo")
-	if v.IsNull() || !v.IsKnown() {
-		return ""
-	}
-	return v.AsString()
+	return writeonly.GetString(d, "client_secret", "client_secret_wo")
 }

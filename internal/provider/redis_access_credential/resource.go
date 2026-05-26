@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -33,12 +34,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		}
 	}
 
-	var password string
-	if v, ok := d.GetOk("password"); ok {
-		password = v.(string)
-	} else if v, ok := d.GetOk("password_wo"); ok {
-		password = v.(string)
-	}
+	password := writeonly.GetString(d, "password", "password_wo")
 
 	db := d.Get("database").(int)
 	input := &client.CreateRedisAccessCredentialInput{
@@ -73,11 +69,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if v, ok := d.GetOk("access_key_id"); ok {
 		input.AccessKeyID = v.(string)
 	}
-	if v, ok := d.GetOk("secret_access_key"); ok {
-		input.SecretAccessKey = v.(string)
-	} else if v, ok := d.GetOk("secret_access_key_wo"); ok {
-		input.SecretAccessKey = v.(string)
-	}
+	input.SecretAccessKey = writeonly.GetString(d, "secret_access_key", "secret_access_key_wo")
 
 	credential, err := client.CreateRedisAccessCredential(ctx, c, input)
 	if err != nil {
@@ -189,12 +181,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.TLSCA = &v
 	}
 	if d.HasChange("password") || d.HasChange("password_wo") || d.HasChange("password_wo_version") {
-		var password string
-		if v, ok := d.GetOk("password"); ok {
-			password = v.(string)
-		} else if v, ok := d.GetOk("password_wo"); ok {
-			password = v.(string)
-		}
+		password := writeonly.GetString(d, "password", "password_wo")
 		input.Password = &password
 	}
 	if d.HasChange("engine") {
@@ -218,12 +205,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.AccessKeyID = &v
 	}
 	if d.HasChange("secret_access_key") || d.HasChange("secret_access_key_wo") || d.HasChange("secret_access_key_wo_version") {
-		var secret string
-		if v, ok := d.GetOk("secret_access_key"); ok {
-			secret = v.(string)
-		} else if v, ok := d.GetOk("secret_access_key_wo"); ok {
-			secret = v.(string)
-		}
+		secret := writeonly.GetString(d, "secret_access_key", "secret_access_key_wo")
 		input.SecretAccessKey = &secret
 	}
 

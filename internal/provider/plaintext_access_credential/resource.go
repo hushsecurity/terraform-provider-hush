@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -34,12 +35,7 @@ func plaintextAccessCredentialCreate(ctx context.Context, d *schema.ResourceData
 		}
 	}
 
-	var secret string
-	if v, ok := d.GetOk("secret"); ok {
-		secret = v.(string)
-	} else if v, ok := d.GetOk("secret_wo"); ok {
-		secret = v.(string)
-	}
+	secret := writeonly.GetString(d, "secret", "secret_wo")
 
 	input := &client.CreatePlaintextAccessCredentialInput{
 		Name:          d.Get("name").(string),
