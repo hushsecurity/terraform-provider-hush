@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -139,19 +140,6 @@ func resourceDelete(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	return nil
 }
 
-// getServiceAccountKey reads the service account key from either the regular
-// attribute or the write-only attribute via GetRawConfig.
 func getServiceAccountKey(d *schema.ResourceData) string {
-	if v, ok := d.GetOk("service_account_key"); ok {
-		return v.(string)
-	}
-	rawConfig := d.GetRawConfig()
-	if rawConfig.IsNull() {
-		return ""
-	}
-	v := rawConfig.GetAttr("service_account_key_wo")
-	if v.IsNull() || !v.IsKnown() {
-		return ""
-	}
-	return v.AsString()
+	return writeonly.GetString(d, "service_account_key", "service_account_key_wo")
 }

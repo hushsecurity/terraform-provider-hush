@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -24,18 +25,7 @@ func Resource() *schema.Resource {
 }
 
 func getAPIKey(d *schema.ResourceData) string {
-	if v, ok := d.GetOk("api_key"); ok {
-		return v.(string)
-	}
-	rawConfig := d.GetRawConfig()
-	if rawConfig.IsNull() {
-		return ""
-	}
-	v := rawConfig.GetAttr("api_key_wo")
-	if v.IsNull() || !v.IsKnown() {
-		return ""
-	}
-	return v.AsString()
+	return writeonly.GetString(d, "api_key", "api_key_wo")
 }
 
 func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
