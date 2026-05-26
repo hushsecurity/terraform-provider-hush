@@ -38,13 +38,6 @@ output "confluence_status" {
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the integration was created
 - `description` (String) The description of the Confluence integration
-- `modified_at` (String) The timestamp when the integration was last modified
-- `next_rescan_at` (String) The timestamp of the next scheduled rescan
-- `onprem_deployment_id` (String) The ID of the on-premises deployment to associate with this integration
 - `org_domain` (String) The Confluence organization domain (e.g., mycompany.atlassian.net)
 - `status` (String) The current status of the integration
-- `status_at` (String) The timestamp of the last status change
-- `status_message` (String) Additional details about the integration status
-- `type` (String) The type of integration (always 'confluence' for this resource)

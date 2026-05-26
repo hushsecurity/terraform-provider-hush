@@ -34,14 +34,9 @@ data "hush_jira_integration" "by_name" {
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the integration was created
 - `description` (String) The description of the Jira integration
 - `enable_scans` (Boolean) Whether to enable scanning of Jira issues. Defaults to `true`. Changing this forces a new resource.
-- `modified_at` (String) The timestamp when the integration was last modified
-- `onprem_deployment_id` (String) The ID of the on-premises deployment to associate with this integration
 - `org_domain` (String) The Jira organization domain (e.g., mycompany.atlassian.net)
 - `status` (String) The current status of the integration
-- `status_message` (String) Additional details about the integration status
 - `sync_issues_resolution` (Boolean) Whether to sync issue resolution status from Jira. Defaults to `true`.
-- `type` (String) The type of integration (always 'jira' for this resource)
 - `webhook_provisioned` (Boolean) Whether the webhook has been provisioned for this integration

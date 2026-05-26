@@ -70,10 +70,6 @@ output "gitlab_integration_id" {
 ### Read-Only
 
 - `bot_name` (String) The bot name used for GitLab integration (computed by the API)
-- `created_at` (String) The timestamp when the integration was created
 - `group` (String) The resolved GitLab group name (computed)
 - `id` (String) The unique identifier of the GitLab integration
-- `modified_at` (String) The timestamp when the integration was last modified
 - `status` (String) The current status of the integration
-- `status_message` (String) Additional details about the integration status
-- `type` (String) The type of integration (always 'gitlab' for this resource)

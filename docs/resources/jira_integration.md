@@ -51,15 +51,10 @@ resource "hush_jira_integration" "full" {
 - `api_key_wo_version` (String) Used to trigger updates for `api_key_wo`. This value should be changed when the API key changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `description` (String) The description of the Jira integration
 - `enable_scans` (Boolean) Whether to enable scanning of Jira issues. Defaults to `true`. Changing this forces a new resource.
-- `onprem_deployment_id` (String) The ID of the on-premises deployment to associate with this integration
 - `sync_issues_resolution` (Boolean) Whether to sync issue resolution status from Jira. Defaults to `true`.
 
 ### Read-Only
 
-- `created_at` (String) The timestamp when the integration was created
 - `id` (String) The unique identifier of the Jira integration
-- `modified_at` (String) The timestamp when the integration was last modified
 - `status` (String) The current status of the integration
-- `status_message` (String) Additional details about the integration status
-- `type` (String) The type of integration (always 'jira' for this resource)
 - `webhook_provisioned` (Boolean) Whether the webhook has been provisioned for this integration
