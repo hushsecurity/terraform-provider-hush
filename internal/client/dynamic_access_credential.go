@@ -29,6 +29,7 @@ const (
 	AccessCredentialTypeGitlab        AccessCredentialType = "gitlab"
 	AccessCredentialTypeDatadog       AccessCredentialType = "datadog"
 	AccessCredentialTypeSalesforce    AccessCredentialType = "salesforce"
+	AccessCredentialTypeTemporalCloud AccessCredentialType = "temporal_cloud"
 )
 
 // Postgres
@@ -1716,4 +1717,67 @@ func UpdateSendGridAccessCredential(ctx context.Context, c *Client, id string, i
 
 func (s SendGridAccessCredential) statusFields() (string, string) {
 	return s.Status, s.StatusDetail
+}
+
+// Temporal Cloud
+
+type TemporalCloudAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateTemporalCloudAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	APIKey        string   `json:"api_key"`
+}
+
+type UpdateTemporalCloudAccessCredentialInput struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	APIKey      *string `json:"api_key,omitempty"`
+}
+
+func CreateTemporalCloudAccessCredential(ctx context.Context, c *Client, input *CreateTemporalCloudAccessCredentialInput) (*TemporalCloudAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/temporal_cloud"
+	var resp TemporalCloudAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetTemporalCloudAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetTemporalCloudAccessCredential(ctx context.Context, c *Client, id string) (*TemporalCloudAccessCredential, error) {
+	path := fmt.Sprintf("%s/temporal_cloud/%s", accessCredentialsEndpoint, id)
+	var resp TemporalCloudAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateTemporalCloudAccessCredential(ctx context.Context, c *Client, id string, input *UpdateTemporalCloudAccessCredentialInput) (*TemporalCloudAccessCredential, error) {
+	path := fmt.Sprintf("%s/temporal_cloud/%s", accessCredentialsEndpoint, id)
+	var resp TemporalCloudAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetTemporalCloudAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (t TemporalCloudAccessCredential) statusFields() (string, string) {
+	return t.Status, t.StatusDetail
 }
