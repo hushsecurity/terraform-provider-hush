@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -25,15 +26,11 @@ func Resource() *schema.Resource {
 }
 
 func getSecretAccessKey(d *schema.ResourceData) *string {
-	if v, ok := d.GetOk("secret_access_key"); ok {
-		s := v.(string)
-		return &s
+	s := writeonly.GetString(d, "secret_access_key", "secret_access_key_wo")
+	if s == "" {
+		return nil
 	}
-	if v, ok := d.GetOk("secret_access_key_wo"); ok {
-		s := v.(string)
-		return &s
-	}
-	return nil
+	return &s
 }
 
 func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {

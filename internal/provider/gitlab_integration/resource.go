@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 const resourceDescription = "Manages a Hush Security GitLab integration for scanning GitLab repositories for secrets and sensitive data."
@@ -29,10 +30,7 @@ func Resource() *schema.Resource {
 func gitlabIntegrationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
-	token := d.Get("token").(string)
-	if token == "" {
-		token = d.Get("token_wo").(string)
-	}
+	token := writeonly.GetString(d, "token", "token_wo")
 
 	input := &client.CreateGitlabIntegrationInput{
 		Name:  d.Get("name").(string),
@@ -88,10 +86,7 @@ func gitlabIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m any)
 
 	// Handle token rotation separately
 	if d.HasChanges("token", "token_wo", "token_wo_version") {
-		token := d.Get("token").(string)
-		if token == "" {
-			token = d.Get("token_wo").(string)
-		}
+		token := writeonly.GetString(d, "token", "token_wo")
 
 		if token != "" {
 			replaceInput := &client.ReplaceGitlabTokenInput{

@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 func Resource() *schema.Resource {
@@ -33,12 +34,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		}
 	}
 
-	var serviceAccountKey string
-	if v, ok := d.GetOk("service_account_key"); ok {
-		serviceAccountKey = v.(string)
-	} else if v, ok := d.GetOk("service_account_key_wo"); ok {
-		serviceAccountKey = v.(string)
-	}
+	serviceAccountKey := writeonly.GetString(d, "service_account_key", "service_account_key_wo")
 
 	input := &client.CreateGeminiAccessCredentialInput{
 		Name:          d.Get("name").(string),
@@ -123,12 +119,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.ProjectID = &v
 	}
 	if d.HasChange("service_account_key") || d.HasChange("service_account_key_wo") || d.HasChange("service_account_key_wo_version") {
-		var serviceAccountKey string
-		if v, ok := d.GetOk("service_account_key"); ok {
-			serviceAccountKey = v.(string)
-		} else if v, ok := d.GetOk("service_account_key_wo"); ok {
-			serviceAccountKey = v.(string)
-		}
+		serviceAccountKey := writeonly.GetString(d, "service_account_key", "service_account_key_wo")
 		input.ServiceAccountKey = &serviceAccountKey
 	}
 

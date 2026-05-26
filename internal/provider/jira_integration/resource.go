@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 const resourceDescription = "Manages a Hush Security Jira integration for scanning Jira issues for secrets and sensitive data."
@@ -29,10 +30,7 @@ func Resource() *schema.Resource {
 func jiraIntegrationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
-	apiKey := d.Get("api_key").(string)
-	if apiKey == "" {
-		apiKey = d.Get("api_key_wo").(string)
-	}
+	apiKey := writeonly.GetString(d, "api_key", "api_key_wo")
 
 	input := &client.CreateJiraIntegrationInput{
 		Name:      d.Get("name").(string),
@@ -66,10 +64,7 @@ func jiraIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m any) d
 
 	// Handle api_key rotation separately
 	if d.HasChanges("api_key", "api_key_wo", "api_key_wo_version", "user") {
-		apiKey := d.Get("api_key").(string)
-		if apiKey == "" {
-			apiKey = d.Get("api_key_wo").(string)
-		}
+		apiKey := writeonly.GetString(d, "api_key", "api_key_wo")
 
 		if apiKey != "" {
 			replaceInput := &client.ReplaceJiraApiKeyInput{
