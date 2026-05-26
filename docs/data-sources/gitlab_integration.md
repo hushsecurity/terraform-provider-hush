@@ -42,16 +42,12 @@ output "gitlab_integration_status" {
 
 - `base_url` (String) The base URL of the GitLab instance. Defaults to `https://gitlab.com`.
 - `bot_name` (String) The bot name used for GitLab integration (computed by the API)
-- `created_at` (String) The timestamp when the integration was created
 - `description` (String) The description of the GitLab integration
 - `enable_pr_scans` (Boolean) Whether to enable pull/merge request scanning for this integration
 - `group` (String) The resolved GitLab group name (computed)
 - `group_id` (Number) The GitLab group ID to scan. Mutually exclusive with `project_id`.
-- `modified_at` (String) The timestamp when the integration was last modified
 - `onprem_deployment_id` (String) The ID of the on-premises deployment to associate with this integration
 - `project_id` (Number) The GitLab project ID to scan. Mutually exclusive with `group_id`.
 - `selected_repos` (List of String) List of specific repository names to scan. If not specified, all repositories in the group/project are scanned.
 - `status` (String) The current status of the integration
-- `status_message` (String) Additional details about the integration status
-- `type` (String) The type of integration (always 'gitlab' for this resource)
 - `visibilities` (List of String) List of repository visibilities to scan. Valid values: `private`, `public`, `internal`.
