@@ -1065,6 +1065,61 @@ func UpdateTemporalCloudAccessPrivilege(ctx context.Context, c *Client, id strin
 	return &resp, nil
 }
 
+// MongoDB Atlas
+
+type MongoDBAtlasGrant struct {
+	Privileges    []string `json:"privileges"`
+	ResourceType  string   `json:"resource_type"`
+	ResourceNames []string `json:"resource_names,omitempty"`
+}
+
+type MongoDBAtlasAccessPrivilege struct {
+	ID          string              `json:"id,omitempty"`
+	Name        string              `json:"name"`
+	Description string              `json:"description,omitempty"`
+	Type        string              `json:"type,omitempty"`
+	Grants      []MongoDBAtlasGrant `json:"grants"`
+}
+
+type CreateMongoDBAtlasAccessPrivilegeInput struct {
+	Name        string              `json:"name"`
+	Description string              `json:"description,omitempty"`
+	Grants      []MongoDBAtlasGrant `json:"grants"`
+}
+
+type UpdateMongoDBAtlasAccessPrivilegeInput struct {
+	Name        *string              `json:"name,omitempty"`
+	Description *string              `json:"description,omitempty"`
+	Grants      *[]MongoDBAtlasGrant `json:"grants,omitempty"`
+}
+
+func CreateMongoDBAtlasAccessPrivilege(ctx context.Context, c *Client, input *CreateMongoDBAtlasAccessPrivilegeInput) (*MongoDBAtlasAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/mongodb_atlas"
+	var resp MongoDBAtlasAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetMongoDBAtlasAccessPrivilege(ctx context.Context, c *Client, id string) (*MongoDBAtlasAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/mongodb_atlas/%s", accessPrivilegesEndpoint, id)
+	var resp MongoDBAtlasAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateMongoDBAtlasAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateMongoDBAtlasAccessPrivilegeInput) (*MongoDBAtlasAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/mongodb_atlas/%s", accessPrivilegesEndpoint, id)
+	var resp MongoDBAtlasAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
