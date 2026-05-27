@@ -27,6 +27,7 @@ const (
 	AccessCredentialTypeSnowflake     AccessCredentialType = "snowflake"
 	AccessCredentialTypeAWSWIF        AccessCredentialType = "aws_wif"
 	AccessCredentialTypeGCPWIF        AccessCredentialType = "gcp_wif"
+	AccessCredentialTypeAzureWIF      AccessCredentialType = "azure_wif"
 	AccessCredentialTypeGitlab        AccessCredentialType = "gitlab"
 	AccessCredentialTypeDatadog       AccessCredentialType = "datadog"
 	AccessCredentialTypeSalesforce    AccessCredentialType = "salesforce"
@@ -1598,6 +1599,70 @@ func UpdateGcpWifAccessCredential(ctx context.Context, c *Client, id string, inp
 
 func (g GcpWifAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
+}
+
+// Azure WIF
+
+type AzureWifAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Audience      string               `json:"audience,omitempty"`
+	IssuerURL     string               `json:"issuer_url,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateAzureWifAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+}
+
+type UpdateAzureWifAccessCredentialInput struct {
+	Name          *string  `json:"name,omitempty"`
+	Description   *string  `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids,omitempty"`
+}
+
+func CreateAzureWifAccessCredential(ctx context.Context, c *Client, input *CreateAzureWifAccessCredentialInput) (*AzureWifAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/azure_wif"
+	var resp AzureWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetAzureWifAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAzureWifAccessCredential(ctx context.Context, c *Client, id string) (*AzureWifAccessCredential, error) {
+	path := fmt.Sprintf("%s/azure_wif/%s", accessCredentialsEndpoint, id)
+	var resp AzureWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAzureWifAccessCredential(ctx context.Context, c *Client, id string, input *UpdateAzureWifAccessCredentialInput) (*AzureWifAccessCredential, error) {
+	path := fmt.Sprintf("%s/azure_wif/%s", accessCredentialsEndpoint, id)
+	var resp AzureWifAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetAzureWifAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (a AzureWifAccessCredential) statusFields() (string, string) {
+	return a.Status, a.StatusDetail
 }
 
 // Datadog
