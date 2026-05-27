@@ -114,6 +114,10 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetMongoDBAccessCredential(context.Background(), c, resourceId)
 			case "mongodb_access_privilege":
 				_, err = client.GetMongoDBAccessPrivilege(context.Background(), c, resourceId)
+			case "mongodb_atlas_access_credential":
+				_, err = client.GetMongoDBAtlasAccessCredential(context.Background(), c, resourceId)
+			case "mongodb_atlas_access_privilege":
+				_, err = client.GetMongoDBAtlasAccessPrivilege(context.Background(), c, resourceId)
 			case "mysql_access_credential":
 				_, err = client.GetMySQLAccessCredential(context.Background(), c, resourceId)
 			case "mysql_access_privilege":

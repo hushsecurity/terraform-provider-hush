@@ -9,6 +9,7 @@ import (
 const (
 	AccessCredentialTypePostgres      AccessCredentialType = "postgres"
 	AccessCredentialTypeMongoDB       AccessCredentialType = "mongodb"
+	AccessCredentialTypeMongoDBAtlas  AccessCredentialType = "mongodb_atlas"
 	AccessCredentialTypeMySQL         AccessCredentialType = "mysql"
 	AccessCredentialTypeMariaDB       AccessCredentialType = "mariadb"
 	AccessCredentialTypeOpenAI        AccessCredentialType = "openai"
@@ -194,6 +195,86 @@ func UpdateMongoDBAccessCredential(ctx context.Context, c *Client, id string, in
 }
 
 func (m MongoDBAccessCredential) statusFields() (string, string) {
+	return m.Status, m.StatusDetail
+}
+
+// MongoDB Atlas
+
+type MongoDBAtlasAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	GroupID       string               `json:"group_id,omitempty"`
+	DBName        string               `json:"db_name,omitempty"`
+	Host          string               `json:"host,omitempty"`
+	ClientID      string               `json:"client_id,omitempty"`
+	PublicKey     string               `json:"public_key,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateMongoDBAtlasAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	GroupID       string   `json:"group_id"`
+	DBName        string   `json:"db_name"`
+	Host          string   `json:"host"`
+	ClientID      string   `json:"client_id,omitempty"`
+	ClientSecret  string   `json:"client_secret,omitempty"`
+	PublicKey     string   `json:"public_key,omitempty"`
+	PrivateKey    string   `json:"private_key,omitempty"`
+}
+
+type UpdateMongoDBAtlasAccessCredentialInput struct {
+	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
+	GroupID      *string `json:"group_id,omitempty"`
+	DBName       *string `json:"db_name,omitempty"`
+	Host         *string `json:"host,omitempty"`
+	ClientID     *string `json:"client_id,omitempty"`
+	ClientSecret *string `json:"client_secret,omitempty"`
+	PublicKey    *string `json:"public_key,omitempty"`
+	PrivateKey   *string `json:"private_key,omitempty"`
+}
+
+func CreateMongoDBAtlasAccessCredential(ctx context.Context, c *Client, input *CreateMongoDBAtlasAccessCredentialInput) (*MongoDBAtlasAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/mongodb_atlas"
+	var resp MongoDBAtlasAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetMongoDBAtlasAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetMongoDBAtlasAccessCredential(ctx context.Context, c *Client, id string) (*MongoDBAtlasAccessCredential, error) {
+	path := fmt.Sprintf("%s/mongodb_atlas/%s", accessCredentialsEndpoint, id)
+	var resp MongoDBAtlasAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateMongoDBAtlasAccessCredential(ctx context.Context, c *Client, id string, input *UpdateMongoDBAtlasAccessCredentialInput) (*MongoDBAtlasAccessCredential, error) {
+	path := fmt.Sprintf("%s/mongodb_atlas/%s", accessCredentialsEndpoint, id)
+	var resp MongoDBAtlasAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetMongoDBAtlasAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (m MongoDBAtlasAccessCredential) statusFields() (string, string) {
 	return m.Status, m.StatusDetail
 }
 
