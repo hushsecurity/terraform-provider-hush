@@ -513,11 +513,10 @@ type CreateGrokAccessCredentialInput struct {
 }
 
 type UpdateGrokAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	APIKey        *string   `json:"api_key,omitempty"`
-	TeamID        *string   `json:"team_id,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	APIKey      *string `json:"api_key,omitempty"`
+	TeamID      *string `json:"team_id,omitempty"`
 }
 
 func CreateGrokAccessCredential(ctx context.Context, c *Client, input *CreateGrokAccessCredentialInput) (*GrokAccessCredential, error) {
@@ -602,22 +601,21 @@ type CreateRedisAccessCredentialInput struct {
 }
 
 type UpdateRedisAccessCredentialInput struct {
-	Name            *string   `json:"name,omitempty"`
-	Description     *string   `json:"description,omitempty"`
-	DeploymentIDs   *[]string `json:"deployment_ids,omitempty"`
-	Host            *string   `json:"host,omitempty"`
-	Port            *int      `json:"port,omitempty"`
-	Username        *string   `json:"username,omitempty"`
-	Password        *string   `json:"password,omitempty"`
-	Database        *int      `json:"database,omitempty"`
-	TLS             *bool     `json:"tls,omitempty"`
-	TLSCA           *string   `json:"tls_ca,omitempty"`
-	Engine          *string   `json:"engine,omitempty"`
-	CacheEngine     *string   `json:"cache_engine,omitempty"`
-	Region          *string   `json:"region,omitempty"`
-	UserGroupID     *string   `json:"user_group_id,omitempty"`
-	AccessKeyID     *string   `json:"access_key_id,omitempty"`
-	SecretAccessKey *string   `json:"secret_access_key,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	Description     *string `json:"description,omitempty"`
+	Host            *string `json:"host,omitempty"`
+	Port            *int    `json:"port,omitempty"`
+	Username        *string `json:"username,omitempty"`
+	Password        *string `json:"password,omitempty"`
+	Database        *int    `json:"database,omitempty"`
+	TLS             *bool   `json:"tls,omitempty"`
+	TLSCA           *string `json:"tls_ca,omitempty"`
+	Engine          *string `json:"engine,omitempty"`
+	CacheEngine     *string `json:"cache_engine,omitempty"`
+	Region          *string `json:"region,omitempty"`
+	UserGroupID     *string `json:"user_group_id,omitempty"`
+	AccessKeyID     *string `json:"access_key_id,omitempty"`
+	SecretAccessKey *string `json:"secret_access_key,omitempty"`
 }
 
 func CreateRedisAccessCredential(ctx context.Context, c *Client, input *CreateRedisAccessCredentialInput) (*RedisAccessCredential, error) {
@@ -683,12 +681,11 @@ type CreateBedrockAccessCredentialInput struct {
 }
 
 type UpdateBedrockAccessCredentialInput struct {
-	Name            *string   `json:"name,omitempty"`
-	Description     *string   `json:"description,omitempty"`
-	DeploymentIDs   *[]string `json:"deployment_ids,omitempty"`
-	Region          *string   `json:"region,omitempty"`
-	AccessKeyID     *string   `json:"access_key_id,omitempty"`
-	SecretAccessKey *string   `json:"secret_access_key,omitempty"`
+	Name            *string `json:"name,omitempty"`
+	Description     *string `json:"description,omitempty"`
+	Region          *string `json:"region,omitempty"`
+	AccessKeyID     *string `json:"access_key_id,omitempty"`
+	SecretAccessKey *string `json:"secret_access_key,omitempty"`
 }
 
 func CreateBedrockAccessCredential(ctx context.Context, c *Client, input *CreateBedrockAccessCredentialInput) (*BedrockAccessCredential, error) {
@@ -750,10 +747,9 @@ type CreateApigeeAccessCredentialInput struct {
 }
 
 type UpdateApigeeAccessCredentialInput struct {
-	Name              *string   `json:"name,omitempty"`
-	Description       *string   `json:"description,omitempty"`
-	DeploymentIDs     *[]string `json:"deployment_ids,omitempty"`
-	ServiceAccountKey *string   `json:"service_account_key,omitempty"`
+	Name              *string `json:"name,omitempty"`
+	Description       *string `json:"description,omitempty"`
+	ServiceAccountKey *string `json:"service_account_key,omitempty"`
 }
 
 func CreateApigeeAccessCredential(ctx context.Context, c *Client, input *CreateApigeeAccessCredentialInput) (*ApigeeAccessCredential, error) {
@@ -824,15 +820,14 @@ type CreateElasticsearchAccessCredentialInput struct {
 }
 
 type UpdateElasticsearchAccessCredentialInput struct {
-	Name          *string   `json:"name,omitempty"`
-	Description   *string   `json:"description,omitempty"`
-	DeploymentIDs *[]string `json:"deployment_ids,omitempty"`
-	Host          *string   `json:"host,omitempty"`
-	Port          *int      `json:"port,omitempty"`
-	Username      *string   `json:"username,omitempty"`
-	Password      *string   `json:"password,omitempty"`
-	TLS           *bool     `json:"tls,omitempty"`
-	TLSCA         *string   `json:"tls_ca,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Host        *string `json:"host,omitempty"`
+	Port        *int    `json:"port,omitempty"`
+	Username    *string `json:"username,omitempty"`
+	Password    *string `json:"password,omitempty"`
+	TLS         *bool   `json:"tls,omitempty"`
+	TLSCA       *string `json:"tls_ca,omitempty"`
 }
 
 func CreateElasticsearchAccessCredential(ctx context.Context, c *Client, input *CreateElasticsearchAccessCredentialInput) (*ElasticsearchAccessCredential, error) {
@@ -907,17 +902,16 @@ type CreateRabbitmqAccessCredentialInput struct {
 }
 
 type UpdateRabbitmqAccessCredentialInput struct {
-	Name           *string   `json:"name,omitempty"`
-	Description    *string   `json:"description,omitempty"`
-	DeploymentIDs  *[]string `json:"deployment_ids,omitempty"`
-	Host           *string   `json:"host,omitempty"`
-	Port           *int      `json:"port,omitempty"`
-	ManagementPort *int      `json:"management_port,omitempty"`
-	Username       *string   `json:"username,omitempty"`
-	Password       *string   `json:"password,omitempty"`
-	Vhost          *string   `json:"vhost,omitempty"`
-	TLS            *bool     `json:"tls,omitempty"`
-	TLSCA          *string   `json:"tls_ca,omitempty"`
+	Name           *string `json:"name,omitempty"`
+	Description    *string `json:"description,omitempty"`
+	Host           *string `json:"host,omitempty"`
+	Port           *int    `json:"port,omitempty"`
+	ManagementPort *int    `json:"management_port,omitempty"`
+	Username       *string `json:"username,omitempty"`
+	Password       *string `json:"password,omitempty"`
+	Vhost          *string `json:"vhost,omitempty"`
+	TLS            *bool   `json:"tls,omitempty"`
+	TLSCA          *string `json:"tls_ca,omitempty"`
 }
 
 func CreateRabbitmqAccessCredential(ctx context.Context, c *Client, input *CreateRabbitmqAccessCredentialInput) (*RabbitmqAccessCredential, error) {

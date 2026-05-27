@@ -43,7 +43,7 @@ func ResourceSchema() map[string]*schema.Schema {
 		ValidateFunc: validation.StringLenBetween(0, 1000),
 	}
 	s["deployment_ids"] = &schema.Schema{
-		Description: deploymentIDsDesc,
+		Description: deploymentIDsDesc + ". Changing this after creation is not supported; the credential must be deleted and recreated.",
 		Type:        schema.TypeList,
 		Required:    true,
 		MinItems:    1,

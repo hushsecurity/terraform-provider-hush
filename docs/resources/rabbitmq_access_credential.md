@@ -33,7 +33,7 @@ resource "hush_rabbitmq_access_credential" "example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `host` (String) The RabbitMQ host
 - `name` (String) The name of the RabbitMQ access credential
 

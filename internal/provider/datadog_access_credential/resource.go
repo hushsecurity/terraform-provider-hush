@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/credutil"
 	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
@@ -17,6 +18,7 @@ func Resource() *schema.Resource {
 		ReadContext:   resourceRead,
 		UpdateContext: resourceUpdate,
 		DeleteContext: resourceDelete,
+		CustomizeDiff: credutil.ForbidDeploymentIDsChange,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -110,10 +112,6 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	c := meta.(*client.Client)
 	id := d.Id()
-
-	if d.HasChange("deployment_ids") {
-		return diag.Errorf("cannot update 'deployment_ids' after creation")
-	}
 
 	input := &client.UpdateDatadogAccessCredentialInput{}
 
