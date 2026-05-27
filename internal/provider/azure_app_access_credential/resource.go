@@ -6,8 +6,10 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/credutil"
 	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
@@ -18,7 +20,7 @@ func Resource() *schema.Resource {
 		ReadContext:   resourceRead,
 		UpdateContext: resourceUpdate,
 		DeleteContext: resourceDelete,
-		CustomizeDiff: validateCredentialPairing,
+		CustomizeDiff: customdiff.All(validateCredentialPairing, credutil.ForbidDeploymentIDsChange),
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},

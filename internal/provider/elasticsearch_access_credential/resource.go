@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/credutil"
 	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
@@ -17,6 +18,7 @@ func Resource() *schema.Resource {
 		ReadContext:   resourceRead,
 		UpdateContext: resourceUpdate,
 		DeleteContext: resourceDelete,
+		CustomizeDiff: credutil.ForbidDeploymentIDsChange,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
@@ -121,14 +123,6 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
-	}
-	if d.HasChange("deployment_ids") {
-		list := d.Get("deployment_ids").([]any)
-		ids := make([]string, len(list))
-		for i, item := range list {
-			ids[i] = item.(string)
-		}
-		input.DeploymentIDs = &ids
 	}
 	if d.HasChange("host") {
 		v := d.Get("host").(string)

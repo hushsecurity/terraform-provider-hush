@@ -34,7 +34,7 @@ resource "hush_mongodb_access_credential" "example" {
 ### Required
 
 - `db_name` (String) The name of the MongoDB database
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `host` (String) The hostname or IP address of the MongoDB server
 - `name` (String) The name of the MongoDB access credential
 - `username` (String) The username for the MongoDB connection

@@ -31,7 +31,7 @@ resource "hush_gitlab_access_credential" "example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `name` (String) The name of the GitLab access credential
 - `resource_id` (String) The GitLab group or project ID
 - `resource_type` (String) The type of GitLab resource to manage (group or project)

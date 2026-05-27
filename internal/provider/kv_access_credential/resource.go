@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/credutil"
 )
 
 func Resource() *schema.Resource {
@@ -16,6 +17,7 @@ func Resource() *schema.Resource {
 		ReadContext:   kvAccessCredentialRead,
 		UpdateContext: kvAccessCredentialUpdate,
 		DeleteContext: kvAccessCredentialDelete,
+		CustomizeDiff: credutil.ForbidDeploymentIDsChange,
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
