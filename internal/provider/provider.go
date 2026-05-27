@@ -18,6 +18,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_wif_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_app_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_wif_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/confluence_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_credential"
@@ -140,6 +141,7 @@ func New(version string) func() *schema.Provider {
 				"hush_twilio_access_credential":         twilio_access_credential.Resource(),
 				"hush_twilio_access_privilege":          twilio_access_privilege.Resource(),
 				"hush_aws_wif_access_credential":        aws_wif_access_credential.Resource(),
+				"hush_azure_wif_access_credential":      azure_wif_access_credential.Resource(),
 				"hush_gcp_wif_access_credential":        gcp_wif_access_credential.Resource(),
 				"hush_gitlab_access_credential":         gitlab_access_credential.Resource(),
 				"hush_gitlab_access_privilege":          gitlab_access_privilege.Resource(),
@@ -197,6 +199,7 @@ func New(version string) func() *schema.Provider {
 				"hush_twilio_access_credential":         twilio_access_credential.DataSource(),
 				"hush_twilio_access_privilege":          twilio_access_privilege.DataSource(),
 				"hush_aws_wif_access_credential":        aws_wif_access_credential.DataSource(),
+				"hush_azure_wif_access_credential":      azure_wif_access_credential.DataSource(),
 				"hush_gcp_wif_access_credential":        gcp_wif_access_credential.DataSource(),
 				"hush_gitlab_access_credential":         gitlab_access_credential.DataSource(),
 				"hush_gitlab_access_privilege":          gitlab_access_privilege.DataSource(),
