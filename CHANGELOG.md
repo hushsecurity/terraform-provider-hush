@@ -10,18 +10,68 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
-* **Sendgrid**: `hush_sendgrid_access_credential` and `hush_sendgrid_access_privilege` resources and data sources
-* **Salesforce**: `hush_salesforce_access_credential` and `hush_salesforce_access_privilege` resources and data sources
-* **Datadog**: `hush_datadog_access_credential` and `hush_datadog_access_privilege` resources and data sources
+* **Azure WIF delivery configuration** on `hush_access_policy` for just-in-time credential delivery
+* **SDK Delivery**: New delivery mode for `hush_access_policy` that publishes credentials as named items under an SDK secret name, for consumption via the Hush SDK
+
+## [1.12.0] - 2026-06-01
+
+### Added
+
+* **AWS Integration**: `hush_aws_integration` resource and data source
+
+## [1.11.0] - 2026-05-30
+
+### Added
+
 * **Temporal Cloud**: `hush_temporal_cloud_access_credential` and `hush_temporal_cloud_access_privilege` resources and data sources
 * **MongoDB Atlas**: `hush_mongodb_atlas_access_credential` and `hush_mongodb_atlas_access_privilege` resources and data sources
 * **Azure Workload Identity Federation**: Issue short-lived Azure credentials through WIF, without managing long-lived client secrets
   * `hush_azure_wif_access_credential` resource and data source
+* **GCP Integration**: `hush_gcp_integration` resource and data source
+
+### Changed
+
+* **On-prem integrations**: Remove `onprem_deployment_id` from `hush_confluence_integration`, `hush_jira_integration`, and `hush_gitlab_integration`, and drop unused computed fields
 
 ### Fixed
 
 * **Write-only secrets across all credential resources and integrations**: Fix Create silently sending an empty secret, and rotation via `_wo_version` overwriting the stored secret with an empty value. All `*_wo` attributes are now read from raw config via a shared helper.
 * **`deployment_ids` on credential resources**: Changes after creation now error at plan time for credential types whose API does not support updating `deployment_ids` (every type except `aws_wif`, `azure_wif`, `gcp_wif`). Previously such changes were either silently no-op'd or rejected by the API mid-apply.
+
+## [1.10.0] - 2026-05-25
+
+### Added
+
+* **Jira Integration**: `hush_jira_integration` resource and data source
+* **Confluence Integration**: `hush_confluence_integration` resource and data source
+
+### Changed
+
+* **On-prem deployments**: Wait for the access bridge to become available before completing apply, so policies that depend on on-prem deployments do not race the bridge setup
+
+## [1.9.0] - 2026-05-24
+
+### Added
+
+* **GitLab Integration**: `hush_gitlab_integration` resource and data source
+* **`hush_aws_access_key_access_credential`**: Add `permission_boundary` attribute to control whether the issued IAM access key is subject to a permission boundary
+
+## [1.8.0] - 2026-05-04
+
+### Added
+
+* **Sendgrid**: `hush_sendgrid_access_credential` and `hush_sendgrid_access_privilege` resources and data sources
+* **Salesforce**: `hush_salesforce_access_credential` and `hush_salesforce_access_privilege` resources and data sources
+* **Datadog**: `hush_datadog_access_credential` and `hush_datadog_access_privilege` resources and data sources
+* **`hush_redis_access_credential`**: Support AWS ElastiCache via new attributes `engine`, `cache_engine`, `region`, `user_group_id`, `access_key_id`, `secret_access_key`
+
+### Changed
+
+* Bump `terraform-plugin-sdk/v2` (provider built against the newer SDK)
+
+### Fixed
+
+* **`hush_twilio_access_credential`, `hush_gitlab_access_credential`**: Allow changing `deployment_ids` without forcing resource replacement
 
 ## [1.7.0] - 2026-04-13
 
