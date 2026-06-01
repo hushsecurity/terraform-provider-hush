@@ -1103,3 +1103,140 @@ resource "hush_access_policy" "test" {
 }
 `
 }
+
+func TestAccResourceAccessPolicy_withSdkDelivery(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicySdkDeliveryStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-sdk",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.secret_name", "test/db/creds",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.#", "2",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.0.name", "username",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.0.key", "username",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.0.type", "key",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.1.name", "password",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.1.type", "key",
+					),
+				),
+			},
+			{
+				Config: accessPolicySdkDeliveryStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-sdk-updated",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.secret_name", "test/db/creds-v2",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.#", "3",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.2.name", "connection_string",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.2.key", "{{ .username }}:{{ .password }}@localhost",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "sdk_delivery_config.0.items.2.type", "template",
+					),
+				),
+			},
+		},
+	})
+}
+
+func accessPolicySdkDeliveryStep1() string {
+	return `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-sdk"
+  description          = "test SDK delivery policy"
+  enabled              = true
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  sdk_delivery_config {
+    secret_name = "test/db/creds"
+
+    items {
+      name = "username"
+      key  = "username"
+    }
+
+    items {
+      name = "password"
+      key  = "password"
+    }
+  }
+}
+`
+}
+
+func accessPolicySdkDeliveryStep2() string {
+	return `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-sdk-updated"
+  description          = "updated SDK delivery policy"
+  enabled              = true
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  sdk_delivery_config {
+    secret_name = "test/db/creds-v2"
+
+    items {
+      name = "username"
+      key  = "username"
+    }
+
+    items {
+      name = "password"
+      key  = "password"
+    }
+
+    items {
+      name = "connection_string"
+      key  = "{{ .username }}:{{ .password }}@localhost"
+      type = "template"
+    }
+  }
+}
+`
+}

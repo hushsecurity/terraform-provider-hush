@@ -25,11 +25,14 @@ const (
 	awsWifDeliveryConfigDesc   = "AWS WIF delivery configuration for the access policy"
 	gcpWifDeliveryConfigDesc   = "GCP WIF delivery configuration for the access policy"
 	azureWifDeliveryConfigDesc = "Azure WIF delivery configuration for the access policy"
+	sdkDeliveryConfigDesc      = "SDK delivery configuration for the access policy"
 	statusDesc                 = "The status of the access policy (syncing, ok, warning, error, disabled)"
 	statusDetailDesc           = "The status detail of the access policy"
 )
 
-var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config", "azure_wif_delivery_config"}
+var sdkNameRegex = regexp.MustCompile(`^[a-zA-Z0-9/_+=.@-]+$`)
+
+var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config", "azure_wif_delivery_config", "sdk_delivery_config"}
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -244,6 +247,57 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"sdk_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  sdkDeliveryConfigDesc,
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"secret_name": {
+						Type:     schema.TypeString,
+						Required: true,
+						ValidateFunc: validation.All(
+							validation.StringLenBetween(1, 512),
+							validation.StringMatch(sdkNameRegex, "must match ^[a-zA-Z0-9/_+=.@-]+$"),
+						),
+						Description: "The SDK secret name to deliver the credential under",
+					},
+					"items": {
+						Type:        schema.TypeList,
+						Required:    true,
+						MinItems:    1,
+						Description: "The list of items mapped into the delivered secret",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"name": {
+									Type:     schema.TypeString,
+									Required: true,
+									ValidateFunc: validation.All(
+										validation.StringLenBetween(1, 512),
+										validation.StringMatch(sdkNameRegex, "must match ^[a-zA-Z0-9/_+=.@-]+$"),
+									),
+									Description: "The item name within the SDK secret",
+								},
+								"key": {
+									Type:        schema.TypeString,
+									Optional:    true,
+									Description: "The credential key or template string for the delivery item",
+								},
+								"type": {
+									Type:         schema.TypeString,
+									Optional:     true,
+									Default:      string(client.DeliveryMappingTypeKey),
+									ValidateFunc: validation.StringInSlice([]string{string(client.DeliveryMappingTypeKey), string(client.DeliveryMappingTypeTemplate)}, false),
+									Description:  "The type of delivery item mapping (key or template)",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -443,6 +497,44 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"sdk_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: sdkDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"secret_name": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The SDK secret name to deliver the credential under",
+					},
+					"items": {
+						Type:        schema.TypeList,
+						Computed:    true,
+						Description: "The list of items mapped into the delivered secret",
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"name": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The item name within the SDK secret",
+								},
+								"key": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The credential key or template string for the delivery item",
+								},
+								"type": {
+									Type:        schema.TypeString,
+									Computed:    true,
+									Description: "The type of delivery item mapping",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -551,6 +643,9 @@ func expandDeliveryConfig(d *schema.ResourceData) any {
 	}
 	if v, ok := d.GetOk("azure_wif_delivery_config"); ok {
 		return expandAzureWifDeliveryConfig(v.([]any))
+	}
+	if v, ok := d.GetOk("sdk_delivery_config"); ok {
+		return expandSdkDeliveryConfig(v.([]any))
 	}
 
 	return nil
@@ -680,6 +775,35 @@ func expandAwsWifDeliveryConfig(list []any) *client.AwsWifDeliveryConfig {
 	}
 }
 
+func expandSdkDeliveryConfig(list []any) *client.SdkDeliveryConfig {
+	if len(list) == 0 || list[0] == nil {
+		return nil
+	}
+
+	configMap := list[0].(map[string]any)
+	rawItems, _ := configMap["items"].([]any)
+	items := make([]client.SdkDeliveryItem, len(rawItems))
+	for i, raw := range rawItems {
+		itemMap := raw.(map[string]any)
+		item := client.SdkDeliveryItem{
+			Name: itemMap["name"].(string),
+		}
+		if key, ok := itemMap["key"].(string); ok && key != "" {
+			item.Key = key
+		}
+		if t, ok := itemMap["type"].(string); ok && t != "" {
+			item.Type = client.DeliveryMappingType(t)
+		}
+		items[i] = item
+	}
+
+	return &client.SdkDeliveryConfig{
+		Type:       client.DeliveryTypeSdk,
+		SecretName: configMap["secret_name"].(string),
+		Items:      items,
+	}
+}
+
 func expandAzureWifDeliveryConfig(list []any) *client.AzureWifDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return nil
@@ -763,6 +887,10 @@ func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics 
 		if err := d.Set("azure_wif_delivery_config", flattenAzureWifDeliveryConfig(configMap)); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set azure_wif_delivery_config: %w", err))
 		}
+	case client.DeliveryTypeSdk:
+		if err := d.Set("sdk_delivery_config", flattenSdkDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set sdk_delivery_config: %w", err))
+		}
 	}
 
 	return nil
@@ -820,6 +948,25 @@ func flattenAzureWifDeliveryConfig(configMap map[string]any) []any {
 	}
 	flattenWifSubject(configMap, result)
 	return []any{result}
+}
+
+func flattenSdkDeliveryConfig(configMap map[string]any) []any {
+	rawItems, _ := configMap["items"].([]any)
+	items := make([]any, len(rawItems))
+	for i, raw := range rawItems {
+		itemMap, _ := raw.(map[string]any)
+		items[i] = map[string]any{
+			"name": itemMap["name"],
+			"key":  itemMap["key"],
+			"type": itemMap["type"],
+		}
+	}
+	return []any{
+		map[string]any{
+			"secret_name": configMap["secret_name"],
+			"items":       items,
+		},
+	}
 }
 
 func isNotFoundError(err error) bool {
