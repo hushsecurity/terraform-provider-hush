@@ -32,6 +32,7 @@ const (
 	DeliveryTypeAwsWif   DeliveryType = "aws_wif"
 	DeliveryTypeGcpWif   DeliveryType = "gcp_wif"
 	DeliveryTypeAzureWif DeliveryType = "azure_wif"
+	DeliveryTypeSdk      DeliveryType = "sdk"
 )
 
 type WifSubjectKind string
@@ -92,6 +93,18 @@ type AzureWifDeliveryConfig struct {
 	ClientID    string         `json:"client_id"`
 	SubjectKind WifSubjectKind `json:"subject_kind"`
 	Subject     string         `json:"subject,omitempty"`
+}
+
+type SdkDeliveryItem struct {
+	Name string              `json:"name"`
+	Key  string              `json:"key,omitempty"`
+	Type DeliveryMappingType `json:"type,omitempty"`
+}
+
+type SdkDeliveryConfig struct {
+	Type       DeliveryType      `json:"type"`
+	SecretName string            `json:"secret_name"`
+	Items      []SdkDeliveryItem `json:"items"`
 }
 
 type AccessPolicy struct {

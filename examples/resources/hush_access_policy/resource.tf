@@ -291,3 +291,31 @@ resource "hush_access_policy" "azure_wif_example" {
     subject      = "my-workload-identity"
   }
 }
+
+# Create an access policy with SDK delivery (credentials retrieved via the Hush SDK)
+resource "hush_access_policy" "sdk_example" {
+  name                 = "prod-sdk-policy"
+  description          = "Access policy delivered to workloads via the Hush SDK"
+  enabled              = true
+  access_credential_id = hush_postgres_access_credential.example.id
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  sdk_delivery_config {
+    secret_name = "prod/db/credentials"
+
+    items {
+      name = "username"
+      key  = "username"
+    }
+
+    items {
+      name = "password"
+      key  = "password"
+    }
+  }
+}

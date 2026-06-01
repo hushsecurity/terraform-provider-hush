@@ -58,6 +58,7 @@ output "status" {
 - `env_delivery_config` (List of Object) Environment variable delivery configuration for the access policy (see [below for nested schema](#nestedatt--env_delivery_config))
 - `gcp_wif_delivery_config` (List of Object) GCP WIF delivery configuration for the access policy (see [below for nested schema](#nestedatt--gcp_wif_delivery_config))
 - `name` (String) The name of the access policy
+- `sdk_delivery_config` (List of Object) SDK delivery configuration for the access policy (see [below for nested schema](#nestedatt--sdk_delivery_config))
 - `status` (String) The status of the access policy (syncing, ok, warning, error, disabled)
 - `status_detail` (String) The status detail of the access policy
 - `volume_delivery_config` (List of Object) Volume mount delivery configuration for the access policy (see [below for nested schema](#nestedatt--volume_delivery_config))
@@ -112,6 +113,25 @@ Read-Only:
 - `service_account_token_lifetime` (Number)
 - `subject` (String)
 - `subject_kind` (String)
+
+
+<a id="nestedatt--sdk_delivery_config"></a>
+### Nested Schema for `sdk_delivery_config`
+
+Read-Only:
+
+- `items` (List of Object) (see [below for nested schema](#nestedobjatt--sdk_delivery_config--items))
+- `secret_name` (String)
+
+<a id="nestedobjatt--sdk_delivery_config--items"></a>
+### Nested Schema for `sdk_delivery_config.items`
+
+Read-Only:
+
+- `key` (String)
+- `name` (String)
+- `type` (String)
+
 
 
 <a id="nestedatt--volume_delivery_config"></a>
