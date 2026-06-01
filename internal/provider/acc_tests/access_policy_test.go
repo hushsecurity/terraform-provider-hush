@@ -928,3 +928,118 @@ data "hush_access_policy" "test" {
   id = hush_access_policy.test.id
 }
 `
+
+func TestAccResourceAccessPolicy_withAzureWifDelivery(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			{
+				Config: accessPolicyAzureWifDeliveryStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-azure-wif",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "test Azure WIF delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "azure_wif_delivery_config.0.tenant_id", "00000000-0000-0000-0000-000000000000",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "azure_wif_delivery_config.0.client_id", "11111111-1111-1111-1111-111111111111",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "azure_wif_delivery_config.0.subject_kind", "hush_subject",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "azure_wif_delivery_config.0.subject", "my-test-subject",
+					),
+				),
+			},
+			{
+				Config: accessPolicyAzureWifDeliveryStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_access_policy.test", "id", regexp.MustCompile("^apl-.+$"),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "name", "test-policy-azure-wif-updated",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "description", "updated Azure WIF delivery policy",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "azure_wif_delivery_config.0.client_id", "22222222-2222-2222-2222-222222222222",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.test", "azure_wif_delivery_config.0.subject", "my-updated-subject",
+					),
+				),
+			},
+		},
+	})
+}
+
+func accessPolicyAzureWifDeliveryStep1() string {
+	return `
+resource "hush_azure_wif_access_credential" "test" {
+  name           = "test-azure-wif-cred"
+  description    = "Azure WIF credential for access policy test"
+  deployment_ids = ["` + mockDeploymentID + `"]
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-azure-wif"
+  description          = "test Azure WIF delivery policy"
+  enabled              = true
+  access_credential_id = hush_azure_wif_access_credential.test.id
+  deployment_ids       = ["` + mockDeploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  azure_wif_delivery_config {
+    tenant_id    = "00000000-0000-0000-0000-000000000000"
+    client_id    = "11111111-1111-1111-1111-111111111111"
+    subject_kind = "hush_subject"
+    subject      = "my-test-subject"
+  }
+}
+`
+}
+
+func accessPolicyAzureWifDeliveryStep2() string {
+	return `
+resource "hush_azure_wif_access_credential" "test" {
+  name           = "test-azure-wif-cred"
+  description    = "Azure WIF credential for access policy test"
+  deployment_ids = ["` + mockDeploymentID + `"]
+}
+
+resource "hush_access_policy" "test" {
+  name                 = "test-policy-azure-wif-updated"
+  description          = "updated Azure WIF delivery policy"
+  enabled              = true
+  access_credential_id = hush_azure_wif_access_credential.test.id
+  deployment_ids       = ["` + mockDeploymentID + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  azure_wif_delivery_config {
+    tenant_id    = "00000000-0000-0000-0000-000000000000"
+    client_id    = "22222222-2222-2222-2222-222222222222"
+    subject_kind = "hush_subject"
+    subject      = "my-updated-subject"
+  }
+}
+`
+}

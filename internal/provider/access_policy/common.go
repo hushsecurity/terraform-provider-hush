@@ -12,23 +12,24 @@ import (
 )
 
 const (
-	idDesc                   = "The ID of the access policy"
-	nameDesc                 = "The name of the access policy"
-	descriptionDesc          = "The description of the access policy"
-	enabledDesc              = "Whether the access policy is enabled"
-	accessCredentialIDDesc   = "The ID of the access credential"
-	accessPrivilegeIDsDesc   = "The list of access privilege IDs"
-	deploymentIDsDesc        = "The list of deployment IDs"
-	attestationCriteriaDesc  = "The attestation criteria for the access policy"
-	envDeliveryConfigDesc    = "Environment variable delivery configuration for the access policy"
-	volumeDeliveryConfigDesc = "Volume mount delivery configuration for the access policy"
-	awsWifDeliveryConfigDesc = "AWS WIF delivery configuration for the access policy"
-	gcpWifDeliveryConfigDesc = "GCP WIF delivery configuration for the access policy"
-	statusDesc               = "The status of the access policy (syncing, ok, warning, error, disabled)"
-	statusDetailDesc         = "The status detail of the access policy"
+	idDesc                     = "The ID of the access policy"
+	nameDesc                   = "The name of the access policy"
+	descriptionDesc            = "The description of the access policy"
+	enabledDesc                = "Whether the access policy is enabled"
+	accessCredentialIDDesc     = "The ID of the access credential"
+	accessPrivilegeIDsDesc     = "The list of access privilege IDs"
+	deploymentIDsDesc          = "The list of deployment IDs"
+	attestationCriteriaDesc    = "The attestation criteria for the access policy"
+	envDeliveryConfigDesc      = "Environment variable delivery configuration for the access policy"
+	volumeDeliveryConfigDesc   = "Volume mount delivery configuration for the access policy"
+	awsWifDeliveryConfigDesc   = "AWS WIF delivery configuration for the access policy"
+	gcpWifDeliveryConfigDesc   = "GCP WIF delivery configuration for the access policy"
+	azureWifDeliveryConfigDesc = "Azure WIF delivery configuration for the access policy"
+	statusDesc                 = "The status of the access policy (syncing, ok, warning, error, disabled)"
+	statusDetailDesc           = "The status detail of the access policy"
 )
 
-var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config"}
+var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config", "azure_wif_delivery_config"}
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -218,6 +219,31 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"azure_wif_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  azureWifDeliveryConfigDesc,
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"tenant_id": {
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringLenBetween(1, 255),
+						Description:  "The Azure tenant (Entra ID directory) ID",
+					},
+					"client_id": {
+						Type:         schema.TypeString,
+						Required:     true,
+						ValidateFunc: validation.StringLenBetween(1, 255),
+						Description:  "The Azure AD app registration client ID",
+					},
+					"subject_kind": wifSubjectKindResourceSchema(),
+					"subject":      wifSubjectResourceSchema(),
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -396,6 +422,27 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"azure_wif_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: azureWifDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"tenant_id": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The Azure tenant (Entra ID directory) ID",
+					},
+					"client_id": {
+						Type:        schema.TypeString,
+						Computed:    true,
+						Description: "The Azure AD app registration client ID",
+					},
+					"subject_kind": wifSubjectKindDataSourceSchema(),
+					"subject":      wifSubjectDataSourceSchema(),
+				},
+			},
+		},
 		"status": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -501,6 +548,9 @@ func expandDeliveryConfig(d *schema.ResourceData) any {
 	}
 	if v, ok := d.GetOk("gcp_wif_delivery_config"); ok {
 		return expandGcpWifDeliveryConfig(v.([]any))
+	}
+	if v, ok := d.GetOk("azure_wif_delivery_config"); ok {
+		return expandAzureWifDeliveryConfig(v.([]any))
 	}
 
 	return nil
@@ -630,6 +680,23 @@ func expandAwsWifDeliveryConfig(list []any) *client.AwsWifDeliveryConfig {
 	}
 }
 
+func expandAzureWifDeliveryConfig(list []any) *client.AzureWifDeliveryConfig {
+	if len(list) == 0 || list[0] == nil {
+		return nil
+	}
+
+	configMap := list[0].(map[string]any)
+	subjectKind, subject := expandWifSubject(configMap)
+
+	return &client.AzureWifDeliveryConfig{
+		Type:        client.DeliveryTypeAzureWif,
+		TenantID:    configMap["tenant_id"].(string),
+		ClientID:    configMap["client_id"].(string),
+		SubjectKind: subjectKind,
+		Subject:     subject,
+	}
+}
+
 func expandGcpWifDeliveryConfig(list []any) *client.GcpWifDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return nil
@@ -692,6 +759,10 @@ func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics 
 		if err := d.Set("gcp_wif_delivery_config", flattenGcpWifDeliveryConfig(configMap)); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set gcp_wif_delivery_config: %w", err))
 		}
+	case client.DeliveryTypeAzureWif:
+		if err := d.Set("azure_wif_delivery_config", flattenAzureWifDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set azure_wif_delivery_config: %w", err))
+		}
 	}
 
 	return nil
@@ -739,6 +810,15 @@ func flattenGcpWifDeliveryConfig(configMap map[string]any) []any {
 			result["service_account_token_lifetime"] = v
 		}
 	}
+	return []any{result}
+}
+
+func flattenAzureWifDeliveryConfig(configMap map[string]any) []any {
+	result := map[string]any{
+		"tenant_id": configMap["tenant_id"],
+		"client_id": configMap["client_id"],
+	}
+	flattenWifSubject(configMap, result)
 	return []any{result}
 }
 
