@@ -270,3 +270,24 @@ resource "hush_access_policy" "gcp_wif_sa_example" {
     service_account = "my-sa@my-project.iam.gserviceaccount.com"
   }
 }
+
+# Create an access policy with Azure WIF delivery
+resource "hush_access_policy" "azure_wif_example" {
+  name                 = "prod-azure-wif-policy"
+  description          = "Access policy with Azure WIF delivery"
+  enabled              = true
+  access_credential_id = hush_azure_wif_access_credential.example.id
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  azure_wif_delivery_config {
+    tenant_id    = "00000000-0000-0000-0000-000000000000"
+    client_id    = "11111111-1111-1111-1111-111111111111"
+    subject_kind = "hush_subject"
+    subject      = "my-workload-identity"
+  }
+}

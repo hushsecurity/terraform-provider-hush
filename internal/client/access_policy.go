@@ -27,10 +27,11 @@ type AttestationCriterion struct {
 type DeliveryType string
 
 const (
-	DeliveryTypeEnv    DeliveryType = "env"
-	DeliveryTypeVolume DeliveryType = "volume"
-	DeliveryTypeAwsWif DeliveryType = "aws_wif"
-	DeliveryTypeGcpWif DeliveryType = "gcp_wif"
+	DeliveryTypeEnv      DeliveryType = "env"
+	DeliveryTypeVolume   DeliveryType = "volume"
+	DeliveryTypeAwsWif   DeliveryType = "aws_wif"
+	DeliveryTypeGcpWif   DeliveryType = "gcp_wif"
+	DeliveryTypeAzureWif DeliveryType = "azure_wif"
 )
 
 type WifSubjectKind string
@@ -83,6 +84,14 @@ type GcpWifDeliveryConfig struct {
 	Subject                     string         `json:"subject,omitempty"`
 	ServiceAccount              string         `json:"service_account,omitempty"`
 	ServiceAccountTokenLifetime int            `json:"service_account_token_lifetime,omitempty"`
+}
+
+type AzureWifDeliveryConfig struct {
+	Type        DeliveryType   `json:"type"`
+	TenantID    string         `json:"tenant_id"`
+	ClientID    string         `json:"client_id"`
+	SubjectKind WifSubjectKind `json:"subject_kind"`
+	Subject     string         `json:"subject,omitempty"`
 }
 
 type AccessPolicy struct {
