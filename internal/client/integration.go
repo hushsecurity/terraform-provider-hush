@@ -402,3 +402,94 @@ func ReplaceBitbucketToken(ctx context.Context, c *Client, id string, input *Rep
 	path := fmt.Sprintf("%s/%s/bitbucket/token", integrationsEndpoint, id)
 	return c.doRequest(ctx, http.MethodPut, path, input, nil)
 }
+
+// Infisical Integration
+
+type InfisicalIntegration struct {
+	ID                 string `json:"id,omitempty"`
+	Name               string `json:"name"`
+	Description        string `json:"description,omitempty"`
+	Status             string `json:"status,omitempty"`
+	StatusMessage      string `json:"status_message,omitempty"`
+	Type               string `json:"type,omitempty"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	BaseURL            string `json:"base_url"`
+	CreatedAt          string `json:"created_at,omitempty"`
+	ModifiedAt         string `json:"modified_at,omitempty"`
+}
+
+type CreateInfisicalIntegrationInput struct {
+	Name               string `json:"name"`
+	Description        string `json:"description,omitempty"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	BaseURL            string `json:"base_url"`
+	ClientID           string `json:"client_id"`
+	ClientSecret       string `json:"client_secret"`
+}
+
+type UpdateInfisicalIntegrationInput struct {
+	Name               *string `json:"name,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	OnpremDeploymentID *string `json:"onprem_deployment_id,omitempty"`
+	BaseURL            *string `json:"base_url,omitempty"`
+}
+
+type ReplaceInfisicalCredentialsInput struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+}
+
+type InfisicalIntegrationListResponse struct {
+	Items        []InfisicalIntegration `json:"items"`
+	PageNumber   int                    `json:"page_number"`
+	Total        *int                   `json:"total"`
+	PreviousPage *string                `json:"previous_page"`
+	NextPage     *string                `json:"next_page"`
+}
+
+func CreateInfisicalIntegration(ctx context.Context, c *Client, input *CreateInfisicalIntegrationInput) (*InfisicalIntegration, error) {
+	path := fmt.Sprintf("%s/infisical", integrationsEndpoint)
+	var resp InfisicalIntegration
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetInfisicalIntegration(ctx context.Context, c *Client, id string) (*InfisicalIntegration, error) {
+	path := fmt.Sprintf("%s/%s/infisical", integrationsEndpoint, id)
+	var resp InfisicalIntegration
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetInfisicalIntegrationsByName(ctx context.Context, c *Client, name string) ([]InfisicalIntegration, error) {
+	encodedName := url.QueryEscape(name)
+	path := fmt.Sprintf("%s?name=%s&type=infisical", integrationsEndpoint, encodedName)
+	var resp InfisicalIntegrationListResponse
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
+}
+
+func UpdateInfisicalIntegration(ctx context.Context, c *Client, id string, input *UpdateInfisicalIntegrationInput) (*InfisicalIntegration, error) {
+	path := fmt.Sprintf("%s/%s/infisical", integrationsEndpoint, id)
+	var resp InfisicalIntegration
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func DeleteInfisicalIntegration(ctx context.Context, c *Client, id string) error {
+	path := fmt.Sprintf("%s/%s", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
+}
+
+func ReplaceInfisicalCredentials(ctx context.Context, c *Client, id string, input *ReplaceInfisicalCredentialsInput) error {
+	path := fmt.Sprintf("%s/%s/infisical/credentials", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodPut, path, input, nil)
+}
