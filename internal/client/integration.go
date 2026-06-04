@@ -309,3 +309,96 @@ func ReplaceJiraApiKey(ctx context.Context, c *Client, id string, input *Replace
 	path := fmt.Sprintf("%s/%s/jira/api_key", integrationsEndpoint, id)
 	return c.doRequest(ctx, http.MethodPut, path, input, nil)
 }
+
+// Bitbucket Integration
+
+type BitbucketIntegration struct {
+	ID                    string `json:"id,omitempty"`
+	Name                  string `json:"name"`
+	Description           string `json:"description,omitempty"`
+	Status                string `json:"status,omitempty"`
+	StatusMessage         string `json:"status_message,omitempty"`
+	StatusAt              string `json:"status_at,omitempty"`
+	Type                  string `json:"type,omitempty"`
+	OnpremDeploymentID    string `json:"onprem_deployment_id,omitempty"`
+	WorkspaceSlug         string `json:"workspace_slug"`
+	CreatedAt             string `json:"created_at,omitempty"`
+	ModifiedAt            string `json:"modified_at,omitempty"`
+	NextRescanAt          string `json:"next_rescan_at,omitempty"`
+	NextFullScanAt        string `json:"next_full_scan_at,omitempty"`
+	NextPeriodicChecksAt  string `json:"next_periodic_checks_at,omitempty"`
+	NextUpdateResourcesAt string `json:"next_update_resources_at,omitempty"`
+}
+
+type CreateBitbucketIntegrationInput struct {
+	Name               string `json:"name"`
+	Description        string `json:"description,omitempty"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	Token              string `json:"token"`
+	WorkspaceSlug      string `json:"workspace_slug"`
+}
+
+type UpdateBitbucketIntegrationInput struct {
+	Name               *string `json:"name,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	OnpremDeploymentID *string `json:"onprem_deployment_id,omitempty"`
+}
+
+type ReplaceBitbucketTokenInput struct {
+	Token string `json:"token"`
+}
+
+type BitbucketIntegrationListResponse struct {
+	Items        []BitbucketIntegration `json:"items"`
+	PageNumber   int                    `json:"page_number"`
+	Total        *int                   `json:"total"`
+	PreviousPage *string                `json:"previous_page"`
+	NextPage     *string                `json:"next_page"`
+}
+
+func CreateBitbucketIntegration(ctx context.Context, c *Client, input *CreateBitbucketIntegrationInput) (*BitbucketIntegration, error) {
+	path := fmt.Sprintf("%s/bitbucket", integrationsEndpoint)
+	var resp BitbucketIntegration
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetBitbucketIntegration(ctx context.Context, c *Client, id string) (*BitbucketIntegration, error) {
+	path := fmt.Sprintf("%s/%s/bitbucket", integrationsEndpoint, id)
+	var resp BitbucketIntegration
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetBitbucketIntegrationsByName(ctx context.Context, c *Client, name string) ([]BitbucketIntegration, error) {
+	encodedName := url.QueryEscape(name)
+	path := fmt.Sprintf("%s?name=%s&type=bitbucket", integrationsEndpoint, encodedName)
+	var resp BitbucketIntegrationListResponse
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
+}
+
+func UpdateBitbucketIntegration(ctx context.Context, c *Client, id string, input *UpdateBitbucketIntegrationInput) (*BitbucketIntegration, error) {
+	path := fmt.Sprintf("%s/%s/bitbucket", integrationsEndpoint, id)
+	var resp BitbucketIntegration
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func DeleteBitbucketIntegration(ctx context.Context, c *Client, id string) error {
+	path := fmt.Sprintf("%s/%s", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
+}
+
+func ReplaceBitbucketToken(ctx context.Context, c *Client, id string, input *ReplaceBitbucketTokenInput) error {
+	path := fmt.Sprintf("%s/%s/bitbucket/token", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodPut, path, input, nil)
+}
