@@ -590,3 +590,98 @@ func ReplaceSonatypeApiKey(ctx context.Context, c *Client, id string, input *Rep
 	path := fmt.Sprintf("%s/%s/sonatype/api_key", integrationsEndpoint, id)
 	return c.doRequest(ctx, http.MethodPut, path, input, nil)
 }
+
+// Artifactory Integration
+
+type ArtifactoryIntegration struct {
+	ID                    string `json:"id,omitempty"`
+	Name                  string `json:"name"`
+	Description           string `json:"description,omitempty"`
+	Status                string `json:"status,omitempty"`
+	StatusMessage         string `json:"status_message,omitempty"`
+	StatusAt              string `json:"status_at,omitempty"`
+	Type                  string `json:"type,omitempty"`
+	OnpremDeploymentID    string `json:"onprem_deployment_id,omitempty"`
+	OrgURL                string `json:"org_url,omitempty"`
+	WebhookProvisioned    bool   `json:"webhook_provisioned,omitempty"`
+	CreatedAt             string `json:"created_at,omitempty"`
+	ModifiedAt            string `json:"modified_at,omitempty"`
+	NextRescanAt          string `json:"next_rescan_at,omitempty"`
+	NextFullScanAt        string `json:"next_full_scan_at,omitempty"`
+	NextPeriodicChecksAt  string `json:"next_periodic_checks_at,omitempty"`
+	NextUpdateResourcesAt string `json:"next_update_resources_at,omitempty"`
+}
+
+type CreateArtifactoryIntegrationInput struct {
+	Name               string `json:"name"`
+	Description        string `json:"description,omitempty"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	OrgURL             string `json:"org_url,omitempty"`
+	Token              string `json:"token"`
+}
+
+type UpdateArtifactoryIntegrationInput struct {
+	Name               *string `json:"name,omitempty"`
+	Description        *string `json:"description,omitempty"`
+	OnpremDeploymentID *string `json:"onprem_deployment_id,omitempty"`
+	OrgURL             *string `json:"org_url,omitempty"`
+}
+
+type ReplaceArtifactoryTokenInput struct {
+	Token string `json:"token"`
+}
+
+type ArtifactoryIntegrationListResponse struct {
+	Items        []ArtifactoryIntegration `json:"items"`
+	PageNumber   int                      `json:"page_number"`
+	Total        *int                     `json:"total"`
+	PreviousPage *string                  `json:"previous_page"`
+	NextPage     *string                  `json:"next_page"`
+}
+
+func CreateArtifactoryIntegration(ctx context.Context, c *Client, input *CreateArtifactoryIntegrationInput) (*ArtifactoryIntegration, error) {
+	path := fmt.Sprintf("%s/artifactory", integrationsEndpoint)
+	var resp ArtifactoryIntegration
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetArtifactoryIntegration(ctx context.Context, c *Client, id string) (*ArtifactoryIntegration, error) {
+	path := fmt.Sprintf("%s/%s/artifactory", integrationsEndpoint, id)
+	var resp ArtifactoryIntegration
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetArtifactoryIntegrationsByName(ctx context.Context, c *Client, name string) ([]ArtifactoryIntegration, error) {
+	encodedName := url.QueryEscape(name)
+	path := fmt.Sprintf("%s?name=%s&type=artifactory", integrationsEndpoint, encodedName)
+	var resp ArtifactoryIntegrationListResponse
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
+}
+
+func UpdateArtifactoryIntegration(ctx context.Context, c *Client, id string, input *UpdateArtifactoryIntegrationInput) (*ArtifactoryIntegration, error) {
+	path := fmt.Sprintf("%s/%s/artifactory", integrationsEndpoint, id)
+	var resp ArtifactoryIntegration
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func DeleteArtifactoryIntegration(ctx context.Context, c *Client, id string) error {
+	path := fmt.Sprintf("%s/%s", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
+}
+
+func ReplaceArtifactoryToken(ctx context.Context, c *Client, id string, input *ReplaceArtifactoryTokenInput) error {
+	path := fmt.Sprintf("%s/%s/artifactory/token", integrationsEndpoint, id)
+	return c.doRequest(ctx, http.MethodPut, path, input, nil)
+}

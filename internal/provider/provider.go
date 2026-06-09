@@ -13,6 +13,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/artifactory_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_access_key_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_access_key_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_integration"
@@ -156,6 +157,7 @@ func New(version string) func() *schema.Provider {
 				"hush_aws_integration":                  aws_integration.Resource(),
 				"hush_bitbucket_integration":            bitbucket_integration.Resource(),
 				"hush_infisical_integration":            infisical_integration.Resource(),
+				"hush_artifactory_integration":          artifactory_integration.Resource(),
 				"hush_datadog_access_credential":        datadog_access_credential.Resource(),
 				"hush_datadog_access_privilege":         datadog_access_privilege.Resource(),
 				"hush_salesforce_access_credential":     salesforce_access_credential.Resource(),
@@ -218,6 +220,7 @@ func New(version string) func() *schema.Provider {
 				"hush_aws_integration":                  aws_integration.DataSource(),
 				"hush_bitbucket_integration":            bitbucket_integration.DataSource(),
 				"hush_infisical_integration":            infisical_integration.DataSource(),
+				"hush_artifactory_integration":          artifactory_integration.DataSource(),
 				"hush_datadog_access_credential":        datadog_access_credential.DataSource(),
 				"hush_datadog_access_privilege":         datadog_access_privilege.DataSource(),
 				"hush_salesforce_access_credential":     salesforce_access_credential.DataSource(),
