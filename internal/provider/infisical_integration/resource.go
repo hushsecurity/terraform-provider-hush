@@ -43,6 +43,10 @@ func infisicalIntegrationCreate(ctx context.Context, d *schema.ResourceData, m a
 		input.Description = desc
 	}
 
+	if onpremID := d.Get("onprem_deployment_id").(string); onpremID != "" {
+		input.OnpremDeploymentID = onpremID
+	}
+
 	resp, err := client.CreateInfisicalIntegration(ctx, c, input)
 	if err != nil {
 		return diag.FromErr(err)
@@ -93,6 +97,11 @@ func infisicalIntegrationUpdate(ctx context.Context, d *schema.ResourceData, m a
 	if d.HasChange("base_url") {
 		baseURL := d.Get("base_url").(string)
 		input.BaseURL = &baseURL
+		hasChanges = true
+	}
+	if d.HasChange("onprem_deployment_id") {
+		onpremID := d.Get("onprem_deployment_id").(string)
+		input.OnpremDeploymentID = &onpremID
 		hasChanges = true
 	}
 

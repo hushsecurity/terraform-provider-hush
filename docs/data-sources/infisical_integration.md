@@ -44,5 +44,6 @@ output "infisical_url" {
 
 - `base_url` (String) The Infisical base URL (e.g., https://app.infisical.com)
 - `description` (String) The description of the Infisical integration
+- `onprem_deployment_id` (String) The ID of the on-premises deployment to associate with this integration
 - `status` (String) The current status of the integration
 - `status_message` (String) The status message providing additional details about the integration status

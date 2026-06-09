@@ -57,6 +57,7 @@ resource "hush_infisical_integration" "with_description" {
 - `client_secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The client secret for Infisical authentication (write-only). This is more secure than `client_secret` because Terraform will not store this value in the state file. Either `client_secret` or `client_secret_wo` must be specified.
 - `client_secret_wo_version` (String) Used to trigger updates for `client_secret_wo`. This value should be changed when the client secret changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `description` (String) The description of the Infisical integration
+- `onprem_deployment_id` (String) The ID of the on-premises deployment to associate with this integration
 
 ### Read-Only
 

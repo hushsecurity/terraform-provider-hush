@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -20,6 +21,7 @@ const (
 	clientSecretDesc          = "The client secret for Infisical authentication"
 	clientSecretWODesc        = "The client secret for Infisical authentication (write-only). This is more secure than `client_secret` because Terraform will not store this value in the state file. Either `client_secret` or `client_secret_wo` must be specified."
 	clientSecretWOVersionDesc = "Used to trigger updates for `client_secret_wo`. This value should be changed when the client secret changes. Can be any value (e.g., a timestamp, version number, or hash)."
+	onpremDeploymentIDDesc    = "The ID of the on-premises deployment to associate with this integration"
 	statusDesc                = "The current status of the integration"
 	statusMessageDesc         = "The status message providing additional details about the integration status"
 )
@@ -79,6 +81,12 @@ func InfisicalIntegrationResourceSchema() map[string]*schema.Schema {
 		Optional:     true,
 		RequiredWith: []string{"client_secret_wo"},
 	}
+	s["onprem_deployment_id"] = &schema.Schema{
+		Description:  onpremDeploymentIDDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "onprem_deployment_id must start with 'dep-'"),
+	}
 	return s
 }
 
@@ -105,6 +113,11 @@ func InfisicalIntegrationDataSourceSchema() map[string]*schema.Schema {
 		},
 		"base_url": {
 			Description: baseURLDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"onprem_deployment_id": {
+			Description: onpremDeploymentIDDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -182,11 +195,12 @@ func infisicalIntegrationRead(ctx context.Context, d *schema.ResourceData, m any
 
 func setInfisicalIntegrationFields(d *schema.ResourceData, integration *client.InfisicalIntegration) diag.Diagnostics {
 	fields := map[string]any{
-		"name":           integration.Name,
-		"description":    integration.Description,
-		"base_url":       integration.BaseURL,
-		"status":         integration.Status,
-		"status_message": integration.StatusMessage,
+		"name":                 integration.Name,
+		"description":          integration.Description,
+		"base_url":             integration.BaseURL,
+		"onprem_deployment_id": integration.OnpremDeploymentID,
+		"status":               integration.Status,
+		"status_message":       integration.StatusMessage,
 	}
 
 	for field, value := range fields {
