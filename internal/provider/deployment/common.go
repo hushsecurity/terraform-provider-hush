@@ -21,6 +21,11 @@ const (
 	tokenDesc           = "The deployment token for authentication"
 	passwordDesc        = "The deployment password for authentication"
 	imagePullSecretDesc = "The image pull secret for accessing private container images"
+
+	oidcProviderDesc        = "Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password."
+	oidcIssuerDesc          = "The OIDC issuer URL (must be HTTPS). Its OpenID configuration and JWKS are used to verify presented assertions."
+	oidcAudienceDesc        = "The audience claim expected in presented OIDC assertions."
+	oidcAllowedSubjectsDesc = "Optional list of allowed subject claims. A trailing '*' acts as a prefix wildcard (for example 'system:serviceaccount:hush-security:*'). When omitted, any subject is accepted."
 )
 
 func DeploymentResourceSchema() map[string]*schema.Schema {
@@ -81,6 +86,34 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 		Sensitive:   true,
 	}
 
+	s["oidc_provider"] = &schema.Schema{
+		Description: oidcProviderDesc,
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"issuer": {
+					Description:  oidcIssuerDesc,
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.IsURLWithHTTPS,
+				},
+				"audience": {
+					Description: oidcAudienceDesc,
+					Type:        schema.TypeString,
+					Required:    true,
+				},
+				"allowed_subjects": {
+					Description: oidcAllowedSubjectsDesc,
+					Type:        schema.TypeList,
+					Optional:    true,
+					Elem:        &schema.Schema{Type: schema.TypeString},
+				},
+			},
+		},
+	}
+
 	return s
 }
 
@@ -118,6 +151,31 @@ func DeploymentDataSourceSchema() map[string]*schema.Schema {
 			Description: statusDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
+		},
+		"oidc_provider": {
+			Description: oidcProviderDesc,
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"issuer": {
+						Description: oidcIssuerDesc,
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"audience": {
+						Description: oidcAudienceDesc,
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"allowed_subjects": {
+						Description: oidcAllowedSubjectsDesc,
+						Type:        schema.TypeList,
+						Computed:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
+					},
+				},
+			},
 		},
 	}
 }
@@ -200,5 +258,22 @@ func setDeploymentFields(d *schema.ResourceData, deployment *client.Deployment) 
 		}
 	}
 
+	if err := d.Set("oidc_provider", flattenOidcProvider(deployment.OidcProvider)); err != nil {
+		return diag.FromErr(fmt.Errorf("failed to set oidc_provider: %w", err))
+	}
+
 	return nil
+}
+
+// flattenOidcProvider converts the API OIDC config into the single-element list
+// the nested block schema expects, or an empty list when none is configured.
+func flattenOidcProvider(oidc *client.OidcConfig) []map[string]any {
+	if oidc == nil {
+		return []map[string]any{}
+	}
+	return []map[string]any{{
+		"issuer":           oidc.Issuer,
+		"audience":         oidc.Audience,
+		"allowed_subjects": oidc.AllowedSubjects,
+	}}
 }

@@ -31,10 +31,11 @@ func deploymentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 	c := m.(*client.Client)
 
 	input := &client.CreateDeploymentInput{
-		Name:        d.Get("name").(string),
-		Description: d.Get("description").(string),
-		EnvType:     d.Get("env_type").(string),
-		Kind:        d.Get("kind").(string),
+		Name:         d.Get("name").(string),
+		Description:  d.Get("description").(string),
+		EnvType:      d.Get("env_type").(string),
+		Kind:         d.Get("kind").(string),
+		OidcProvider: expandOidcProvider(d),
 	}
 
 	resp, err := client.CreateDeploymentWithCredentials(ctx, c, input)
@@ -43,6 +44,11 @@ func deploymentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 	}
 
 	d.SetId(resp.ID)
+
+	// Sync the returned deployment (including oidc_provider) into state.
+	if diags := setDeploymentFields(d, &resp.Deployment); diags.HasError() {
+		return diags
+	}
 
 	// Set computed sensitive fields
 	if err := d.Set("token", resp.Token); err != nil {
@@ -84,6 +90,10 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 		input.Kind = &kind
 		hasChanges = true
 	}
+	if d.HasChange("oidc_provider") {
+		input.OidcProvider = client.NewOidcProviderUpdate(expandOidcProvider(d))
+		hasChanges = true
+	}
 
 	if !hasChanges {
 		return nil
@@ -100,6 +110,28 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 	}
 
 	return nil
+}
+
+// expandOidcProvider reads the oidc_provider block from configuration,
+// returning nil when the block is absent.
+func expandOidcProvider(d *schema.ResourceData) *client.OidcConfig {
+	raw := d.Get("oidc_provider").([]any)
+	if len(raw) == 0 || raw[0] == nil {
+		return nil
+	}
+	m := raw[0].(map[string]any)
+
+	cfg := &client.OidcConfig{
+		Issuer:   m["issuer"].(string),
+		Audience: m["audience"].(string),
+	}
+	if subs, ok := m["allowed_subjects"].([]any); ok && len(subs) > 0 {
+		cfg.AllowedSubjects = make([]string, len(subs))
+		for i, s := range subs {
+			cfg.AllowedSubjects[i] = s.(string)
+		}
+	}
+	return cfg
 }
 
 func deploymentDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
