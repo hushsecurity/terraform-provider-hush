@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.15.0] - 2026-06-22
+
+### Added
+
+* **Kafka**: `hush_kafka_access_credential` and `hush_kafka_access_privilege` resources and data sources. The credential supports both the `native` (self-managed cluster) and `aiven` (Aiven-managed service) engines. Requires a Hush platform with Kafka support (HUSH-5803).
+
 ## [1.14.0] - 2026-06-09
 
 ### Added
