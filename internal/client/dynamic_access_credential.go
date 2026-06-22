@@ -32,6 +32,7 @@ const (
 	AccessCredentialTypeDatadog       AccessCredentialType = "datadog"
 	AccessCredentialTypeSalesforce    AccessCredentialType = "salesforce"
 	AccessCredentialTypeTemporalCloud AccessCredentialType = "temporal_cloud"
+	AccessCredentialTypeKafka         AccessCredentialType = "kafka"
 )
 
 // Postgres
@@ -1926,4 +1927,100 @@ func UpdateTemporalCloudAccessCredential(ctx context.Context, c *Client, id stri
 
 func (t TemporalCloudAccessCredential) statusFields() (string, string) {
 	return t.Status, t.StatusDetail
+}
+
+// Kafka
+
+type KafkaAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	Engine        string               `json:"engine,omitempty"`
+	// Native-engine fields.
+	BootstrapServers string `json:"bootstrap_servers,omitempty"`
+	Username         string `json:"username,omitempty"`
+	SaslMechanism    string `json:"sasl_mechanism,omitempty"`
+	TLS              bool   `json:"tls,omitempty"`
+	TLSCA            string `json:"tls_ca,omitempty"`
+	// Aiven-engine fields.
+	Project      string `json:"project,omitempty"`
+	ServiceName  string `json:"service_name,omitempty"`
+	Status       string `json:"status,omitempty"`
+	StatusDetail string `json:"status_detail,omitempty"`
+}
+
+type CreateKafkaAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	Engine        string   `json:"engine"`
+	// Native-engine fields.
+	BootstrapServers string `json:"bootstrap_servers,omitempty"`
+	Username         string `json:"username,omitempty"`
+	SaslMechanism    string `json:"sasl_mechanism,omitempty"`
+	TLS              bool   `json:"tls,omitempty"`
+	TLSCA            string `json:"tls_ca,omitempty"`
+	Password         string `json:"password,omitempty"`
+	// Aiven-engine fields.
+	Project     string `json:"project,omitempty"`
+	ServiceName string `json:"service_name,omitempty"`
+	Token       string `json:"token,omitempty"`
+}
+
+// UpdateKafkaAccessCredentialInput omits engine: it is immutable and ignored by
+// the API on update.
+type UpdateKafkaAccessCredentialInput struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	// Native-engine fields.
+	BootstrapServers *string `json:"bootstrap_servers,omitempty"`
+	Username         *string `json:"username,omitempty"`
+	SaslMechanism    *string `json:"sasl_mechanism,omitempty"`
+	TLS              *bool   `json:"tls,omitempty"`
+	TLSCA            *string `json:"tls_ca,omitempty"`
+	Password         *string `json:"password,omitempty"`
+	// Aiven-engine fields.
+	Project     *string `json:"project,omitempty"`
+	ServiceName *string `json:"service_name,omitempty"`
+	Token       *string `json:"token,omitempty"`
+}
+
+func CreateKafkaAccessCredential(ctx context.Context, c *Client, input *CreateKafkaAccessCredentialInput) (*KafkaAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/kafka"
+	var resp KafkaAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetKafkaAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetKafkaAccessCredential(ctx context.Context, c *Client, id string) (*KafkaAccessCredential, error) {
+	path := fmt.Sprintf("%s/kafka/%s", accessCredentialsEndpoint, id)
+	var resp KafkaAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateKafkaAccessCredential(ctx context.Context, c *Client, id string, input *UpdateKafkaAccessCredentialInput) (*KafkaAccessCredential, error) {
+	path := fmt.Sprintf("%s/kafka/%s", accessCredentialsEndpoint, id)
+	var resp KafkaAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetKafkaAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (k KafkaAccessCredential) statusFields() (string, string) {
+	return k.Status, k.StatusDetail
 }
