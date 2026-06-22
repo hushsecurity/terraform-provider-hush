@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.14.0] - 2026-06-09
+
+### Added
+
+* **Bitbucket Integration**: `hush_bitbucket_integration` resource and data source
+* **Infisical Integration**: `hush_infisical_integration` resource and data source
+* **Sonatype Integration**: `hush_sonatype_integration` resource and data source
+* **Artifactory Integration**: `hush_artifactory_integration` resource and data source
+
 ## [1.13.0] - 2026-06-02
 
 ### Added
