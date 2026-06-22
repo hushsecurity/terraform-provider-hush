@@ -1120,6 +1120,64 @@ func UpdateMongoDBAtlasAccessPrivilege(ctx context.Context, c *Client, id string
 	return &resp, nil
 }
 
+// Kafka
+
+type KafkaAclEntry struct {
+	ResourceType   string `json:"resource_type"`
+	ResourceName   string `json:"resource_name"`
+	PatternType    string `json:"pattern_type"`
+	Operation      string `json:"operation"`
+	PermissionType string `json:"permission_type"`
+	Host           string `json:"host,omitempty"`
+}
+
+type KafkaAccessPrivilege struct {
+	ID          string          `json:"id,omitempty"`
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Type        string          `json:"type,omitempty"`
+	Acls        []KafkaAclEntry `json:"acls"`
+}
+
+type CreateKafkaAccessPrivilegeInput struct {
+	Name        string          `json:"name"`
+	Description string          `json:"description,omitempty"`
+	Acls        []KafkaAclEntry `json:"acls"`
+}
+
+type UpdateKafkaAccessPrivilegeInput struct {
+	Name        *string          `json:"name,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Acls        *[]KafkaAclEntry `json:"acls,omitempty"`
+}
+
+func CreateKafkaAccessPrivilege(ctx context.Context, c *Client, input *CreateKafkaAccessPrivilegeInput) (*KafkaAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/kafka"
+	var resp KafkaAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetKafkaAccessPrivilege(ctx context.Context, c *Client, id string) (*KafkaAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/kafka/%s", accessPrivilegesEndpoint, id)
+	var resp KafkaAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateKafkaAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateKafkaAccessPrivilegeInput) (*KafkaAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/kafka/%s", accessPrivilegesEndpoint, id)
+	var resp KafkaAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // Shared delete function for all access privileges
 
 func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
