@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.16.1] - 2026-06-24
+
+### Changed
+
+* **Docs**: the `hush_deployment` `oidc_provider` example uses a more realistic `allowed_subjects` value (`system:serviceaccount:hush-security:*`)
+
 ## [1.16.0] - 2026-06-24
 
 ### Added
