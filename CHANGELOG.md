@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.16.0] - 2026-06-24
+
+### Added
+
+* **Deployment OIDC**: optional `oidc_provider` block on `hush_deployment` for passwordless token exchange, letting the agent present a signed OIDC token (such as a Kubernetes service account token) instead of the deployment password
+
+```hcl
+resource "hush_deployment" "k8s" {
+  name = "prod-cluster"
+  kind = "k8s"
+
+  oidc_provider {
+    issuer           = "https://oidc.eks.us-east-1.amazonaws.com/id/D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9"
+    audience         = "https://kubernetes.default.svc"
+    allowed_subjects = ["system:serviceaccount:hush-security:*"]
+  }
+}
+```
+
 ## [1.15.0] - 2026-06-22
 
 ### Added

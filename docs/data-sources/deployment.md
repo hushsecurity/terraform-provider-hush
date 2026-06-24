@@ -49,4 +49,14 @@ output "status" {
 - `description` (String) The description of the deployment
 - `env_type` (String) The environment type for the deployment (dev, prod)
 - `kind` (String) The deployment kind (k8s, ecs, serverless)
+- `oidc_provider` (List of Object) Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password. (see [below for nested schema](#nestedatt--oidc_provider))
 - `status` (String) The current status of the deployment
+
+<a id="nestedatt--oidc_provider"></a>
+### Nested Schema for `oidc_provider`
+
+Read-Only:
+
+- `allowed_subjects` (List of String)
+- `audience` (String)
+- `issuer` (String)

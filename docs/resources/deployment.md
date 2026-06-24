@@ -20,6 +20,21 @@ resource "hush_deployment" "example" {
   kind        = "k8s"
 }
 
+# Deployment with OIDC configuration for passwordless token exchange. The agent
+# presents a signed OIDC token (e.g. a Kubernetes service account token) instead
+# of the deployment password.
+resource "hush_deployment" "oidc" {
+  name     = "oidc-deployment"
+  env_type = "prod"
+  kind     = "k8s"
+
+  oidc_provider {
+    issuer           = "https://oidc.eks.us-east-1.amazonaws.com/id/D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9"
+    audience         = "https://kubernetes.default.svc"
+    allowed_subjects = ["system:serviceaccount:hush-security:hush-agent"]
+  }
+}
+
 output "deployment" {
   value = hush_deployment.example
 }
@@ -37,6 +52,7 @@ output "deployment" {
 
 - `description` (String) The description of the deployment
 - `env_type` (String) The environment type for the deployment (dev, prod)
+- `oidc_provider` (Block List, Max: 1) Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password. (see [below for nested schema](#nestedblock--oidc_provider))
 
 ### Read-Only
 
@@ -45,3 +61,15 @@ output "deployment" {
 - `password` (String, Sensitive) The deployment password for authentication
 - `status` (String) The current status of the deployment
 - `token` (String, Sensitive) The deployment token for authentication
+
+<a id="nestedblock--oidc_provider"></a>
+### Nested Schema for `oidc_provider`
+
+Required:
+
+- `audience` (String) The audience claim expected in presented OIDC assertions.
+- `issuer` (String) The OIDC issuer URL (must be HTTPS). Its OpenID configuration and JWKS are used to verify presented assertions.
+
+Optional:
+
+- `allowed_subjects` (List of String) Optional list of allowed subject claims. A trailing '*' acts as a prefix wildcard (for example 'system:serviceaccount:hush-security:*'). When omitted, any subject is accepted.
