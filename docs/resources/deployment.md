@@ -31,7 +31,7 @@ resource "hush_deployment" "oidc" {
   oidc_provider {
     issuer           = "https://oidc.eks.us-east-1.amazonaws.com/id/D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9"
     audience         = "https://kubernetes.default.svc"
-    allowed_subjects = ["system:serviceaccount:hush-security:hush-agent"]
+    allowed_subjects = ["system:serviceaccount:hush-security:*"]
   }
 }
 
