@@ -43,6 +43,7 @@ func PlaintextAccessCredentialResourceSchema() map[string]*schema.Schema {
 		Type:        schema.TypeList,
 		Required:    true,
 		MinItems:    1,
+		MaxItems:    1,
 		Elem: &schema.Schema{
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
