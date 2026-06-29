@@ -68,13 +68,10 @@ func TestAccResourceGcpWifAccessCredential(t *testing.T) {
 						"hush_gcp_wif_access_credential.test", "description", "updated gcp wif credential",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_gcp_wif_access_credential.test", "deployment_ids.#", "2",
+						"hush_gcp_wif_access_credential.test", "deployment_ids.#", "1",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_gcp_wif_access_credential.test", "deployment_ids.0", mockDeploymentID,
-					),
-					resource.TestCheckResourceAttr(
-						"hush_gcp_wif_access_credential.test", "deployment_ids.1", mockDeploymentID2,
+						"hush_gcp_wif_access_credential.test", "deployment_ids.0", mockDeploymentID2,
 					),
 					resource.TestCheckResourceAttr(
 						"hush_gcp_wif_access_credential.test", "project_number", "987654321098",
@@ -138,7 +135,7 @@ func gcpWifAccessCredentialStep2() string {
 resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred-updated"
   description          = "updated gcp wif credential"
-  deployment_ids       = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
+  deployment_ids       = ["` + mockDeploymentID2 + `"]
   project_number       = "987654321098"
   pool_id              = "my-wif-pool-updated"
   workload_provider_id = "my-wif-provider-updated"

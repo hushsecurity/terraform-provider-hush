@@ -553,7 +553,7 @@ func TestAccResourceAccessPolicy_withAwsWifDelivery(t *testing.T) {
 						"hush_access_policy.test", "description", "updated AWS WIF delivery policy",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_access_policy.test", "deployment_ids.#", "2",
+						"hush_access_policy.test", "deployment_ids.#", "1",
 					),
 					resource.TestCheckResourceAttr(
 						"hush_access_policy.test", "aws_wif_delivery_config.0.role_arn", "arn:aws:iam::123456789012:role/updated-role",
@@ -653,7 +653,7 @@ func accessPolicyAwsWifDeliveryStep2() string {
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred"
   description    = "AWS WIF credential for access policy test"
-  deployment_ids = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
+  deployment_ids = ["` + mockDeploymentID + `"]
 }
 
 resource "hush_access_policy" "test" {
@@ -661,7 +661,7 @@ resource "hush_access_policy" "test" {
   description          = "updated AWS WIF delivery policy"
   enabled              = true
   access_credential_id = hush_aws_wif_access_credential.test.id
-  deployment_ids       = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
 
   attestation_criteria {
     type  = "k8s:ns"
@@ -1239,4 +1239,37 @@ resource "hush_access_policy" "test" {
   }
 }
 `
+}
+
+// Negative test: deployment_ids is capped at one (schema MaxItems: 1).
+func TestAccResourceAccessPolicy_RejectsMultipleDeployments(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+resource "hush_access_policy" "test" {
+  name                 = "test-policy"
+  description          = "test policy description"
+  enabled              = true
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  env_delivery_config {
+    key  = "port"
+    name = "PORT"
+    type = "key"
+  }
+}
+`,
+				ExpectError: regexp.MustCompile(`supports 1 item maximum`),
+			},
+		},
+	})
 }

@@ -63,13 +63,10 @@ func TestAccResourceAwsWifAccessCredential(t *testing.T) {
 						"hush_aws_wif_access_credential.test", "description", "updated aws wif credential",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_aws_wif_access_credential.test", "deployment_ids.#", "2",
+						"hush_aws_wif_access_credential.test", "deployment_ids.#", "1",
 					),
 					resource.TestCheckResourceAttr(
-						"hush_aws_wif_access_credential.test", "deployment_ids.0", mockDeploymentID,
-					),
-					resource.TestCheckResourceAttr(
-						"hush_aws_wif_access_credential.test", "deployment_ids.1", mockDeploymentID2,
+						"hush_aws_wif_access_credential.test", "deployment_ids.0", mockDeploymentID2,
 					),
 				),
 			},
@@ -115,7 +112,7 @@ func awsWifAccessCredentialStep2() string {
 resource "hush_aws_wif_access_credential" "test" {
   name           = "test-aws-wif-cred-updated"
   description    = "updated aws wif credential"
-  deployment_ids = ["` + mockDeploymentID + `", "` + mockDeploymentID2 + `"]
+  deployment_ids = ["` + mockDeploymentID2 + `"]
 }
 `
 }
