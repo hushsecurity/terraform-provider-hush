@@ -78,6 +78,7 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeList,
 			Required:    true,
 			MinItems:    1,
+			MaxItems:    1,
 			Description: deploymentIDsDesc,
 			Elem: &schema.Schema{
 				Type:         schema.TypeString,
