@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.17.0] - 2026-06-30
+
+### Changed
+
+* **Access credentials and policies**: `deployment_ids` is now limited to a single deployment. A configuration that lists more than one deployment fails at plan time.
+
+```hcl
+resource "hush_postgres_access_credential" "example" {
+  name = "my-db"
+  # ...
+
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"] # exactly one deployment
+}
+```
+
 ## [1.16.1] - 2026-06-24
 
 ### Changed
