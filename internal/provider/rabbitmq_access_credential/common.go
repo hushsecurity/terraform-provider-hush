@@ -22,6 +22,7 @@ const (
 	vhostDesc          = "The RabbitMQ virtual host (default: /)"
 	tlsDesc            = "Whether to use TLS"
 	tlsCADesc          = "The TLS CA certificate"
+	autoRotateRootDesc = "Whether Hush periodically rotates the root credential itself (the configured `username`/`password`), not just the ephemeral per-workload users (default: false)"
 	typeDesc           = "The type of access credential"
 	kindDesc           = "The kind of access credential"
 )
@@ -123,6 +124,12 @@ func ResourceSchema() map[string]*schema.Schema {
 		Optional:    true,
 		Sensitive:   true,
 	}
+	s["auto_rotate_root"] = &schema.Schema{
+		Description: autoRotateRootDesc,
+		Type:        schema.TypeBool,
+		Optional:    true,
+		Default:     false,
+	}
 
 	return s
 }
@@ -187,6 +194,11 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 			Sensitive:   true,
+		},
+		"auto_rotate_root": {
+			Description: autoRotateRootDesc,
+			Type:        schema.TypeBool,
+			Computed:    true,
 		},
 		"type": {
 			Description: typeDesc,

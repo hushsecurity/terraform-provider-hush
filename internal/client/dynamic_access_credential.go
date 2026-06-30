@@ -967,6 +967,7 @@ type RabbitmqAccessCredential struct {
 	Vhost          string               `json:"vhost,omitempty"`
 	TLS            bool                 `json:"tls,omitempty"`
 	TLSCA          string               `json:"tls_ca,omitempty"`
+	AutoRotateRoot bool                 `json:"auto_rotate_root"`
 	Status         string               `json:"status,omitempty"`
 	StatusDetail   string               `json:"status_detail,omitempty"`
 }
@@ -983,6 +984,7 @@ type CreateRabbitmqAccessCredentialInput struct {
 	Vhost          string   `json:"vhost,omitempty"`
 	TLS            bool     `json:"tls,omitempty"`
 	TLSCA          string   `json:"tls_ca,omitempty"`
+	AutoRotateRoot bool     `json:"auto_rotate_root"`
 }
 
 type UpdateRabbitmqAccessCredentialInput struct {
@@ -996,6 +998,7 @@ type UpdateRabbitmqAccessCredentialInput struct {
 	Vhost          *string `json:"vhost,omitempty"`
 	TLS            *bool   `json:"tls,omitempty"`
 	TLSCA          *string `json:"tls_ca,omitempty"`
+	AutoRotateRoot *bool   `json:"auto_rotate_root,omitempty"`
 }
 
 func CreateRabbitmqAccessCredential(ctx context.Context, c *Client, input *CreateRabbitmqAccessCredentialInput) (*RabbitmqAccessCredential, error) {
