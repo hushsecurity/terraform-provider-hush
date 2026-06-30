@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.18.0] - 2026-07-02
+
+### Added
+
+* **RabbitMQ access credentials**: new `auto_rotate_root` argument (Boolean, default `false`). When enabled, Hush periodically rotates the root credential itself (the configured `username`/`password`), not just the ephemeral per-workload users.
+
+```hcl
+resource "hush_rabbitmq_access_credential" "example" {
+  name             = "prod-rabbitmq"
+  deployment_ids   = ["dep-xxxxxxxxxxxxxxxx"]
+  host             = "rabbitmq.example.com"
+  username         = "admin"
+  password_wo      = var.rabbitmq_password
+  auto_rotate_root = true
+}
+```
+
 ## [1.17.0] - 2026-06-30
 
 ### Changed

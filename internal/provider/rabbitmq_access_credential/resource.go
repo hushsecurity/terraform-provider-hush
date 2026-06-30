@@ -48,6 +48,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Password:       password,
 		Vhost:          d.Get("vhost").(string),
 		TLS:            d.Get("tls").(bool),
+		AutoRotateRoot: d.Get("auto_rotate_root").(bool),
 	}
 
 	if v, ok := d.GetOk("username"); ok {
@@ -93,18 +94,19 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 	d.SetId(credential.ID)
 
 	fields := map[string]any{
-		"name":            credential.Name,
-		"description":     credential.Description,
-		"deployment_ids":  credential.DeploymentIDs,
-		"host":            credential.Host,
-		"port":            credential.Port,
-		"management_port": credential.ManagementPort,
-		"username":        credential.Username,
-		"vhost":           credential.Vhost,
-		"tls":             credential.TLS,
-		"tls_ca":          credential.TLSCA,
-		"type":            string(credential.Type),
-		"kind":            credential.Kind,
+		"name":             credential.Name,
+		"description":      credential.Description,
+		"deployment_ids":   credential.DeploymentIDs,
+		"host":             credential.Host,
+		"port":             credential.Port,
+		"management_port":  credential.ManagementPort,
+		"username":         credential.Username,
+		"vhost":            credential.Vhost,
+		"tls":              credential.TLS,
+		"tls_ca":           credential.TLSCA,
+		"auto_rotate_root": credential.AutoRotateRoot,
+		"type":             string(credential.Type),
+		"kind":             credential.Kind,
 	}
 
 	for field, value := range fields {
@@ -153,6 +155,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("tls") {
 		v := d.Get("tls").(bool)
 		input.TLS = &v
+	}
+	if d.HasChange("auto_rotate_root") {
+		v := d.Get("auto_rotate_root").(bool)
+		input.AutoRotateRoot = &v
 	}
 	if d.HasChange("tls_ca") {
 		v := d.Get("tls_ca").(string)

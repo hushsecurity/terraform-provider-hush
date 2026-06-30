@@ -37,6 +37,9 @@ func TestAccResourceRabbitmqAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_rabbitmq_access_credential.test", "vhost", "/",
 					),
+					resource.TestCheckResourceAttr(
+						"hush_rabbitmq_access_credential.test", "auto_rotate_root", "true",
+					),
 				),
 			},
 			{
@@ -53,6 +56,9 @@ func TestAccResourceRabbitmqAccessCredential(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"hush_rabbitmq_access_credential.test", "vhost", "/test",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_rabbitmq_access_credential.test", "auto_rotate_root", "false",
 					),
 				),
 			},
@@ -88,10 +94,11 @@ resource "hush_rabbitmq_access_credential" "test" {
   host            = "` + mockRabbitmqHost + `"
   port            = 5672
   management_port = 15672
-  username        = "` + mockRabbitmqUsername + `"
-  password        = "` + mockRabbitmqPassword + `"
-  vhost           = "/"
-  tls             = false
+  username         = "` + mockRabbitmqUsername + `"
+  password         = "` + mockRabbitmqPassword + `"
+  vhost            = "/"
+  tls              = false
+  auto_rotate_root = true
 }
 `
 
@@ -103,10 +110,11 @@ resource "hush_rabbitmq_access_credential" "test" {
   host            = "` + mockRabbitmqHost + `"
   port            = 5672
   management_port = 15672
-  username        = "` + mockRabbitmqUsername + `"
-  password        = "` + mockRabbitmqPassword + `"
-  vhost           = "/test"
-  tls             = false
+  username         = "` + mockRabbitmqUsername + `"
+  password         = "` + mockRabbitmqPassword + `"
+  vhost            = "/test"
+  tls              = false
+  auto_rotate_root = false
 }
 `
 

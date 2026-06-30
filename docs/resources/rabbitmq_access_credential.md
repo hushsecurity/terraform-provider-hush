@@ -15,16 +15,17 @@ Manage RabbitMQ dynamic access credentials in the Hush Security platform.
 ```terraform
 # Create a RabbitMQ dynamic access credential
 resource "hush_rabbitmq_access_credential" "example" {
-  name            = "prod-rabbitmq"
-  description     = "Production RabbitMQ credential"
-  deployment_ids  = [hush_deployment.example.id]
-  host            = "rabbitmq.example.com"
-  port            = 5672
-  management_port = 15672
-  username        = "admin"
-  password_wo     = var.rabbitmq_password
-  vhost           = "/"
-  tls             = true
+  name             = "prod-rabbitmq"
+  description      = "Production RabbitMQ credential"
+  deployment_ids   = [hush_deployment.example.id]
+  host             = "rabbitmq.example.com"
+  port             = 5672
+  management_port  = 15672
+  username         = "admin"
+  password_wo      = var.rabbitmq_password
+  vhost            = "/"
+  tls              = true
+  auto_rotate_root = true # let Hush periodically rotate the root credential itself
 }
 ```
 
@@ -41,6 +42,7 @@ resource "hush_rabbitmq_access_credential" "example" {
 
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
+- `auto_rotate_root` (Boolean) Whether Hush periodically rotates the root credential itself (the configured `username`/`password`), not just the ephemeral per-workload users (default: false)
 - `description` (String) The description of the RabbitMQ access credential
 - `management_port` (Number) The RabbitMQ management API port (default: 15672)
 - `password` (String, Sensitive) The RabbitMQ password
