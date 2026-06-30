@@ -32,7 +32,7 @@ resource "hush_salesforce_access_credential" "example" {
 ### Required
 
 - `client_id` (String) The Salesforce OAuth2 client ID
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `instance_url` (String) The Salesforce instance URL
 - `name` (String) The name of the Salesforce access credential
 

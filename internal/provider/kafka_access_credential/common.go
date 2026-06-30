@@ -21,7 +21,7 @@ const (
 	idDesc               = "The unique identifier of the Kafka access credential"
 	nameDesc             = "The name of the Kafka access credential"
 	descriptionDesc      = "The description of the Kafka access credential"
-	deploymentIDsDesc    = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc    = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	engineDesc           = "The Kafka engine: `native` for a self-managed/standard Kafka cluster, or `aiven` for an Aiven-managed service. Immutable; changing it forces replacement."
 	bootstrapServersDesc = "Comma-separated list of Kafka bootstrap brokers (host:port,host:port). Required when `engine` is `native`."
 	usernameDesc         = "The SASL username for the root Kafka connection. Required when `engine` is `native`."

@@ -40,7 +40,7 @@ output "client_id" {
 ### Read-Only
 
 - `client_id` (String) The Salesforce OAuth2 client ID
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the Salesforce access credential
 - `instance_url` (String) The Salesforce instance URL
 - `kind` (String) The kind of access credential

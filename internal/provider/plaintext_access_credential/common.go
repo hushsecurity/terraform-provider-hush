@@ -11,7 +11,7 @@ const (
 	idDesc              = "The unique identifier of the plaintext access credential"
 	nameDesc            = "The name of the plaintext access credential"
 	descriptionDesc     = "The description of the plaintext access credential"
-	deploymentIDsDesc   = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc   = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	secretDesc          = "The secret value for the plaintext credential"
 	secretWODesc        = "The secret value for the plaintext credential (write-only). This is a write-only attribute that is more secure than `secret` because Terraform will not store this value in the state file. Either `secret` or `secret_wo` must be specified."
 	secretWOVersionDesc = "Used to trigger updates for `secret_wo`. This value should be changed when the secret content changes. Can be any value (e.g., a timestamp, version number, or hash)."

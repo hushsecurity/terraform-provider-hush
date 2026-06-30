@@ -35,7 +35,7 @@ output "has_provider_credentials" {
 
 ### Read-Only
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the Apigee access credential
 - `has_provider_credentials` (Boolean) Whether the credential uses provider credentials (no explicit service account key)
 - `kind` (String) The kind of access credential

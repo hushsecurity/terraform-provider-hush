@@ -43,7 +43,7 @@ resource "hush_kafka_access_credential" "aiven" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `engine` (String) The Kafka engine: `native` for a self-managed/standard Kafka cluster, or `aiven` for an Aiven-managed service. Immutable; changing it forces replacement.
 - `name` (String) The name of the Kafka access credential
 

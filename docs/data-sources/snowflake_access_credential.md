@@ -54,7 +54,7 @@ output "auth_method" {
 - `account` (String) The Snowflake account identifier (e.g., MYORG-MYACCOUNT)
 - `auth_method` (String) The authentication method for the Snowflake connection (password or key-pair)
 - `database` (String) The Snowflake database name
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the Snowflake access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Snowflake access credential

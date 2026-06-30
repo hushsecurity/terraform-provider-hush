@@ -18,7 +18,7 @@ const (
 	enabledDesc                = "Whether the access policy is enabled"
 	accessCredentialIDDesc     = "The ID of the access credential"
 	accessPrivilegeIDsDesc     = "The list of access privilege IDs"
-	deploymentIDsDesc          = "The list of deployment IDs"
+	deploymentIDsDesc          = "The list of deployment IDs. Currently limited to a single deployment"
 	attestationCriteriaDesc    = "The attestation criteria for the access policy"
 	envDeliveryConfigDesc      = "Environment variable delivery configuration for the access policy"
 	volumeDeliveryConfigDesc   = "Volume mount delivery configuration for the access policy"

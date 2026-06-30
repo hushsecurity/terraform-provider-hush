@@ -11,7 +11,7 @@ const (
 	idDesc              = "The unique identifier of the Salesforce access credential"
 	nameDesc            = "The name of the Salesforce access credential"
 	descriptionDesc     = "The description of the Salesforce access credential"
-	deploymentIDsDesc   = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc   = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	instanceURLDesc     = "The Salesforce instance URL"
 	clientIDDesc        = "The Salesforce OAuth2 client ID"
 	clientSecretDesc    = "The Salesforce OAuth2 client secret"

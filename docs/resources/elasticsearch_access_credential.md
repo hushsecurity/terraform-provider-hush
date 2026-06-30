@@ -31,7 +31,7 @@ resource "hush_elasticsearch_access_credential" "example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `host` (String) The hostname or IP address of the Elasticsearch server
 - `name` (String) The name of the Elasticsearch access credential
 - `username` (String) The username for the Elasticsearch connection

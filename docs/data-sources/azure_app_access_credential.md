@@ -28,7 +28,7 @@ data "hush_azure_app_access_credential" "example" {
 ### Read-Only
 
 - `client_id` (String) The Azure client ID (must be a valid UUID)
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the Azure app access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Azure app access credential

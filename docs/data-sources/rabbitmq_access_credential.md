@@ -55,7 +55,7 @@ output "tls" {
 
 ### Read-Only
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the RabbitMQ access credential
 - `host` (String) The RabbitMQ host
 - `kind` (String) The kind of access credential

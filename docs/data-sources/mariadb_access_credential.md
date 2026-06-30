@@ -52,7 +52,7 @@ output "ssl_mode" {
 ### Read-Only
 
 - `db_name` (String) The name of the MariaDB database
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the MariaDB access credential
 - `host` (String) The hostname or IP address of the MariaDB server
 - `kind` (String) The kind of access credential

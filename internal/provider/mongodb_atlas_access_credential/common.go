@@ -11,7 +11,7 @@ const (
 	idDesc              = "The unique identifier of the MongoDB Atlas access credential"
 	nameDesc            = "The name of the MongoDB Atlas access credential"
 	descriptionDesc     = "The description of the MongoDB Atlas access credential"
-	deploymentIDsDesc   = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc   = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	groupIDDesc         = "The MongoDB Atlas project (group) ID"
 	dbNameDesc          = "The name of the MongoDB Atlas database"
 	hostDesc            = "The hostname of the MongoDB Atlas cluster"

@@ -11,7 +11,7 @@ const (
 	idDesc              = "The unique identifier of the Azure app access credential"
 	nameDesc            = "The name of the Azure app access credential"
 	descriptionDesc     = "The description of the Azure app access credential"
-	deploymentIDsDesc   = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc   = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	tenantIDDesc        = "The Azure tenant ID (must be a valid UUID)"
 	clientIDDesc        = "The Azure client ID (must be a valid UUID)"
 	clientSecretDesc    = "The Azure client secret"

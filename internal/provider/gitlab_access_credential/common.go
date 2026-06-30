@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the GitLab access credential"
 	nameDesc          = "The name of the GitLab access credential"
 	descriptionDesc   = "The description of the GitLab access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	tokenDesc         = "The GitLab API token"
 	tokenWODesc       = "The GitLab API token (write-only). More secure than `token` because Terraform will not store this value in the state file."
 	tokenWOVerDesc    = "Used to trigger updates for `token_wo`. Change when the token changes."

@@ -28,7 +28,7 @@ data "hush_aws_access_key_access_credential" "example" {
 ### Read-Only
 
 - `access_key_id_value` (String) The AWS access key ID
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the AWS access key access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the AWS access key access credential

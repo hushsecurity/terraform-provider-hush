@@ -26,7 +26,7 @@ resource "hush_aws_wif_access_credential" "example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `name` (String) The name of the AWS WIF access credential
 
 ### Optional

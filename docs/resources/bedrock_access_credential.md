@@ -31,7 +31,7 @@ resource "hush_bedrock_access_credential" "example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `name` (String) The name of the Bedrock access credential
 - `region` (String) The AWS region for Bedrock (e.g., us-east-1)
 

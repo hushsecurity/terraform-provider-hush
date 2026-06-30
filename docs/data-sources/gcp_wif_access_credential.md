@@ -40,7 +40,7 @@ output "project_number" {
 ### Read-Only
 
 - `audience` (String) The audience for the GCP WIF access credential
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the GCP WIF access credential
 - `issuer_url` (String) The issuer URL for the GCP WIF access credential
 - `kind` (String) The kind of access credential

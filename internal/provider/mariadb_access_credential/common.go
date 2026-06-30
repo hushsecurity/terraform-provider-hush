@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the MariaDB access credential"
 	nameDesc          = "The name of the MariaDB access credential"
 	descriptionDesc   = "The description of the MariaDB access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	dbNameDesc        = "The name of the MariaDB database"
 	hostDesc          = "The hostname or IP address of the MariaDB server"
 	portDesc          = "The port number of the MariaDB server (default: 3306)"

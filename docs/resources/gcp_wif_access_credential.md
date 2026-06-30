@@ -29,7 +29,7 @@ resource "hush_gcp_wif_access_credential" "example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `name` (String) The name of the GCP WIF access credential
 - `pool_id` (String) The workload identity pool ID
 - `project_number` (String) The GCP project number

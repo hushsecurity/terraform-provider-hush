@@ -49,7 +49,7 @@ output "credential_type" {
 
 ### Read-Only
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the KV access credential
 - `keys` (List of String) List of keys available in this credential (computed)
 - `name` (String) The name of the KV access credential
