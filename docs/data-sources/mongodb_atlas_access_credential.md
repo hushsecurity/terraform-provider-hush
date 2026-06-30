@@ -45,7 +45,7 @@ output "db_name" {
 
 - `client_id` (String) The MongoDB Atlas service account client ID (used together with `client_secret`)
 - `db_name` (String) The name of the MongoDB Atlas database
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the MongoDB Atlas access credential
 - `group_id` (String) The MongoDB Atlas project (group) ID
 - `host` (String) The hostname of the MongoDB Atlas cluster

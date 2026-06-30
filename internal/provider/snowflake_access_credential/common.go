@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the Snowflake access credential"
 	nameDesc          = "The name of the Snowflake access credential"
 	descriptionDesc   = "The description of the Snowflake access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	accountDesc       = "The Snowflake account identifier (e.g., MYORG-MYACCOUNT)"
 	warehouseDesc     = "The Snowflake warehouse name"
 	databaseDesc      = "The Snowflake database name"

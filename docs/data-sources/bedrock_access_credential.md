@@ -44,7 +44,7 @@ output "has_provider_credentials" {
 ### Read-Only
 
 - `access_key_id` (String) The AWS access key ID. Must be set together with secret_access_key or secret_access_key_wo. Omit for provider credentials mode.
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the Bedrock access credential
 - `has_provider_credentials` (Boolean) Whether the credential uses AWS provider credentials (no explicit access key)
 - `kind` (String) The kind of access credential

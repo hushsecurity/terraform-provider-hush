@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the PostgreSQL access credential"
 	nameDesc          = "The name of the PostgreSQL access credential"
 	descriptionDesc   = "The description of the PostgreSQL access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	dbNameDesc        = "The name of the PostgreSQL database"
 	hostDesc          = "The hostname or IP address of the PostgreSQL server"
 	portDesc          = "The port number of the PostgreSQL server (default: 5432)"

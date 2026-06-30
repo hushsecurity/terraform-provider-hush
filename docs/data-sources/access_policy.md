@@ -52,7 +52,7 @@ output "status" {
 - `attestation_criteria` (List of Object) The attestation criteria for the access policy (see [below for nested schema](#nestedatt--attestation_criteria))
 - `aws_wif_delivery_config` (List of Object) AWS WIF delivery configuration for the access policy (see [below for nested schema](#nestedatt--aws_wif_delivery_config))
 - `azure_wif_delivery_config` (List of Object) Azure WIF delivery configuration for the access policy (see [below for nested schema](#nestedatt--azure_wif_delivery_config))
-- `deployment_ids` (List of String) The list of deployment IDs
+- `deployment_ids` (List of String) The list of deployment IDs. Currently limited to a single deployment
 - `description` (String) The description of the access policy
 - `enabled` (Boolean) Whether the access policy is enabled
 - `env_delivery_config` (List of Object) Environment variable delivery configuration for the access policy (see [below for nested schema](#nestedatt--env_delivery_config))

@@ -11,7 +11,7 @@ const (
 	idDesc                 = "The unique identifier of the Redis access credential"
 	nameDesc               = "The name of the Redis access credential"
 	descriptionDesc        = "The description of the Redis access credential"
-	deploymentIDsDesc      = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc      = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	hostDesc               = "The hostname or IP address of the Redis server"
 	portDesc               = "The port number of the Redis server (default: 6379)"
 	usernameDesc           = "The username for the Redis connection (Redis 6+ ACL)"

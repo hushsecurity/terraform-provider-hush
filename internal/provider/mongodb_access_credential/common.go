@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the MongoDB access credential"
 	nameDesc          = "The name of the MongoDB access credential"
 	descriptionDesc   = "The description of the MongoDB access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	dbNameDesc        = "The name of the MongoDB database"
 	hostDesc          = "The hostname or IP address of the MongoDB server"
 	portDesc          = "The port number of the MongoDB server (default: 27017)"

@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the AWS WIF access credential"
 	nameDesc          = "The name of the AWS WIF access credential"
 	descriptionDesc   = "The description of the AWS WIF access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	audienceDesc      = "The audience for the AWS WIF access credential"
 	issuerURLDesc     = "The issuer URL for the AWS WIF access credential"
 	typeDesc          = "The type of access credential"

@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the KV access credential"
 	nameDesc          = "The name of the KV access credential"
 	descriptionDesc   = "The description of the KV access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	itemsDesc         = "List of key-value pairs for the credential"
 	keyDesc           = "The key name for the environment variable"
 	valueDesc         = "The value for the key-value pair"

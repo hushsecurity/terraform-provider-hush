@@ -343,7 +343,7 @@ resource "hush_access_policy" "sdk_example" {
 
 - `access_credential_id` (String) The ID of the access credential
 - `attestation_criteria` (Block List, Min: 1) The attestation criteria for the access policy (see [below for nested schema](#nestedblock--attestation_criteria))
-- `deployment_ids` (List of String) The list of deployment IDs
+- `deployment_ids` (List of String) The list of deployment IDs. Currently limited to a single deployment
 - `name` (String) The name of the access policy
 
 ### Optional

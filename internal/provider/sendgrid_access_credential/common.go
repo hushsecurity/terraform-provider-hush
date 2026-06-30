@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the SendGrid access credential"
 	nameDesc          = "The name of the SendGrid access credential"
 	descriptionDesc   = "The description of the SendGrid access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	apiKeyDesc        = "The SendGrid API key"
 	apiKeyWODesc      = "The SendGrid API key (write-only). More secure than `api_key` because Terraform will not store this value in the state file."
 	apiKeyWOVerDesc   = "Used to trigger updates for `api_key_wo`. Change when the API key changes."

@@ -41,7 +41,7 @@ resource "hush_mongodb_atlas_access_credential" "example" {
 ### Required
 
 - `db_name` (String) The name of the MongoDB Atlas database
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `group_id` (String) The MongoDB Atlas project (group) ID
 - `host` (String) The hostname of the MongoDB Atlas cluster
 - `name` (String) The name of the MongoDB Atlas access credential

@@ -11,7 +11,7 @@ const (
 	idDesc                = "The unique identifier of the Twilio access credential"
 	nameDesc              = "The name of the Twilio access credential"
 	descriptionDesc       = "The description of the Twilio access credential"
-	deploymentIDsDesc     = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc     = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	accountSIDDesc        = "The Twilio Account SID"
 	apiKeySIDDesc         = "The Twilio API Key SID"
 	apiKeySecretDesc      = "The Twilio API Key Secret"

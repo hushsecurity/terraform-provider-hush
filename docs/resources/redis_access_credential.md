@@ -52,7 +52,7 @@ resource "hush_redis_access_credential" "elasticache_example" {
 
 ### Required
 
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `engine` (String) The routing engine for this credential. `redis` connects directly to a Redis server using a password. `elasticache` provisions users via the AWS ElastiCache API.
 - `host` (String) The hostname or IP address of the Redis server
 - `name` (String) The name of the Redis access credential

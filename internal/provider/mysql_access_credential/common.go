@@ -11,7 +11,7 @@ const (
 	idDesc            = "The unique identifier of the MySQL access credential"
 	nameDesc          = "The name of the MySQL access credential"
 	descriptionDesc   = "The description of the MySQL access credential"
-	deploymentIDsDesc = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	dbNameDesc        = "The name of the MySQL database"
 	hostDesc          = "The hostname or IP address of the MySQL server"
 	portDesc          = "The port number of the MySQL server (default: 3306)"

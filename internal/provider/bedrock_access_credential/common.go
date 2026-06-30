@@ -11,7 +11,7 @@ const (
 	idDesc                   = "The unique identifier of the Bedrock access credential"
 	nameDesc                 = "The name of the Bedrock access credential"
 	descriptionDesc          = "The description of the Bedrock access credential"
-	deploymentIDsDesc        = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc        = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	regionDesc               = "The AWS region for Bedrock (e.g., us-east-1)"
 	accessKeyIDDesc          = "The AWS access key ID. Must be set together with secret_access_key or secret_access_key_wo. Omit for provider credentials mode."
 	secretAccessKeyDesc      = "The AWS secret access key"

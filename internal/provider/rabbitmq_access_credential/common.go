@@ -11,7 +11,7 @@ const (
 	idDesc             = "The unique identifier of the RabbitMQ access credential"
 	nameDesc           = "The name of the RabbitMQ access credential"
 	descriptionDesc    = "The description of the RabbitMQ access credential"
-	deploymentIDsDesc  = "List of deployment IDs that can access this credential"
+	deploymentIDsDesc  = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
 	hostDesc           = "The RabbitMQ host"
 	portDesc           = "The RabbitMQ AMQP port (default: 5672)"
 	managementPortDesc = "The RabbitMQ management API port (default: 15672)"

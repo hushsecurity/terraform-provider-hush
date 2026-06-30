@@ -44,7 +44,7 @@ output "sasl_mechanism" {
 ### Read-Only
 
 - `bootstrap_servers` (String) Comma-separated list of Kafka bootstrap brokers (host:port,host:port). Required when `engine` is `native`.
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the Kafka access credential
 - `engine` (String) The Kafka engine: `native` for a self-managed/standard Kafka cluster, or `aiven` for an Aiven-managed service. Immutable; changing it forces replacement.
 - `kind` (String) The kind of access credential

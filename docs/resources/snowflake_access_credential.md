@@ -51,7 +51,7 @@ resource "hush_snowflake_access_credential" "keypair" {
 - `account` (String) The Snowflake account identifier (e.g., MYORG-MYACCOUNT)
 - `auth_method` (String) The authentication method for the Snowflake connection (password or key-pair)
 - `database` (String) The Snowflake database name
-- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Changing this after creation is not supported; the credential must be deleted and recreated.
+- `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment. Changing this after creation is not supported; the credential must be deleted and recreated.
 - `name` (String) The name of the Snowflake access credential
 - `username` (String) The username for the Snowflake connection
 - `warehouse` (String) The Snowflake warehouse name
