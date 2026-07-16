@@ -242,3 +242,279 @@ resource "hush_redis_access_credential" "ec_fed" {
 }
 `
 }
+
+// Exercises the Aiven engine branch (project/service_name/token). No host/port
+// are sent; Hush resolves the endpoint from the Aiven API.
+func TestAccResourceRedisAccessCredentialAiven(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialAivenStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_redis_access_credential.aiven", "id", regexp.MustCompile(`^acr-.+$`),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.aiven", "engine", "aiven",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.aiven", "project", "my-aiven-project",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.aiven", "service_name", "my-valkey-service",
+					),
+					// The aiven engine must not carry a host (Hush resolves it).
+					resource.TestCheckNoResourceAttr(
+						"hush_redis_access_credential.aiven", "host",
+					),
+				),
+			},
+			{
+				Config: redisAccessCredentialAivenStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.aiven", "description", "updated aiven redis credential",
+					),
+				),
+			},
+		},
+	})
+}
+
+// Write-only secret rotation for the Aiven engine's token. Bumping
+// token_wo_version must trigger Update and converge with no perpetual diff.
+func TestAccResourceRedisAccessCredentialWOTokenRotation(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialWOTokenStep1(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.aiven", "token_wo_version", "1",
+				),
+			},
+			{
+				Config: redisAccessCredentialWOTokenStep2(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.aiven", "token_wo_version", "2",
+				),
+			},
+		},
+	})
+}
+
+// Negative tests: every branch of validateEngineFields (CustomizeDiff), both the
+// missing-required and forbidden-field paths. Each fails at plan time, before
+// any request reaches the mock.
+func TestAccResourceRedisAccessCredentialEngineFieldValidation(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				// redis engine, password (a required field) omitted.
+				Config:      redisAccessCredentialRedisMissingRequired(),
+				ExpectError: regexp.MustCompile(`engine "redis" requires:.*password`),
+			},
+			{
+				// redis engine with an aiven-only field set.
+				Config:      redisAccessCredentialRedisWithAivenField(),
+				ExpectError: regexp.MustCompile(`engine "redis" does not allow:.*project`),
+			},
+			{
+				// elasticache engine, user_group_id (a required field) omitted.
+				Config:      redisAccessCredentialElastiCacheMissingRequired(),
+				ExpectError: regexp.MustCompile(`engine "elasticache" requires:.*user_group_id`),
+			},
+			{
+				// elasticache engine with a redis-only field (password) set.
+				Config:      redisAccessCredentialElastiCacheWithPassword(),
+				ExpectError: regexp.MustCompile(`engine "elasticache" does not allow:.*password`),
+			},
+			{
+				// aiven engine, token (a required field) omitted.
+				Config:      redisAccessCredentialAivenMissingRequired(),
+				ExpectError: regexp.MustCompile(`engine "aiven" requires:.*token`),
+			},
+			{
+				// aiven engine with a connection field (host) set.
+				Config:      redisAccessCredentialAivenWithHost(),
+				ExpectError: regexp.MustCompile(`engine "aiven" does not allow:.*host`),
+			},
+		},
+	})
+}
+
+func redisAccessCredentialAivenStep1() string {
+	return `
+resource "hush_redis_access_credential" "aiven" {
+  name           = "test-redis-aiven"
+  description    = "test aiven redis credential"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "aiven"
+  project        = "my-aiven-project"
+  service_name   = "my-valkey-service"
+  token          = "test-aiven-token"
+}
+`
+}
+
+func redisAccessCredentialAivenStep2() string {
+	return `
+resource "hush_redis_access_credential" "aiven" {
+  name           = "test-redis-aiven"
+  description    = "updated aiven redis credential"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "aiven"
+  project        = "my-aiven-project"
+  service_name   = "my-valkey-service"
+  token          = "test-aiven-token"
+}
+`
+}
+
+func redisAccessCredentialWOTokenStep1() string {
+	return `
+resource "hush_redis_access_credential" "aiven" {
+  name             = "test-redis-wo-token"
+  deployment_ids   = ["` + mockDeploymentID + `"]
+  engine           = "aiven"
+  project          = "my-aiven-project"
+  service_name     = "my-valkey-service"
+  token_wo         = "token-v1"
+  token_wo_version = "1"
+}
+`
+}
+
+func redisAccessCredentialWOTokenStep2() string {
+	return `
+resource "hush_redis_access_credential" "aiven" {
+  name             = "test-redis-wo-token"
+  deployment_ids   = ["` + mockDeploymentID + `"]
+  engine           = "aiven"
+  project          = "my-aiven-project"
+  service_name     = "my-valkey-service"
+  token_wo         = "token-v2"
+  token_wo_version = "2"
+}
+`
+}
+
+func redisAccessCredentialRedisMissingRequired() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "redis"
+  host           = "redis.example.com"
+}
+`
+}
+
+func redisAccessCredentialRedisWithAivenField() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "redis"
+  host           = "redis.example.com"
+  password       = "testpassword123"
+  project        = "should-not-be-here"
+}
+`
+}
+
+func redisAccessCredentialElastiCacheMissingRequired() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "elasticache"
+  host           = "my-cluster.cache.amazonaws.com"
+  cache_engine   = "valkey"
+  region         = "eu-north-1"
+}
+`
+}
+
+func redisAccessCredentialElastiCacheWithPassword() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "elasticache"
+  host           = "my-cluster.cache.amazonaws.com"
+  cache_engine   = "valkey"
+  region         = "eu-north-1"
+  user_group_id  = "my-user-group"
+  password       = "should-not-be-here"
+}
+`
+}
+
+func redisAccessCredentialAivenMissingRequired() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "aiven"
+  project        = "my-aiven-project"
+  service_name   = "my-valkey-service"
+}
+`
+}
+
+func redisAccessCredentialAivenWithHost() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "aiven"
+  project        = "my-aiven-project"
+  service_name   = "my-valkey-service"
+  token          = "test-aiven-token"
+  host           = "should-not-be-here.example.com"
+}
+`
+}
+
+// A required field sourced from another resource's computed attribute is unknown
+// at plan time. validateEngineFields must not reject it as missing.
+func TestAccResourceRedisAccessCredentialComputedRequired(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialComputedRequired(),
+				Check: resource.TestMatchResourceAttr(
+					"hush_redis_access_credential.consumer", "id", regexp.MustCompile(`^acr-.+$`),
+				),
+			},
+		},
+	})
+}
+
+func redisAccessCredentialComputedRequired() string {
+	return `
+resource "hush_redis_access_credential" "src" {
+  name           = "test-redis-src"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "redis"
+  host           = "redis.example.com"
+  password       = "testpassword123"
+}
+
+resource "hush_redis_access_credential" "consumer" {
+  name           = "test-redis-consumer"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "redis"
+  host           = "redis.example.com"
+  # unknown at plan time (stand-in for random_password.x.result)
+  password       = hush_redis_access_credential.src.id
+}
+`
+}

@@ -30,3 +30,18 @@ resource "hush_redis_access_credential" "elasticache_example" {
   region         = "us-east-1"
   user_group_id  = "my-elasticache-user-group"
 }
+
+# Create an Aiven-managed Valkey dynamic access credential.
+# Provisions ephemeral users via the Aiven API. Hush resolves the host/port
+# from the service, so no connection fields are set; authentication uses an
+# Aiven API token.
+resource "hush_redis_access_credential" "aiven_example" {
+  name             = "prod-aiven-valkey"
+  description      = "Production Aiven Valkey credential"
+  deployment_ids   = [hush_deployment.example.id]
+  engine           = "aiven"
+  project          = "my-aiven-project"
+  service_name     = "my-valkey-service"
+  token_wo         = var.aiven_token
+  token_wo_version = "1"
+}
