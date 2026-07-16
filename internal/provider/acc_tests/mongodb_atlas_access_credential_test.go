@@ -324,3 +324,45 @@ resource "hush_mongodb_atlas_access_credential" "test" {
 }
 `
 }
+
+// A pairing field sourced from another resource's computed attribute is unknown
+// at plan time. validateAtlasAuth must not read it as missing.
+func TestAccResourceMongoDBAtlasAccessCredentialComputedSecret(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("mongodb_atlas_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: mongodbAtlasAccessCredentialComputedSecret(),
+				Check: resource.TestMatchResourceAttr(
+					"hush_mongodb_atlas_access_credential.consumer", "id", regexp.MustCompile(`^acr-.+$`),
+				),
+			},
+		},
+	})
+}
+
+func mongodbAtlasAccessCredentialComputedSecret() string {
+	return `
+resource "hush_mongodb_atlas_access_credential" "src" {
+  name           = "test-atlas-src"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  group_id       = "5e2211c17a3e5a48f5497de3"
+  db_name        = "testdb"
+  host           = "cluster0.abcde.mongodb.net"
+  client_id      = "mdb_sa_id_abc123"
+  client_secret  = "test-client-secret-123"
+}
+
+resource "hush_mongodb_atlas_access_credential" "consumer" {
+  name           = "test-atlas-consumer"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  group_id       = "5e2211c17a3e5a48f5497de3"
+  db_name        = "testdb"
+  host           = "cluster0.abcde.mongodb.net"
+  client_id      = "mdb_sa_id_abc123"
+  # unknown at plan time (stand-in for a computed / data-source secret)
+  client_secret  = hush_mongodb_atlas_access_credential.src.id
+}
+`
+}

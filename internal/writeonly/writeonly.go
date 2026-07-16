@@ -30,10 +30,22 @@ func GetString(d *schema.ResourceData, plainAttr, woAttr string) string {
 	return readRawString(d, woAttr)
 }
 
-// IsSet reports whether the write-only attribute woAttr has a non-null,
-// known, non-empty value in raw config.
-func IsSet(g rawConfigGetter, woAttr string) bool {
-	return readRawString(g, woAttr) != ""
+// IsSet reports whether the string attribute attr is configured in raw config.
+// A present-but-unknown value (a reference resolved at apply) counts as set;
+// null and known-empty do not. Works for plain and write-only attributes.
+func IsSet(g rawConfigGetter, attr string) bool {
+	rc := g.GetRawConfig()
+	if rc.IsNull() {
+		return false
+	}
+	v := rc.GetAttr(attr)
+	if v.IsNull() {
+		return false
+	}
+	if !v.IsKnown() {
+		return true
+	}
+	return v.AsString() != ""
 }
 
 func readRawString(g rawConfigGetter, attr string) string {

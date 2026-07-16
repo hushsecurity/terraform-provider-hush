@@ -92,3 +92,37 @@ data "hush_aws_access_key_access_credential" "test" {
   id = hush_aws_access_key_access_credential.test.id
 }
 `
+
+// A pairing field sourced from another resource's computed attribute is unknown
+// at plan time. validateKeyPairing must not read it as missing.
+func TestAccResourceAWSAccessKeyAccessCredentialComputedSecret(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("aws_access_key_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: awsAccessKeyAccessCredentialComputedSecret,
+				Check: resource.TestMatchResourceAttr(
+					"hush_aws_access_key_access_credential.consumer", "id", regexp.MustCompile(`^acr-.+$`),
+				),
+			},
+		},
+	})
+}
+
+const awsAccessKeyAccessCredentialComputedSecret = `
+resource "hush_aws_access_key_access_credential" "src" {
+  name                = "test-aws-src"
+  deployment_ids      = ["` + mockDeploymentID + `"]
+  access_key_id_value = "` + mockAWSAccessKeyID + `"
+  secret_access_key   = "` + mockAWSSecretAccessKey + `"
+}
+
+resource "hush_aws_access_key_access_credential" "consumer" {
+  name                = "test-aws-consumer"
+  deployment_ids      = ["` + mockDeploymentID + `"]
+  access_key_id_value = "` + mockAWSAccessKeyID + `"
+  # unknown at plan time (stand-in for a computed / data-source secret)
+  secret_access_key   = hush_aws_access_key_access_credential.src.id
+}
+`
