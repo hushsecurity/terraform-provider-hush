@@ -661,29 +661,40 @@ type RedisAccessCredential struct {
 	UserGroupID     string               `json:"user_group_id,omitempty"`
 	AccessKeyID     string               `json:"access_key_id,omitempty"`
 	SecretAccessKey string               `json:"secret_access_key,omitempty"`
-	Status          string               `json:"status,omitempty"`
-	StatusDetail    string               `json:"status_detail,omitempty"`
+	// Aiven-engine fields.
+	Project      string `json:"project,omitempty"`
+	ServiceName  string `json:"service_name,omitempty"`
+	Status       string `json:"status,omitempty"`
+	StatusDetail string `json:"status_detail,omitempty"`
 }
 
 type CreateRedisAccessCredentialInput struct {
-	Name            string   `json:"name"`
-	Description     string   `json:"description,omitempty"`
-	DeploymentIDs   []string `json:"deployment_ids"`
-	Host            string   `json:"host"`
-	Port            int      `json:"port,omitempty"`
-	Username        string   `json:"username,omitempty"`
-	Password        string   `json:"password,omitempty"`
-	Database        *int     `json:"database,omitempty"`
-	TLS             bool     `json:"tls,omitempty"`
-	TLSCA           string   `json:"tls_ca,omitempty"`
-	Engine          string   `json:"engine"`
-	CacheEngine     string   `json:"cache_engine,omitempty"`
-	Region          string   `json:"region,omitempty"`
-	UserGroupID     string   `json:"user_group_id,omitempty"`
-	AccessKeyID     string   `json:"access_key_id,omitempty"`
-	SecretAccessKey string   `json:"secret_access_key,omitempty"`
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	// host carries omitempty so the aiven engine, which resolves the endpoint
+	// itself, sends no host (the API rejects connection fields on aiven creds).
+	Host            string `json:"host,omitempty"`
+	Port            int    `json:"port,omitempty"`
+	Username        string `json:"username,omitempty"`
+	Password        string `json:"password,omitempty"`
+	Database        *int   `json:"database,omitempty"`
+	TLS             bool   `json:"tls,omitempty"`
+	TLSCA           string `json:"tls_ca,omitempty"`
+	Engine          string `json:"engine"`
+	CacheEngine     string `json:"cache_engine,omitempty"`
+	Region          string `json:"region,omitempty"`
+	UserGroupID     string `json:"user_group_id,omitempty"`
+	AccessKeyID     string `json:"access_key_id,omitempty"`
+	SecretAccessKey string `json:"secret_access_key,omitempty"`
+	// Aiven-engine fields.
+	Project     string `json:"project,omitempty"`
+	ServiceName string `json:"service_name,omitempty"`
+	Token       string `json:"token,omitempty"`
 }
 
+// UpdateRedisAccessCredentialInput omits engine: it is immutable and ignored by
+// the API on update.
 type UpdateRedisAccessCredentialInput struct {
 	Name            *string `json:"name,omitempty"`
 	Description     *string `json:"description,omitempty"`
@@ -694,12 +705,15 @@ type UpdateRedisAccessCredentialInput struct {
 	Database        *int    `json:"database,omitempty"`
 	TLS             *bool   `json:"tls,omitempty"`
 	TLSCA           *string `json:"tls_ca,omitempty"`
-	Engine          *string `json:"engine,omitempty"`
 	CacheEngine     *string `json:"cache_engine,omitempty"`
 	Region          *string `json:"region,omitempty"`
 	UserGroupID     *string `json:"user_group_id,omitempty"`
 	AccessKeyID     *string `json:"access_key_id,omitempty"`
 	SecretAccessKey *string `json:"secret_access_key,omitempty"`
+	// Aiven-engine fields.
+	Project     *string `json:"project,omitempty"`
+	ServiceName *string `json:"service_name,omitempty"`
+	Token       *string `json:"token,omitempty"`
 }
 
 func CreateRedisAccessCredential(ctx context.Context, c *Client, input *CreateRedisAccessCredentialInput) (*RedisAccessCredential, error) {

@@ -8,27 +8,43 @@ import (
 )
 
 const (
+	engineRedis       = "redis"
+	engineElastiCache = "elasticache"
+	engineAiven       = "aiven"
+)
+
+var (
+	validEngines      = []string{engineRedis, engineElastiCache, engineAiven}
+	validCacheEngines = []string{"redis", "valkey"}
+)
+
+const (
 	idDesc                 = "The unique identifier of the Redis access credential"
 	nameDesc               = "The name of the Redis access credential"
 	descriptionDesc        = "The description of the Redis access credential"
 	deploymentIDsDesc      = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
-	hostDesc               = "The hostname or IP address of the Redis server"
-	portDesc               = "The port number of the Redis server (default: 6379)"
-	usernameDesc           = "The username for the Redis connection (Redis 6+ ACL)"
-	passwordDesc           = "The password for the Redis connection. Required when `engine` is `redis`; must not be set when `engine` is `elasticache`."
-	passwordWODesc         = "The password for the Redis connection (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file. Required when `engine` is `redis`; must not be set when `engine` is `elasticache`."
+	hostDesc               = "The hostname or IP address of the Redis server. Required when `engine` is `redis` or `elasticache`; must not be set when `engine` is `aiven` (Hush resolves the endpoint from the Aiven API)."
+	portDesc               = "The port number of the Redis server (default: 6379). Only valid when `engine` is `redis` or `elasticache`."
+	usernameDesc           = "The username for the Redis connection (Redis 6+ ACL). Only valid when `engine` is `redis` or `elasticache`."
+	passwordDesc           = "The password for the Redis connection. Required when `engine` is `redis`; must not be set when `engine` is `elasticache` or `aiven`."
+	passwordWODesc         = "The password for the Redis connection (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file. Required when `engine` is `redis`; must not be set when `engine` is `elasticache` or `aiven`."
 	passwordWOVerDesc      = "Used to trigger updates for `password_wo`. This value should be changed when the password content changes. Can be any value (e.g., a timestamp, version number, or hash)."
-	databaseDesc           = "The Redis database number (0-15, default: 0)"
-	tlsDesc                = "Whether to use TLS for the Redis connection"
-	tlsCADesc              = "The TLS CA certificate for the Redis connection"
-	engineDesc             = "The routing engine for this credential. `redis` connects directly to a Redis server using a password. `elasticache` provisions users via the AWS ElastiCache API."
-	cacheEngineDesc        = "The AWS ElastiCache cache engine. Required and only valid when `engine` is `elasticache`. One of `redis`, `valkey`."
+	databaseDesc           = "The Redis database number (0-15, default: 0). Only valid when `engine` is `redis` or `elasticache`."
+	tlsDesc                = "Whether to use TLS for the Redis connection. Only valid when `engine` is `redis` or `elasticache`."
+	tlsCADesc              = "The TLS CA certificate for the Redis connection. Only valid when `engine` is `redis` or `elasticache`."
+	engineDesc             = "The routing engine for this credential. `redis` connects directly to a Redis server using a password. `elasticache` provisions users via the AWS ElastiCache API. `aiven` provisions users via the Aiven API for an Aiven-managed Valkey service. Immutable; changing it forces replacement."
+	cacheEngineDesc        = "The AWS ElastiCache cache engine. Required and only valid when `engine` is `elasticache`. One of `redis`, `valkey`. Not valid when `engine` is `aiven` (Hush resolves the variant from the live service)."
 	regionDesc             = "The AWS region of the ElastiCache cluster. Required and only valid when `engine` is `elasticache`."
 	userGroupIDDesc        = "The ElastiCache user group ID to add provisioned users to. Required and only valid when `engine` is `elasticache`."
 	accessKeyIDDesc        = "The AWS access key ID used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `secret_access_key`. Omit both to use AWS workload identity federation (IRSA / instance profile / WIF)."
 	secretAccessKeyDesc    = "The AWS secret access key used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `access_key_id`. Omit both to use AWS workload identity federation."
 	secretAccessKeyWODesc  = "The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file."
 	secretAccessKeyWOVDesc = "Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret content changes."
+	projectDesc            = "The Aiven project that owns the Valkey service. Required when `engine` is `aiven`."
+	serviceNameDesc        = "The Aiven Valkey service name. Required when `engine` is `aiven`."
+	tokenDesc              = "The Aiven API token used to manage the service (required when `engine` is `aiven`)."
+	tokenWODesc            = "The Aiven API token (write-only). This is a write-only attribute that is more secure than `token` because Terraform will not store this value in the state file. Used when `engine` is `aiven`."
+	tokenWOVerDesc         = "Used to trigger updates for `token_wo`. This value should be changed when the token content changes. Can be any value (e.g., a timestamp, version number, or hash)."
 	typeDesc               = "The type of access credential"
 	kindDesc               = "The kind of access credential"
 )
@@ -64,10 +80,12 @@ func ResourceSchema() map[string]*schema.Schema {
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
 		},
 	}
+	// host is Optional (not Required) because the aiven engine must not set it;
+	// per-engine requiredness is enforced in CustomizeDiff (validateEngineFields).
 	s["host"] = &schema.Schema{
 		Description: hostDesc,
 		Type:        schema.TypeString,
-		Required:    true,
+		Optional:    true,
 	}
 	s["port"] = &schema.Schema{
 		Description: portDesc,
@@ -124,13 +142,14 @@ func ResourceSchema() map[string]*schema.Schema {
 		Description:  engineDesc,
 		Type:         schema.TypeString,
 		Required:     true,
-		ValidateFunc: validation.StringInSlice([]string{"redis", "elasticache"}, false),
+		ForceNew:     true,
+		ValidateFunc: validation.StringInSlice(validEngines, false),
 	}
 	s["cache_engine"] = &schema.Schema{
 		Description:  cacheEngineDesc,
 		Type:         schema.TypeString,
 		Optional:     true,
-		ValidateFunc: validation.StringInSlice([]string{"redis", "valkey"}, false),
+		ValidateFunc: validation.StringInSlice(validCacheEngines, false),
 	}
 	s["region"] = &schema.Schema{
 		Description: regionDesc,
@@ -170,6 +189,39 @@ func ResourceSchema() map[string]*schema.Schema {
 		Type:         schema.TypeString,
 		Optional:     true,
 		RequiredWith: []string{"secret_access_key_wo"},
+	}
+	// Aiven-engine fields.
+	s["project"] = &schema.Schema{
+		Description: projectDesc,
+		Type:        schema.TypeString,
+		Optional:    true,
+	}
+	s["service_name"] = &schema.Schema{
+		Description: serviceNameDesc,
+		Type:        schema.TypeString,
+		Optional:    true,
+	}
+	s["token"] = &schema.Schema{
+		Description:   tokenDesc,
+		Type:          schema.TypeString,
+		Optional:      true,
+		Sensitive:     true,
+		ConflictsWith: []string{"token_wo"},
+	}
+	s["token_wo"] = &schema.Schema{
+		Description:   tokenWODesc,
+		Type:          schema.TypeString,
+		Optional:      true,
+		Sensitive:     true,
+		WriteOnly:     true,
+		ConflictsWith: []string{"token"},
+		RequiredWith:  []string{"token_wo_version"},
+	}
+	s["token_wo_version"] = &schema.Schema{
+		Description:  tokenWOVerDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		RequiredWith: []string{"token_wo"},
 	}
 
 	return s
@@ -252,6 +304,16 @@ func DataSourceSchema() map[string]*schema.Schema {
 		},
 		"access_key_id": {
 			Description: accessKeyIDDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"project": {
+			Description: projectDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"service_name": {
+			Description: serviceNameDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [1.19.0] - 2026-07-14
 
+### Added
+
+* **Redis access credentials**: new `aiven` engine for `hush_redis_access_credential`, alongside `redis` and `elasticache`. Provisions ephemeral users on an Aiven-managed Valkey service via the Aiven API. Set `engine = "aiven"` with `project`, `service_name`, and an Aiven API token (`token` or the write-only `token_wo`/`token_wo_version`). Hush resolves the host/port from the service, so the connection fields (`host`, `port`, `username`, `database`, `tls`, `tls_ca`) and the AWS/ElastiCache fields must not be set; `cache_engine` is not used (Hush resolves the variant from the live service). `engine` is now immutable (changing it forces replacement), and per-engine field requirements are validated at plan time.
+
+```hcl
+resource "hush_redis_access_credential" "aiven_example" {
+  name             = "prod-aiven-valkey"
+  deployment_ids   = ["dep-xxxxxxxxxxxxxxxx"]
+  engine           = "aiven"
+  project          = "my-aiven-project"
+  service_name     = "my-valkey-service"
+  token_wo         = var.aiven_token
+  token_wo_version = "1"
+}
+```
+
 ### Fixed
 
 * **Kafka access credentials**: plan-time engine-field validation no longer rejects a required field whose value is unknown at plan time (e.g. `password = random_password.x.result`); such values are validated by the backend at apply.
