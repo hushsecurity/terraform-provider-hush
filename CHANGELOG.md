@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Fixed
 
 * **Kafka access credentials**: plan-time engine-field validation no longer rejects a required field whose value is unknown at plan time (e.g. `password = random_password.x.result`); such values are validated by the backend at apply.
+* **MongoDB Atlas, AWS access key and Azure app access credentials**: plan-time auth-method validation no longer rejects a secret whose value is unknown at plan time (e.g. `client_secret = data.vault_kv_secret_v2.x.data["secret"]`); such values are validated by the backend at apply.
 
 ## [1.18.0] - 2026-07-02
 

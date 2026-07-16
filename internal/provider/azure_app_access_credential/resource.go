@@ -29,8 +29,8 @@ func Resource() *schema.Resource {
 }
 
 func validateCredentialPairing(_ context.Context, d *schema.ResourceDiff, _ any) error {
-	_, hasClientID := d.GetOk("client_id")
-	_, hasSecret := d.GetOk("client_secret")
+	hasClientID := writeonly.IsSet(d, "client_id")
+	hasSecret := writeonly.IsSet(d, "client_secret")
 	hasSecretWO := writeonly.IsSet(d, "client_secret_wo")
 
 	if hasClientID && !hasSecret && !hasSecretWO && d.Id() == "" {

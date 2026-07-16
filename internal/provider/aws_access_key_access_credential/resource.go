@@ -29,8 +29,8 @@ func Resource() *schema.Resource {
 }
 
 func validateKeyPairing(_ context.Context, d *schema.ResourceDiff, _ any) error {
-	_, hasKeyID := d.GetOk("access_key_id_value")
-	_, hasSecret := d.GetOk("secret_access_key")
+	hasKeyID := writeonly.IsSet(d, "access_key_id_value")
+	hasSecret := writeonly.IsSet(d, "secret_access_key")
 	hasSecretWO := writeonly.IsSet(d, "secret_access_key_wo")
 
 	if hasKeyID && !hasSecret && !hasSecretWO && d.Id() == "" {

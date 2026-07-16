@@ -37,12 +37,10 @@ func validateAtlasAuth(_ context.Context, d *schema.ResourceDiff, _ any) error {
 		return nil
 	}
 
-	_, hasClientID := d.GetOk("client_id")
-	_, hasClientSecretPlain := d.GetOk("client_secret")
-	hasClientSecret := hasClientSecretPlain || writeonly.IsSet(d, "client_secret_wo")
-	_, hasPublicKey := d.GetOk("public_key")
-	_, hasPrivateKeyPlain := d.GetOk("private_key")
-	hasPrivateKey := hasPrivateKeyPlain || writeonly.IsSet(d, "private_key_wo")
+	hasClientID := writeonly.IsSet(d, "client_id")
+	hasClientSecret := writeonly.IsSet(d, "client_secret") || writeonly.IsSet(d, "client_secret_wo")
+	hasPublicKey := writeonly.IsSet(d, "public_key")
+	hasPrivateKey := writeonly.IsSet(d, "private_key") || writeonly.IsSet(d, "private_key_wo")
 
 	if hasClientID != hasClientSecret {
 		return fmt.Errorf("client_id and client_secret must both be set")
