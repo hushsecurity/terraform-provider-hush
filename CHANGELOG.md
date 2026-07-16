@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.19.0] - 2026-07-14
+
+### Fixed
+
+* **Kafka access credentials**: plan-time engine-field validation no longer rejects a required field whose value is unknown at plan time (e.g. `password = random_password.x.result`); such values are validated by the backend at apply.
+
 ## [1.18.0] - 2026-07-02
 
 ### Added
