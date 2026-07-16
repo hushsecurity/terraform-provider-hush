@@ -78,31 +78,33 @@ func validateEngineFields(d *schema.ResourceDiff) error {
 	return nil
 }
 
-// attrSet reports whether attr is configured. The two secrets (password, token)
-// may be supplied via their plain attribute or their write-only counterpart, so
-// either counts as set. Defaults (e.g. tls) live outside raw config and so do
-// not register as set.
+// attrSet reports whether attr is configured. Each secret may be supplied via
+// its plain attribute or its write-only counterpart, so either counts as set.
 func attrSet(d *schema.ResourceDiff, attr string) bool {
 	switch attr {
 	case "password":
-		return rawSet(d, "password") || writeonly.IsSet(d, "password_wo")
+		return rawSet(d, "password") || rawSet(d, "password_wo")
 	case "token":
-		return rawSet(d, "token") || writeonly.IsSet(d, "token_wo")
+		return rawSet(d, "token") || rawSet(d, "token_wo")
 	default:
 		return rawSet(d, attr)
 	}
 }
 
-// rawSet reports whether attr has a non-null, known, non-empty value in raw
-// config. For booleans, any present known value counts.
+// rawSet reports whether attr is configured in raw config. An unknown value (a
+// reference resolved at apply, e.g. random_password.x.result) counts as set and
+// is validated by the backend; null does not, so schema defaults stay unset.
 func rawSet(d *schema.ResourceDiff, attr string) bool {
 	rc := d.GetRawConfig()
 	if rc.IsNull() {
 		return false
 	}
 	v := rc.GetAttr(attr)
-	if v.IsNull() || !v.IsKnown() {
+	if v.IsNull() {
 		return false
+	}
+	if !v.IsKnown() {
+		return true
 	}
 	if v.Type() == cty.String {
 		return v.AsString() != ""

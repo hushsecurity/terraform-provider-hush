@@ -408,3 +408,45 @@ data "hush_kafka_access_credential" "test" {
   id = hush_kafka_access_credential.test.id
 }
 `
+
+// A required field sourced from another resource's computed attribute is unknown
+// at plan time. validateEngineFields must not reject it as missing.
+func TestAccResourceKafkaAccessCredentialComputedRequired(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("kafka_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: kafkaAccessCredentialComputedRequired(),
+				Check: resource.TestMatchResourceAttr(
+					"hush_kafka_access_credential.consumer", "id", regexp.MustCompile(`^acr-.+$`),
+				),
+			},
+		},
+	})
+}
+
+func kafkaAccessCredentialComputedRequired() string {
+	return `
+resource "hush_kafka_access_credential" "src" {
+  name              = "test-kafka-src"
+  deployment_ids    = ["` + mockDeploymentID + `"]
+  engine            = "native"
+  bootstrap_servers = "broker1:9092"
+  username          = "admin"
+  sasl_mechanism    = "SCRAM-SHA-512"
+  password          = "TestPassword123!"
+}
+
+resource "hush_kafka_access_credential" "consumer" {
+  name              = "test-kafka-consumer"
+  deployment_ids    = ["` + mockDeploymentID + `"]
+  engine            = "native"
+  bootstrap_servers = "broker1:9092"
+  username          = "admin"
+  sasl_mechanism    = "SCRAM-SHA-512"
+  # unknown at plan time (stand-in for random_password.x.result)
+  password          = hush_kafka_access_credential.src.id
+}
+`
+}
