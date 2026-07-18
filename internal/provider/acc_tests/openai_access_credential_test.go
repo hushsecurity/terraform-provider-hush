@@ -29,6 +29,7 @@ func TestAccResourceOpenAIAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_openai_access_credential.test", "description", "test openai credential",
 					),
+					checkSecretStoreID("hush_openai_access_credential.test"),
 				),
 			},
 			{
@@ -71,21 +72,23 @@ func TestAccDataSourceOpenAIAccessCredential(t *testing.T) {
 
 const openaiAccessCredentialStep1 = `
 resource "hush_openai_access_credential" "test" {
-  name           = "test-openai-cred"
-  description    = "test openai credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "` + mockOpenAIAPIKey + `"
-  project_id     = "` + mockOpenAIProjectID + `"
+  name            = "test-openai-cred"
+  description     = "test openai credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "` + mockOpenAIAPIKey + `"
+  project_id      = "` + mockOpenAIProjectID + `"
 }
 `
 
 const openaiAccessCredentialStep2 = `
 resource "hush_openai_access_credential" "test" {
-  name           = "test-openai-cred-updated"
-  description    = "updated openai credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "` + mockOpenAIAPIKey + `"
-  project_id     = "` + mockOpenAIProjectID + `"
+  name            = "test-openai-cred-updated"
+  description     = "updated openai credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "` + mockOpenAIAPIKey + `"
+  project_id      = "` + mockOpenAIProjectID + `"
 }
 `
 
