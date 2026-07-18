@@ -39,6 +39,7 @@ func TestAccResourceKafkaAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_kafka_access_credential.test", "tls", "true",
 					),
+					checkSecretStoreID("hush_kafka_access_credential.test"),
 				),
 			},
 			{
@@ -219,6 +220,7 @@ resource "hush_kafka_access_credential" "test" {
   name              = "test-kafka-cred"
   description       = "test kafka credential"
   deployment_ids    = ["` + mockDeploymentID + `"]
+  secret_store_id   = "sst-mock-store-1"
   engine            = "native"
   bootstrap_servers = "broker1:9092,broker2:9092"
   username          = "admin"
@@ -235,6 +237,7 @@ resource "hush_kafka_access_credential" "test" {
   name              = "test-kafka-cred-updated"
   description       = "updated kafka credential"
   deployment_ids    = ["` + mockDeploymentID + `"]
+  secret_store_id   = "sst-mock-store-1"
   engine            = "native"
   bootstrap_servers = "broker1:9092,broker2:9092"
   username          = "admin"

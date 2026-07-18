@@ -58,6 +58,7 @@ resource "hush_kafka_access_credential" "aiven" {
 - `password_wo_version` (String) Used to trigger updates for `password_wo`. This value should be changed when the password content changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `project` (String) The Aiven project that owns the Kafka service. Required when `engine` is `aiven`.
 - `sasl_mechanism` (String) The SASL mechanism for the Kafka connection (PLAIN, SCRAM-SHA-256, or SCRAM-SHA-512). Required when `engine` is `native`.
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `service_name` (String) The Aiven Kafka service name. Required when `engine` is `aiven`.
 - `tls` (Boolean) Whether to use TLS when connecting to the Kafka brokers. Only valid when `engine` is `native`.
 - `tls_ca` (String) The TLS CA certificate for the Kafka connection. Only valid when `engine` is `native`.
