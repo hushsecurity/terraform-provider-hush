@@ -37,6 +37,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:          d.Get("name").(string),
 		Description:   d.Get("description").(string),
 		DeploymentIDs: deploymentIDs,
+		SecretStoreID: d.Get("secret_store_id").(string),
 	}
 
 	credential, err := client.CreateAzureWifAccessCredential(ctx, c, input)
@@ -75,13 +76,14 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 	d.SetId(credential.ID)
 
 	fields := map[string]any{
-		"name":           credential.Name,
-		"description":    credential.Description,
-		"deployment_ids": credential.DeploymentIDs,
-		"audience":       credential.Audience,
-		"issuer_url":     credential.IssuerURL,
-		"type":           string(credential.Type),
-		"kind":           credential.Kind,
+		"name":            credential.Name,
+		"description":     credential.Description,
+		"deployment_ids":  credential.DeploymentIDs,
+		"audience":        credential.Audience,
+		"issuer_url":      credential.IssuerURL,
+		"type":            string(credential.Type),
+		"kind":            credential.Kind,
+		"secret_store_id": credential.SecretStoreID,
 	}
 
 	for field, value := range fields {
@@ -106,6 +108,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("deployment_ids") {
 		deploymentIDs := make([]string, 0)
