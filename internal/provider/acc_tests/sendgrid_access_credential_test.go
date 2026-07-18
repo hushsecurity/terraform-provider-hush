@@ -24,6 +24,7 @@ func TestAccResourceSendGridAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_sendgrid_access_credential.test", "description", "test sendgrid credential",
 					),
+					checkSecretStoreID("hush_sendgrid_access_credential.test"),
 				),
 			},
 			{
@@ -67,10 +68,11 @@ func TestAccDataSourceSendGridAccessCredential(t *testing.T) {
 func sendgridAccessCredentialStep1() string {
 	return `
 resource "hush_sendgrid_access_credential" "test" {
-  name           = "test-sendgrid-cred"
-  description    = "test sendgrid credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "mock-sendgrid-api-key"
+  name            = "test-sendgrid-cred"
+  description     = "test sendgrid credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "mock-sendgrid-api-key"
 }
 `
 }
@@ -78,10 +80,11 @@ resource "hush_sendgrid_access_credential" "test" {
 func sendgridAccessCredentialStep2() string {
 	return `
 resource "hush_sendgrid_access_credential" "test" {
-  name           = "test-sendgrid-cred-updated"
-  description    = "updated sendgrid credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "mock-sendgrid-api-key"
+  name            = "test-sendgrid-cred-updated"
+  description     = "updated sendgrid credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "mock-sendgrid-api-key"
 }
 `
 }
