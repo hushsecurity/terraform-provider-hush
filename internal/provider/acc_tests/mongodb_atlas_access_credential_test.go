@@ -36,6 +36,7 @@ func TestAccResourceMongoDBAtlasAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_mongodb_atlas_access_credential.test", "client_id", "mdb_sa_id_abc123",
 					),
+					checkSecretStoreID("hush_mongodb_atlas_access_credential.test"),
 				),
 			},
 			{
@@ -82,14 +83,15 @@ func TestAccDataSourceMongoDBAtlasAccessCredential(t *testing.T) {
 func mongodbAtlasAccessCredentialStep1() string {
 	return `
 resource "hush_mongodb_atlas_access_credential" "test" {
-  name           = "test-atlas-cred"
-  description    = "test atlas credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  group_id       = "5e2211c17a3e5a48f5497de3"
-  db_name        = "testdb"
-  host           = "cluster0.abcde.mongodb.net"
-  client_id      = "mdb_sa_id_abc123"
-  client_secret  = "test-client-secret-123"
+  name            = "test-atlas-cred"
+  description     = "test atlas credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  group_id        = "5e2211c17a3e5a48f5497de3"
+  db_name         = "testdb"
+  host            = "cluster0.abcde.mongodb.net"
+  client_id       = "mdb_sa_id_abc123"
+  client_secret   = "test-client-secret-123"
 }
 `
 }
@@ -97,14 +99,15 @@ resource "hush_mongodb_atlas_access_credential" "test" {
 func mongodbAtlasAccessCredentialStep2() string {
 	return `
 resource "hush_mongodb_atlas_access_credential" "test" {
-  name           = "test-atlas-cred-updated"
-  description    = "updated atlas credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  group_id       = "5e2211c17a3e5a48f5497de3"
-  db_name        = "testdb"
-  host           = "cluster0.abcde.mongodb.net"
-  client_id      = "mdb_sa_id_abc123"
-  client_secret  = "test-client-secret-123"
+  name            = "test-atlas-cred-updated"
+  description     = "updated atlas credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  group_id        = "5e2211c17a3e5a48f5497de3"
+  db_name         = "testdb"
+  host            = "cluster0.abcde.mongodb.net"
+  client_id       = "mdb_sa_id_abc123"
+  client_secret   = "test-client-secret-123"
 }
 `
 }

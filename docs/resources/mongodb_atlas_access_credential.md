@@ -59,6 +59,7 @@ resource "hush_mongodb_atlas_access_credential" "example" {
 - `private_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The MongoDB Atlas API private key (write-only). This is a write-only attribute that is more secure than `private_key` because Terraform will not store this value in the state file.
 - `private_key_wo_version` (String) Used to trigger updates for `private_key_wo`. This value should be changed when the private key content changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `public_key` (String) The MongoDB Atlas API public key (used together with `private_key`)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 

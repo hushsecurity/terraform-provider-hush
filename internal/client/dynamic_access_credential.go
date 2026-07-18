@@ -215,6 +215,7 @@ type MongoDBAtlasAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	GroupID       string               `json:"group_id,omitempty"`
 	DBName        string               `json:"db_name,omitempty"`
 	Host          string               `json:"host,omitempty"`
@@ -228,6 +229,7 @@ type CreateMongoDBAtlasAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	GroupID       string   `json:"group_id"`
 	DBName        string   `json:"db_name"`
 	Host          string   `json:"host"`
@@ -238,15 +240,16 @@ type CreateMongoDBAtlasAccessCredentialInput struct {
 }
 
 type UpdateMongoDBAtlasAccessCredentialInput struct {
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	GroupID      *string `json:"group_id,omitempty"`
-	DBName       *string `json:"db_name,omitempty"`
-	Host         *string `json:"host,omitempty"`
-	ClientID     *string `json:"client_id,omitempty"`
-	ClientSecret *string `json:"client_secret,omitempty"`
-	PublicKey    *string `json:"public_key,omitempty"`
-	PrivateKey   *string `json:"private_key,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	GroupID       *string `json:"group_id,omitempty"`
+	DBName        *string `json:"db_name,omitempty"`
+	Host          *string `json:"host,omitempty"`
+	ClientID      *string `json:"client_id,omitempty"`
+	ClientSecret  *string `json:"client_secret,omitempty"`
+	PublicKey     *string `json:"public_key,omitempty"`
+	PrivateKey    *string `json:"private_key,omitempty"`
 }
 
 func CreateMongoDBAtlasAccessCredential(ctx context.Context, c *Client, input *CreateMongoDBAtlasAccessCredentialInput) (*MongoDBAtlasAccessCredential, error) {
