@@ -466,6 +466,7 @@ type OpenAIAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	ProjectID     string               `json:"project_id,omitempty"`
 	Status        string               `json:"status,omitempty"`
 	StatusDetail  string               `json:"status_detail,omitempty"`
@@ -475,15 +476,17 @@ type CreateOpenAIAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	APIKey        string   `json:"api_key"`
 	ProjectID     string   `json:"project_id,omitempty"`
 }
 
 type UpdateOpenAIAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	APIKey      *string `json:"api_key,omitempty"`
-	ProjectID   *string `json:"project_id,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	APIKey        *string `json:"api_key,omitempty"`
+	ProjectID     *string `json:"project_id,omitempty"`
 }
 
 func CreateOpenAIAccessCredential(ctx context.Context, c *Client, input *CreateOpenAIAccessCredentialInput) (*OpenAIAccessCredential, error) {

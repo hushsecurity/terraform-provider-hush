@@ -40,6 +40,7 @@ resource "hush_openai_access_credential" "example" {
 - `api_key_wo_version` (String) Used to trigger updates for `api_key_wo`. This value should be changed when the API key content changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `description` (String) The description of the OpenAI access credential
 - `project_id` (String) The OpenAI project ID (must start with 'proj_')
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 
