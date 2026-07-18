@@ -60,6 +60,7 @@ output "auth_method" {
 - `name` (String) The name of the Snowflake access credential
 - `role` (String) The Snowflake role name for the root connection
 - `schema` (String) The Snowflake schema name (default: PUBLIC)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential
 - `username` (String) The username for the Snowflake connection
 - `warehouse` (String) The Snowflake warehouse name

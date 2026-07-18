@@ -69,6 +69,7 @@ resource "hush_snowflake_access_credential" "keypair" {
 - `private_key_wo_version` (String) Used to trigger updates for `private_key_wo`. This value should be changed when the private key content changes.
 - `role` (String) The Snowflake role name for the root connection
 - `schema` (String) The Snowflake schema name (default: PUBLIC)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 
