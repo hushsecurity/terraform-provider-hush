@@ -52,6 +52,7 @@ func kvAccessCredentialCreate(ctx context.Context, d *schema.ResourceData, meta 
 		Name:          d.Get("name").(string),
 		Description:   d.Get("description").(string),
 		DeploymentIDs: deploymentIDs,
+		SecretStoreID: d.Get("secret_store_id").(string),
 		Items:         items,
 	}
 
@@ -106,6 +107,9 @@ func kvAccessCredentialRead(ctx context.Context, d *schema.ResourceData, meta an
 	if err := d.Set("type", string(credential.Type)); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("secret_store_id", credential.SecretStoreID); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }
@@ -124,6 +128,11 @@ func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if d.HasChange("description") {
 		description := d.Get("description").(string)
 		input.Description = &description
+	}
+
+	if d.HasChange("secret_store_id") {
+		secretStoreID := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &secretStoreID
 	}
 
 	_, err := client.UpdateKVAccessCredential(ctx, c, id, input)

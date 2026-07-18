@@ -53,4 +53,5 @@ output "credential_type" {
 - `description` (String) The description of the KV access credential
 - `keys` (List of String) List of keys available in this credential (computed)
 - `name` (String) The name of the KV access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential (always KV for this resource)
