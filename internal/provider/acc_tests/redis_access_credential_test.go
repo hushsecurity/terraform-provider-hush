@@ -39,6 +39,7 @@ func TestAccResourceRedisAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_redis_access_credential.test", "engine", "redis",
 					),
+					checkSecretStoreID("hush_redis_access_credential.test"),
 				),
 			},
 			{
@@ -85,15 +86,16 @@ func TestAccDataSourceRedisAccessCredential(t *testing.T) {
 func redisAccessCredentialStep1() string {
 	return `
 resource "hush_redis_access_credential" "test" {
-  name           = "test-redis-cred"
-  description    = "test redis credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  host           = "test-redis.example.com"
-  port           = 6379
-  tls            = true
-  username       = "testuser"
-  password       = "testpassword123"
-  engine         = "redis"
+  name            = "test-redis-cred"
+  description     = "test redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  host            = "test-redis.example.com"
+  port            = 6379
+  tls             = true
+  username        = "testuser"
+  password        = "testpassword123"
+  engine          = "redis"
 }
 `
 }
@@ -101,15 +103,16 @@ resource "hush_redis_access_credential" "test" {
 func redisAccessCredentialStep2() string {
 	return `
 resource "hush_redis_access_credential" "test" {
-  name           = "test-redis-cred-updated"
-  description    = "updated redis credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  host           = "test-redis.example.com"
-  port           = 6379
-  tls            = true
-  username       = "testuser"
-  password       = "testpassword123"
-  engine         = "redis"
+  name            = "test-redis-cred-updated"
+  description     = "updated redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  host            = "test-redis.example.com"
+  port            = 6379
+  tls             = true
+  username        = "testuser"
+  password        = "testpassword123"
+  engine          = "redis"
 }
 `
 }

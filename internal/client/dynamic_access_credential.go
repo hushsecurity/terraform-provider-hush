@@ -664,6 +664,7 @@ type RedisAccessCredential struct {
 	Type            AccessCredentialType `json:"type"`
 	Kind            string               `json:"kind,omitempty"`
 	DeploymentIDs   []string             `json:"deployment_ids"`
+	SecretStoreID   string               `json:"secret_store_id,omitempty"`
 	Host            string               `json:"host,omitempty"`
 	Port            int                  `json:"port,omitempty"`
 	Username        string               `json:"username,omitempty"`
@@ -687,6 +688,7 @@ type CreateRedisAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	// host carries omitempty so the aiven engine, which resolves the endpoint
 	// itself, sends no host (the API rejects connection fields on aiven creds).
 	Host            string `json:"host,omitempty"`
@@ -713,6 +715,7 @@ type CreateRedisAccessCredentialInput struct {
 type UpdateRedisAccessCredentialInput struct {
 	Name            *string `json:"name,omitempty"`
 	Description     *string `json:"description,omitempty"`
+	SecretStoreID   *string `json:"secret_store_id,omitempty"`
 	Host            *string `json:"host,omitempty"`
 	Port            *int    `json:"port,omitempty"`
 	Username        *string `json:"username,omitempty"`

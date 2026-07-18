@@ -63,6 +63,7 @@ output "tls" {
 - `port` (Number) The port number of the Redis server (default: 6379). Only valid when `engine` is `redis` or `elasticache`.
 - `project` (String) The Aiven project that owns the Valkey service. Required when `engine` is `aiven`.
 - `region` (String) The AWS region of the ElastiCache cluster. Required and only valid when `engine` is `elasticache`.
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `service_name` (String) The Aiven Valkey service name. Required when `engine` is `aiven`.
 - `tls` (Boolean) Whether to use TLS for the Redis connection. Only valid when `engine` is `redis` or `elasticache`.
 - `tls_ca` (String) The TLS CA certificate for the Redis connection. Only valid when `engine` is `redis` or `elasticache`.
