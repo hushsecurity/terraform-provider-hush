@@ -1007,6 +1007,7 @@ type RabbitmqAccessCredential struct {
 	Type           AccessCredentialType `json:"type"`
 	Kind           string               `json:"kind,omitempty"`
 	DeploymentIDs  []string             `json:"deployment_ids"`
+	SecretStoreID  string               `json:"secret_store_id,omitempty"`
 	Host           string               `json:"host,omitempty"`
 	Port           int                  `json:"port,omitempty"`
 	ManagementPort int                  `json:"management_port,omitempty"`
@@ -1023,6 +1024,7 @@ type CreateRabbitmqAccessCredentialInput struct {
 	Name           string   `json:"name"`
 	Description    string   `json:"description,omitempty"`
 	DeploymentIDs  []string `json:"deployment_ids"`
+	SecretStoreID  string   `json:"secret_store_id,omitempty"`
 	Host           string   `json:"host"`
 	Port           int      `json:"port,omitempty"`
 	ManagementPort int      `json:"management_port,omitempty"`
@@ -1037,6 +1039,7 @@ type CreateRabbitmqAccessCredentialInput struct {
 type UpdateRabbitmqAccessCredentialInput struct {
 	Name           *string `json:"name,omitempty"`
 	Description    *string `json:"description,omitempty"`
+	SecretStoreID  *string `json:"secret_store_id,omitempty"`
 	Host           *string `json:"host,omitempty"`
 	Port           *int    `json:"port,omitempty"`
 	ManagementPort *int    `json:"management_port,omitempty"`

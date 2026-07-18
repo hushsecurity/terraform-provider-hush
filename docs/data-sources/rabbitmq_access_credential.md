@@ -63,6 +63,7 @@ output "tls" {
 - `management_port` (Number) The RabbitMQ management API port (default: 15672)
 - `name` (String) The name of the RabbitMQ access credential
 - `port` (Number) The RabbitMQ AMQP port (default: 5672)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `tls` (Boolean) Whether to use TLS
 - `tls_ca` (String, Sensitive) The TLS CA certificate
 - `type` (String) The type of access credential

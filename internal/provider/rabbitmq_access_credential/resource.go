@@ -42,6 +42,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:           d.Get("name").(string),
 		Description:    d.Get("description").(string),
 		DeploymentIDs:  deploymentIDs,
+		SecretStoreID:  d.Get("secret_store_id").(string),
 		Host:           d.Get("host").(string),
 		Port:           d.Get("port").(int),
 		ManagementPort: d.Get("management_port").(int),
@@ -107,6 +108,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"auto_rotate_root": credential.AutoRotateRoot,
 		"type":             string(credential.Type),
 		"kind":             credential.Kind,
+		"secret_store_id":  credential.SecretStoreID,
 	}
 
 	for field, value := range fields {
@@ -131,6 +133,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("host") {
 		v := d.Get("host").(string)

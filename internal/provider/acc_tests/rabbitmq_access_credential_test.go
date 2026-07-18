@@ -40,6 +40,7 @@ func TestAccResourceRabbitmqAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_rabbitmq_access_credential.test", "auto_rotate_root", "true",
 					),
+					checkSecretStoreID("hush_rabbitmq_access_credential.test"),
 				),
 			},
 			{
@@ -88,12 +89,13 @@ func TestAccDataSourceRabbitmqAccessCredential(t *testing.T) {
 
 const rabbitmqAccessCredentialStep1 = `
 resource "hush_rabbitmq_access_credential" "test" {
-  name            = "test-rabbitmq-cred"
-  description     = "test rabbitmq credential"
-  deployment_ids  = ["` + mockDeploymentID + `"]
-  host            = "` + mockRabbitmqHost + `"
-  port            = 5672
-  management_port = 15672
+  name             = "test-rabbitmq-cred"
+  description      = "test rabbitmq credential"
+  deployment_ids   = ["` + mockDeploymentID + `"]
+  secret_store_id  = "sst-mock-store-1"
+  host             = "` + mockRabbitmqHost + `"
+  port             = 5672
+  management_port  = 15672
   username         = "` + mockRabbitmqUsername + `"
   password         = "` + mockRabbitmqPassword + `"
   vhost            = "/"
@@ -104,12 +106,13 @@ resource "hush_rabbitmq_access_credential" "test" {
 
 const rabbitmqAccessCredentialStep2 = `
 resource "hush_rabbitmq_access_credential" "test" {
-  name            = "test-rabbitmq-cred-updated"
-  description     = "updated rabbitmq credential"
-  deployment_ids  = ["` + mockDeploymentID + `"]
-  host            = "` + mockRabbitmqHost + `"
-  port            = 5672
-  management_port = 15672
+  name             = "test-rabbitmq-cred-updated"
+  description      = "updated rabbitmq credential"
+  deployment_ids   = ["` + mockDeploymentID + `"]
+  secret_store_id  = "sst-mock-store-1"
+  host             = "` + mockRabbitmqHost + `"
+  port             = 5672
+  management_port  = 15672
   username         = "` + mockRabbitmqUsername + `"
   password         = "` + mockRabbitmqPassword + `"
   vhost            = "/test"
