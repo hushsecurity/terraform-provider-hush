@@ -604,6 +604,7 @@ type GrokAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	TeamID        string               `json:"team_id,omitempty"`
 	Status        string               `json:"status,omitempty"`
 	StatusDetail  string               `json:"status_detail,omitempty"`
@@ -613,15 +614,17 @@ type CreateGrokAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	APIKey        string   `json:"api_key"`
 	TeamID        string   `json:"team_id"`
 }
 
 type UpdateGrokAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	APIKey      *string `json:"api_key,omitempty"`
-	TeamID      *string `json:"team_id,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	APIKey        *string `json:"api_key,omitempty"`
+	TeamID        *string `json:"team_id,omitempty"`
 }
 
 func CreateGrokAccessCredential(ctx context.Context, c *Client, input *CreateGrokAccessCredentialInput) (*GrokAccessCredential, error) {

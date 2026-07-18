@@ -39,5 +39,6 @@ output "team_id" {
 - `description` (String) The description of the Grok access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Grok access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `team_id` (String) The Grok team ID
 - `type` (String) The type of access credential
