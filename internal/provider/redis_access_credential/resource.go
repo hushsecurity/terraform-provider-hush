@@ -134,6 +134,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:          d.Get("name").(string),
 		Description:   d.Get("description").(string),
 		DeploymentIDs: deploymentIDs,
+		SecretStoreID: d.Get("secret_store_id").(string),
 		Engine:        engine,
 	}
 
@@ -209,14 +210,15 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 	d.SetId(credential.ID)
 
 	fields := map[string]any{
-		"name":           credential.Name,
-		"description":    credential.Description,
-		"deployment_ids": credential.DeploymentIDs,
-		"engine":         credential.Engine,
-		"project":        credential.Project,
-		"service_name":   credential.ServiceName,
-		"type":           string(credential.Type),
-		"kind":           credential.Kind,
+		"name":            credential.Name,
+		"description":     credential.Description,
+		"deployment_ids":  credential.DeploymentIDs,
+		"engine":          credential.Engine,
+		"project":         credential.Project,
+		"service_name":    credential.ServiceName,
+		"type":            string(credential.Type),
+		"kind":            credential.Kind,
+		"secret_store_id": credential.SecretStoreID,
 	}
 
 	// The redis/elasticache connection and AWS fields are unset for the aiven
@@ -257,6 +259,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("host") {
 		v := d.Get("host").(string)

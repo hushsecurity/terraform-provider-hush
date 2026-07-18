@@ -89,6 +89,7 @@ resource "hush_redis_access_credential" "aiven_example" {
 - `secret_access_key` (String, Sensitive) The AWS secret access key used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `access_key_id`. Omit both to use AWS workload identity federation.
 - `secret_access_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file.
 - `secret_access_key_wo_version` (String) Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret content changes.
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `service_name` (String) The Aiven Valkey service name. Required when `engine` is `aiven`.
 - `tls` (Boolean) Whether to use TLS for the Redis connection. Only valid when `engine` is `redis` or `elasticache`.
 - `tls_ca` (String) The TLS CA certificate for the Redis connection. Only valid when `engine` is `redis` or `elasticache`.
