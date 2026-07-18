@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.20.0] - 2026-07-19
+
+### Added
+
+* **Secret stores**: new `hush_secret_store` resource and data source. A secret store describes where the access-manager materializes secrets for a set of deployments -- AWS Secrets Manager (`aws_sm`), AWS SSM Parameter Store (`aws_ssm`), GCP Secret Manager (`gcp_sm`), or Kubernetes Secrets (`k8s_secrets`). The backend configuration is immutable, so changing it replaces the store; `name`, `description`, and `deployment_ids` can be updated in place.
+
+```hcl
+resource "hush_secret_store" "aws" {
+  name           = "prod-aws"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  aws_sm {
+    prefix     = "hush"
+    region     = "eu-west-1"
+    kms_key_id = "arn:aws:kms:eu-west-1:123456789012:key/abcd1234-..." # optional
+  }
+}
+```
+
+* **Access credentials**: optional `secret_store_id` argument on every access credential resource, pointing the credential at a `hush_secret_store` where its secret is saved. Changing it re-points the credential to a different store.
+
+```hcl
+resource "hush_postgres_access_credential" "example" {
+  name           = "my-db"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+  # ...
+  secret_store_id = hush_secret_store.aws.id
+}
+```
+
 ## [1.19.0] - 2026-07-14
 
 ### Added
