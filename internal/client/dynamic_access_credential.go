@@ -1163,6 +1163,7 @@ type AzureAppAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	TenantID      string               `json:"tenant_id,omitempty"`
 	ClientID      string               `json:"client_id,omitempty"`
 	Status        string               `json:"status,omitempty"`
@@ -1173,17 +1174,19 @@ type CreateAzureAppAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	TenantID      string   `json:"tenant_id"`
 	ClientID      string   `json:"client_id"`
 	ClientSecret  string   `json:"client_secret"`
 }
 
 type UpdateAzureAppAccessCredentialInput struct {
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	TenantID     *string `json:"tenant_id,omitempty"`
-	ClientID     *string `json:"client_id,omitempty"`
-	ClientSecret *string `json:"client_secret,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	TenantID      *string `json:"tenant_id,omitempty"`
+	ClientID      *string `json:"client_id,omitempty"`
+	ClientSecret  *string `json:"client_secret,omitempty"`
 }
 
 func CreateAzureAppAccessCredential(ctx context.Context, c *Client, input *CreateAzureAppAccessCredentialInput) (*AzureAppAccessCredential, error) {

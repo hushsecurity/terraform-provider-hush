@@ -32,5 +32,6 @@ data "hush_azure_app_access_credential" "example" {
 - `description` (String) The description of the Azure app access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Azure app access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `tenant_id` (String) The Azure tenant ID (must be a valid UUID)
 - `type` (String) The type of access credential

@@ -55,6 +55,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:          d.Get("name").(string),
 		Description:   d.Get("description").(string),
 		DeploymentIDs: deploymentIDs,
+		SecretStoreID: d.Get("secret_store_id").(string),
 		TenantID:      d.Get("tenant_id").(string),
 		ClientID:      d.Get("client_id").(string),
 		ClientSecret:  clientSecret,
@@ -96,13 +97,14 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 	d.SetId(credential.ID)
 
 	fields := map[string]any{
-		"name":           credential.Name,
-		"description":    credential.Description,
-		"deployment_ids": credential.DeploymentIDs,
-		"tenant_id":      credential.TenantID,
-		"client_id":      credential.ClientID,
-		"type":           string(credential.Type),
-		"kind":           credential.Kind,
+		"name":            credential.Name,
+		"description":     credential.Description,
+		"deployment_ids":  credential.DeploymentIDs,
+		"tenant_id":       credential.TenantID,
+		"client_id":       credential.ClientID,
+		"type":            string(credential.Type),
+		"kind":            credential.Kind,
+		"secret_store_id": credential.SecretStoreID,
 	}
 
 	for field, value := range fields {
@@ -127,6 +129,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("tenant_id") {
 		v := d.Get("tenant_id").(string)
