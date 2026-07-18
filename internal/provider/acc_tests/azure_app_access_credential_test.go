@@ -28,6 +28,7 @@ func TestAccResourceAzureAppAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_azure_app_access_credential.test", "description", "test azure credential",
 					),
+					checkSecretStoreID("hush_azure_app_access_credential.test"),
 				),
 			},
 			{
@@ -73,6 +74,7 @@ resource "hush_azure_app_access_credential" "test" {
   name            = "test-azure-cred"
   description     = "test azure credential"
   deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
   tenant_id       = "` + mockAzureTenantID + `"
   client_id       = "` + mockAzureClientID + `"
   client_secret   = "` + mockAzureClientSecret + `"
@@ -84,6 +86,7 @@ resource "hush_azure_app_access_credential" "test" {
   name            = "test-azure-cred-updated"
   description     = "updated azure credential"
   deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
   tenant_id       = "` + mockAzureTenantID + `"
   client_id       = "` + mockAzureClientID + `"
   client_secret   = "` + mockAzureClientSecret + `"
