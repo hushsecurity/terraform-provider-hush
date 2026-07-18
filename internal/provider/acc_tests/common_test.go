@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
@@ -22,6 +23,7 @@ const (
 	// Mock values used directly in HCL config strings (compile-time concatenation)
 	mockDeploymentID  = "dep-mock-1234"
 	mockDeploymentID2 = "dep-mock-5678"
+	mockSecretStoreID = "sst-mock-store-1"
 )
 
 var provider *schema.Provider
@@ -83,6 +85,11 @@ func setEnv(key, value string) {
 	if err := os.Setenv(key, value); err != nil {
 		panic(fmt.Sprintf("failed to set env %s: %v", key, err))
 	}
+}
+
+// checkSecretStoreID asserts that a credential's secret_store_id round-trips.
+func checkSecretStoreID(resourceName string) resource.TestCheckFunc {
+	return resource.TestCheckResourceAttr(resourceName, "secret_store_id", mockSecretStoreID)
 }
 
 func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.State) error {
