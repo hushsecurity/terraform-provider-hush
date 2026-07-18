@@ -26,6 +26,7 @@ func TestAccResourceGeminiAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_gemini_access_credential.test", "description", "test gemini credential",
 					),
+					checkSecretStoreID("hush_gemini_access_credential.test"),
 				),
 			},
 			{
@@ -72,6 +73,7 @@ resource "hush_gemini_access_credential" "test" {
   name                = "test-gemini-cred"
   description         = "test gemini credential"
   deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   project_id          = "test-gcp-project-1"
   service_account_key = <<-EOF
 ` + mockGeminiServiceAccountKey + `
@@ -86,6 +88,7 @@ resource "hush_gemini_access_credential" "test" {
   name                = "test-gemini-cred-updated"
   description         = "updated gemini credential"
   deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   project_id          = "test-gcp-project-1"
   service_account_key = <<-EOF
 ` + mockGeminiServiceAccountKey + `

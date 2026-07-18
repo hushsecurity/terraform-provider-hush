@@ -535,6 +535,7 @@ type GeminiAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	ProjectID     string               `json:"project_id,omitempty"`
 	Status        string               `json:"status,omitempty"`
 	StatusDetail  string               `json:"status_detail,omitempty"`
@@ -544,6 +545,7 @@ type CreateGeminiAccessCredentialInput struct {
 	Name              string   `json:"name"`
 	Description       string   `json:"description,omitempty"`
 	DeploymentIDs     []string `json:"deployment_ids"`
+	SecretStoreID     string   `json:"secret_store_id,omitempty"`
 	ServiceAccountKey string   `json:"service_account_key,omitempty"`
 	ProjectID         string   `json:"project_id"`
 }
@@ -551,6 +553,7 @@ type CreateGeminiAccessCredentialInput struct {
 type UpdateGeminiAccessCredentialInput struct {
 	Name              *string `json:"name,omitempty"`
 	Description       *string `json:"description,omitempty"`
+	SecretStoreID     *string `json:"secret_store_id,omitempty"`
 	ServiceAccountKey *string `json:"service_account_key,omitempty"`
 	ProjectID         *string `json:"project_id,omitempty"`
 }
