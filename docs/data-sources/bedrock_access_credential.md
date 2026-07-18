@@ -50,4 +50,5 @@ output "has_provider_credentials" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Bedrock access credential
 - `region` (String) The AWS region for Bedrock (e.g., us-east-1)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential
