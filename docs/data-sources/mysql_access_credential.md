@@ -58,6 +58,7 @@ output "ssl_mode" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the MySQL access credential
 - `port` (Number) The port number of the MySQL server (default: 3306)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `ssl_ca` (String) The SSL CA certificate for the MySQL connection
 - `ssl_mode` (String) The SSL mode for the MySQL connection (default: preferred)
 - `type` (String) The type of access credential
