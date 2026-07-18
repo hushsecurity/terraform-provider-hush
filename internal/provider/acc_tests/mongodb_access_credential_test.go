@@ -42,6 +42,7 @@ func TestAccResourceMongoDBAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_mongodb_access_credential.test", "tls", "false",
 					),
+					checkSecretStoreID("hush_mongodb_access_credential.test"),
 				),
 			},
 			{
@@ -88,16 +89,17 @@ func TestAccDataSourceMongoDBAccessCredential(t *testing.T) {
 func mongodbAccessCredentialStep1() string {
 	return `
 resource "hush_mongodb_access_credential" "test" {
-  name           = "test-mongodb-cred"
-  description    = "test mongodb credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-mongo.example.com"
-  port           = 27017
-  username       = "testuser"
-  password       = "testpassword123"
-  auth_source    = "admin"
-  tls            = false
+  name            = "test-mongodb-cred"
+  description     = "test mongodb credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mongo.example.com"
+  port            = 27017
+  username        = "testuser"
+  password        = "testpassword123"
+  auth_source     = "admin"
+  tls             = false
 }
 `
 }
@@ -105,16 +107,17 @@ resource "hush_mongodb_access_credential" "test" {
 func mongodbAccessCredentialStep2() string {
 	return `
 resource "hush_mongodb_access_credential" "test" {
-  name           = "test-mongodb-cred-updated"
-  description    = "updated mongodb credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-mongo.example.com"
-  port           = 27017
-  username       = "testuser"
-  password       = "testpassword123"
-  auth_source    = "admin"
-  tls            = false
+  name            = "test-mongodb-cred-updated"
+  description     = "updated mongodb credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mongo.example.com"
+  port            = 27017
+  username        = "testuser"
+  password        = "testpassword123"
+  auth_source     = "admin"
+  tls             = false
 }
 `
 }
