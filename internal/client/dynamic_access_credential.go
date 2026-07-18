@@ -1379,6 +1379,7 @@ type SnowflakeAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	Account       string               `json:"account,omitempty"`
 	Warehouse     string               `json:"warehouse,omitempty"`
 	Database      string               `json:"database,omitempty"`
@@ -1394,6 +1395,7 @@ type CreateSnowflakeAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	Account       string   `json:"account"`
 	Warehouse     string   `json:"warehouse"`
 	Database      string   `json:"database"`
@@ -1406,17 +1408,18 @@ type CreateSnowflakeAccessCredentialInput struct {
 }
 
 type UpdateSnowflakeAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Account     *string `json:"account,omitempty"`
-	Warehouse   *string `json:"warehouse,omitempty"`
-	Database    *string `json:"database,omitempty"`
-	Schema      *string `json:"schema,omitempty"`
-	Role        *string `json:"role,omitempty"`
-	Username    *string `json:"username,omitempty"`
-	Password    *string `json:"password,omitempty"`
-	PrivateKey  *string `json:"private_key,omitempty"`
-	AuthMethod  *string `json:"auth_method,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	Account       *string `json:"account,omitempty"`
+	Warehouse     *string `json:"warehouse,omitempty"`
+	Database      *string `json:"database,omitempty"`
+	Schema        *string `json:"schema,omitempty"`
+	Role          *string `json:"role,omitempty"`
+	Username      *string `json:"username,omitempty"`
+	Password      *string `json:"password,omitempty"`
+	PrivateKey    *string `json:"private_key,omitempty"`
+	AuthMethod    *string `json:"auth_method,omitempty"`
 }
 
 func CreateSnowflakeAccessCredential(ctx context.Context, c *Client, input *CreateSnowflakeAccessCredentialInput) (*SnowflakeAccessCredential, error) {

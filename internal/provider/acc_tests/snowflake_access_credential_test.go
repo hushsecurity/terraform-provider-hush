@@ -42,6 +42,7 @@ func TestAccResourceSnowflakeAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_snowflake_access_credential.test", "auth_method", "password",
 					),
+					checkSecretStoreID("hush_snowflake_access_credential.test"),
 				),
 			},
 			{
@@ -91,16 +92,17 @@ func TestAccDataSourceSnowflakeAccessCredential(t *testing.T) {
 func snowflakeAccessCredentialStep1() string {
 	return `
 resource "hush_snowflake_access_credential" "test" {
-  name           = "test-snowflake-cred"
-  description    = "test snowflake credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  account        = "TESTORG-TESTACCOUNT"
-  warehouse      = "COMPUTE_WH"
-  database       = "TESTDB"
-  schema         = "PUBLIC"
-  username       = "testuser"
-  password       = "TestPassword123!"
-  auth_method    = "password"
+  name            = "test-snowflake-cred"
+  description     = "test snowflake credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  account         = "TESTORG-TESTACCOUNT"
+  warehouse       = "COMPUTE_WH"
+  database        = "TESTDB"
+  schema          = "PUBLIC"
+  username        = "testuser"
+  password        = "TestPassword123!"
+  auth_method     = "password"
 }
 `
 }
@@ -108,16 +110,17 @@ resource "hush_snowflake_access_credential" "test" {
 func snowflakeAccessCredentialStep2() string {
 	return `
 resource "hush_snowflake_access_credential" "test" {
-  name           = "test-snowflake-cred-updated"
-  description    = "updated snowflake credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  account        = "TESTORG-TESTACCOUNT"
-  warehouse      = "COMPUTE_WH"
-  database       = "TESTDB"
-  schema         = "PUBLIC"
-  username       = "testuser"
-  password       = "TestPassword123!"
-  auth_method    = "password"
+  name            = "test-snowflake-cred-updated"
+  description     = "updated snowflake credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  account         = "TESTORG-TESTACCOUNT"
+  warehouse       = "COMPUTE_WH"
+  database        = "TESTDB"
+  schema          = "PUBLIC"
+  username        = "testuser"
+  password        = "TestPassword123!"
+  auth_method     = "password"
 }
 `
 }
