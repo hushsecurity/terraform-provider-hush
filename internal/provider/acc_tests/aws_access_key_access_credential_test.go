@@ -27,6 +27,7 @@ func TestAccResourceAWSAccessKeyAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_aws_access_key_access_credential.test", "description", "test aws credential",
 					),
+					checkSecretStoreID("hush_aws_access_key_access_credential.test"),
 				),
 			},
 			{
@@ -72,6 +73,7 @@ resource "hush_aws_access_key_access_credential" "test" {
   name                = "test-aws-cred"
   description         = "test aws credential"
   deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   access_key_id_value = "` + mockAWSAccessKeyID + `"
   secret_access_key   = "` + mockAWSSecretAccessKey + `"
 }
@@ -82,6 +84,7 @@ resource "hush_aws_access_key_access_credential" "test" {
   name                = "test-aws-cred-updated"
   description         = "updated aws credential"
   deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   access_key_id_value = "` + mockAWSAccessKeyID + `"
   secret_access_key   = "` + mockAWSSecretAccessKey + `"
 }
