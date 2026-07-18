@@ -44,6 +44,7 @@ resource "hush_twilio_access_credential" "example" {
 - `api_key_secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The Twilio API Key Secret (write-only). More secure than `api_key_secret` because Terraform will not store this value in the state file.
 - `api_key_secret_wo_version` (String) Used to trigger updates for `api_key_secret_wo`. Change when the secret changes.
 - `description` (String) The description of the Twilio access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 
