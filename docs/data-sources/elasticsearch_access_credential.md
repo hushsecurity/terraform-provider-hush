@@ -53,6 +53,7 @@ output "tls" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Elasticsearch access credential
 - `port` (Number) The port number of the Elasticsearch server (default: 9200)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `tls` (Boolean) Whether to use TLS for the Elasticsearch connection
 - `tls_ca` (String) The TLS CA certificate for the Elasticsearch connection
 - `type` (String) The type of access credential

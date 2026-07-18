@@ -914,6 +914,7 @@ type ElasticsearchAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	Host          string               `json:"host,omitempty"`
 	Port          int                  `json:"port,omitempty"`
 	Username      string               `json:"username,omitempty"`
@@ -927,6 +928,7 @@ type CreateElasticsearchAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	Host          string   `json:"host"`
 	Port          int      `json:"port,omitempty"`
 	Username      string   `json:"username"`
@@ -936,14 +938,15 @@ type CreateElasticsearchAccessCredentialInput struct {
 }
 
 type UpdateElasticsearchAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Host        *string `json:"host,omitempty"`
-	Port        *int    `json:"port,omitempty"`
-	Username    *string `json:"username,omitempty"`
-	Password    *string `json:"password,omitempty"`
-	TLS         *bool   `json:"tls,omitempty"`
-	TLSCA       *string `json:"tls_ca,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	Host          *string `json:"host,omitempty"`
+	Port          *int    `json:"port,omitempty"`
+	Username      *string `json:"username,omitempty"`
+	Password      *string `json:"password,omitempty"`
+	TLS           *bool   `json:"tls,omitempty"`
+	TLSCA         *string `json:"tls_ca,omitempty"`
 }
 
 func CreateElasticsearchAccessCredential(ctx context.Context, c *Client, input *CreateElasticsearchAccessCredentialInput) (*ElasticsearchAccessCredential, error) {

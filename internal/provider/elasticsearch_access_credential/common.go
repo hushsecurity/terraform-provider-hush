@@ -22,6 +22,7 @@ const (
 	tlsCADesc         = "The TLS CA certificate for the Elasticsearch connection"
 	typeDesc          = "The type of access credential"
 	kindDesc          = "The kind of access credential"
+	secretStoreIDDesc = "The ID of the secret store where this credential is saved (optional)"
 )
 
 func ResourceSchema() map[string]*schema.Schema {
@@ -54,6 +55,12 @@ func ResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
 		},
+	}
+	s["secret_store_id"] = &schema.Schema{
+		Description:  secretStoreIDDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^sst-`), "secret_store_id must start with 'sst-'"),
 	}
 	s["host"] = &schema.Schema{
 		Description: hostDesc,
@@ -167,6 +174,11 @@ func DataSourceSchema() map[string]*schema.Schema {
 		},
 		"kind": {
 			Description: kindDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"secret_store_id": {
+			Description: secretStoreIDDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
