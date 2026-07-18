@@ -48,6 +48,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:              d.Get("name").(string),
 		Description:       d.Get("description").(string),
 		DeploymentIDs:     deploymentIDs,
+		SecretStoreID:     d.Get("secret_store_id").(string),
 		ServiceAccountKey: getServiceAccountKey(d),
 	}
 
@@ -93,6 +94,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"has_provider_credentials": credential.HasProviderCredentials,
 		"type":                     string(credential.Type),
 		"kind":                     credential.Kind,
+		"secret_store_id":          credential.SecretStoreID,
 	}
 
 	for field, value := range fields {
@@ -117,6 +119,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("service_account_key") || d.HasChange("service_account_key_wo") || d.HasChange("service_account_key_wo_version") {
 		input.ServiceAccountKey = getServiceAccountKey(d)
