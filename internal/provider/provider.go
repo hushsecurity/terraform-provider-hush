@@ -64,6 +64,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/salesforce_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/salesforce_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/secret_store"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sendgrid_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sendgrid_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/snowflake_access_credential"
@@ -167,6 +168,7 @@ func New(version string) func() *schema.Provider {
 				"hush_sendgrid_access_credential":       sendgrid_access_credential.Resource(),
 				"hush_sendgrid_access_privilege":        sendgrid_access_privilege.Resource(),
 				"hush_sonatype_integration":             sonatype_integration.Resource(),
+				"hush_secret_store":                     secret_store.Resource(),
 				"hush_kafka_access_credential":          kafka_access_credential.Resource(),
 				"hush_kafka_access_privilege":           kafka_access_privilege.Resource(),
 			},
@@ -232,6 +234,7 @@ func New(version string) func() *schema.Provider {
 				"hush_sendgrid_access_credential":       sendgrid_access_credential.DataSource(),
 				"hush_sendgrid_access_privilege":        sendgrid_access_privilege.DataSource(),
 				"hush_sonatype_integration":             sonatype_integration.DataSource(),
+				"hush_secret_store":                     secret_store.DataSource(),
 				"hush_kafka_access_credential":          kafka_access_credential.DataSource(),
 				"hush_kafka_access_privilege":           kafka_access_privilege.DataSource(),
 			},
