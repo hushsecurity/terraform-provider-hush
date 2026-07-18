@@ -26,6 +26,7 @@ func TestAccResourceGCPSAAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_gcp_sa_access_credential.test", "description", "test gcp service account credential",
 					),
+					checkSecretStoreID("hush_gcp_sa_access_credential.test"),
 				),
 			},
 			{
@@ -72,6 +73,7 @@ resource "hush_gcp_sa_access_credential" "test" {
   name                = "test-gcp-sa-cred"
   description         = "test gcp service account credential"
   deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   service_account_key = <<-EOF
 ` + mockGCPSAKey + `
 EOF
@@ -85,6 +87,7 @@ resource "hush_gcp_sa_access_credential" "test" {
   name                = "test-gcp-sa-cred-updated"
   description         = "updated gcp service account credential"
   deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   service_account_key = <<-EOF
 ` + mockGCPSAKey + `
 EOF
