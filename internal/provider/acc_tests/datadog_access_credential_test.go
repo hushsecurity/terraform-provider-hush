@@ -27,6 +27,7 @@ func TestAccResourceDatadogAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_datadog_access_credential.test", "site", "us5.datadoghq.com",
 					),
+					checkSecretStoreID("hush_datadog_access_credential.test"),
 				),
 			},
 			{
@@ -76,12 +77,13 @@ func TestAccDataSourceDatadogAccessCredential(t *testing.T) {
 func datadogAccessCredentialStep1() string {
 	return `
 resource "hush_datadog_access_credential" "test" {
-  name           = "test-datadog-cred"
-  description    = "test datadog credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "mock-datadog-api-key"
-  app_key        = "mock-datadog-app-key"
-  site           = "us5.datadoghq.com"
+  name            = "test-datadog-cred"
+  description     = "test datadog credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "mock-datadog-api-key"
+  app_key         = "mock-datadog-app-key"
+  site            = "us5.datadoghq.com"
 }
 `
 }
@@ -89,12 +91,13 @@ resource "hush_datadog_access_credential" "test" {
 func datadogAccessCredentialStep2() string {
 	return `
 resource "hush_datadog_access_credential" "test" {
-  name           = "test-datadog-cred-updated"
-  description    = "updated datadog credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "mock-datadog-api-key"
-  app_key        = "mock-datadog-app-key"
-  site           = "datadoghq.com"
+  name            = "test-datadog-cred-updated"
+  description     = "updated datadog credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "mock-datadog-api-key"
+  app_key         = "mock-datadog-app-key"
+  site            = "datadoghq.com"
 }
 `
 }

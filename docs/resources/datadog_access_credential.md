@@ -31,6 +31,7 @@ Manage Datadog dynamic access credentials in the Hush Security platform.
 - `app_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The Datadog application key (write-only). More secure than `app_key` because Terraform will not store this value in the state file.
 - `app_key_wo_version` (String) Used to trigger updates for `app_key_wo`. Change when the application key changes.
 - `description` (String) The description of the Datadog access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `site` (String) The Datadog site (e.g., datadoghq.com, us3.datadoghq.com, us5.datadoghq.com, datadoghq.eu, ap1.datadoghq.com)
 
 ### Read-Only
