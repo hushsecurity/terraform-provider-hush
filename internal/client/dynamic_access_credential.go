@@ -376,6 +376,7 @@ type MariaDBAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	DBName        string               `json:"db_name,omitempty"`
 	Host          string               `json:"host,omitempty"`
 	Port          int                  `json:"port,omitempty"`
@@ -390,6 +391,7 @@ type CreateMariaDBAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	DBName        string   `json:"db_name"`
 	Host          string   `json:"host"`
 	Port          int      `json:"port,omitempty"`
@@ -400,15 +402,16 @@ type CreateMariaDBAccessCredentialInput struct {
 }
 
 type UpdateMariaDBAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	DBName      *string `json:"db_name,omitempty"`
-	Host        *string `json:"host,omitempty"`
-	Port        *int    `json:"port,omitempty"`
-	SSLMode     *string `json:"ssl_mode,omitempty"`
-	SSLCA       *string `json:"ssl_ca,omitempty"`
-	Username    *string `json:"username,omitempty"`
-	Password    *string `json:"password,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	DBName        *string `json:"db_name,omitempty"`
+	Host          *string `json:"host,omitempty"`
+	Port          *int    `json:"port,omitempty"`
+	SSLMode       *string `json:"ssl_mode,omitempty"`
+	SSLCA         *string `json:"ssl_ca,omitempty"`
+	Username      *string `json:"username,omitempty"`
+	Password      *string `json:"password,omitempty"`
 }
 
 func CreateMariaDBAccessCredential(ctx context.Context, c *Client, input *CreateMariaDBAccessCredentialInput) (*MariaDBAccessCredential, error) {
