@@ -329,6 +329,7 @@ func (ms *MockServer) getIDPrefix(resourceKey string) string {
 		"notification_channels":       "nch",
 		"notification_configurations": "ncf",
 		"integrations":                "int",
+		"secret_stores":               "sst",
 	}
 	// Check for base resource type
 	for base, prefix := range prefixes {
