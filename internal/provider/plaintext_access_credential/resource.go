@@ -43,6 +43,7 @@ func plaintextAccessCredentialCreate(ctx context.Context, d *schema.ResourceData
 		Name:          d.Get("name").(string),
 		Description:   d.Get("description").(string),
 		DeploymentIDs: deploymentIDs,
+		SecretStoreID: d.Get("secret_store_id").(string),
 		Secret:        secret,
 	}
 
@@ -93,6 +94,9 @@ func plaintextAccessCredentialRead(ctx context.Context, d *schema.ResourceData, 
 	if err := d.Set("type", string(credential.Type)); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := d.Set("secret_store_id", credential.SecretStoreID); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return nil
 }
@@ -111,6 +115,11 @@ func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData
 	if d.HasChange("description") {
 		description := d.Get("description").(string)
 		input.Description = &description
+	}
+
+	if d.HasChange("secret_store_id") {
+		secretStoreID := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &secretStoreID
 	}
 
 	_, err := client.UpdatePlaintextAccessCredential(ctx, c, id, input)

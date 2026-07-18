@@ -55,6 +55,7 @@ output "credential_type" {
 
 - `description` (String) The description of the plaintext access credential
 - `secret` (String, Sensitive) The secret value for the plaintext credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The secret value for the plaintext credential (write-only). This is a write-only attribute that is more secure than `secret` because Terraform will not store this value in the state file. Either `secret` or `secret_wo` must be specified.
 - `secret_wo_version` (String) Used to trigger updates for `secret_wo`. This value should be changed when the secret content changes. Can be any value (e.g., a timestamp, version number, or hash).
 

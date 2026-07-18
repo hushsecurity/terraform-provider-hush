@@ -16,6 +16,7 @@ const (
 	secretWODesc        = "The secret value for the plaintext credential (write-only). This is a write-only attribute that is more secure than `secret` because Terraform will not store this value in the state file. Either `secret` or `secret_wo` must be specified."
 	secretWOVersionDesc = "Used to trigger updates for `secret_wo`. This value should be changed when the secret content changes. Can be any value (e.g., a timestamp, version number, or hash)."
 	typeDesc            = "The type of access credential (always PLAINTEXT for this resource)"
+	secretStoreIDDesc   = "The ID of the secret store where this credential is saved (optional)"
 )
 
 func PlaintextAccessCredentialResourceSchema() map[string]*schema.Schema {
@@ -48,6 +49,12 @@ func PlaintextAccessCredentialResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
 		},
+	}
+	s["secret_store_id"] = &schema.Schema{
+		Description:  secretStoreIDDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^sst-`), "secret_store_id must start with 'sst-'"),
 	}
 	s["secret"] = &schema.Schema{
 		Description:   secretDesc,
@@ -106,6 +113,11 @@ func PlaintextAccessCredentialDataSourceSchema() map[string]*schema.Schema {
 		},
 		"type": {
 			Description: typeDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"secret_store_id": {
+			Description: secretStoreIDDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

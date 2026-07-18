@@ -48,4 +48,5 @@ output "credential_type" {
 - `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment
 - `description` (String) The description of the plaintext access credential
 - `name` (String) The name of the plaintext access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential (always PLAINTEXT for this resource)
