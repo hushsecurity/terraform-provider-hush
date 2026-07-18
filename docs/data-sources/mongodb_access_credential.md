@@ -63,6 +63,7 @@ output "tls" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the MongoDB access credential
 - `port` (Number) The port number of the MongoDB server (default: 27017)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `tls` (Boolean) Whether to use TLS for the MongoDB connection (default: false)
 - `tls_ca` (String) The TLS CA certificate for the MongoDB connection
 - `type` (String) The type of access credential

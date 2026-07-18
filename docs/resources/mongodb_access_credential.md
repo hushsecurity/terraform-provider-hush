@@ -49,6 +49,7 @@ resource "hush_mongodb_access_credential" "example" {
 - `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The password for the MongoDB connection (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file. Either `password` or `password_wo` must be specified.
 - `password_wo_version` (String) Used to trigger updates for `password_wo`. This value should be changed when the password content changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `port` (Number) The port number of the MongoDB server (default: 27017)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `tls` (Boolean) Whether to use TLS for the MongoDB connection (default: false)
 - `tls_ca` (String) The TLS CA certificate for the MongoDB connection
 

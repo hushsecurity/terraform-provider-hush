@@ -128,6 +128,7 @@ type MongoDBAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	DBName        string               `json:"db_name,omitempty"`
 	Host          string               `json:"host,omitempty"`
 	Port          int                  `json:"port,omitempty"`
@@ -143,6 +144,7 @@ type CreateMongoDBAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	DBName        string   `json:"db_name"`
 	Host          string   `json:"host"`
 	Port          int      `json:"port,omitempty"`
@@ -154,16 +156,17 @@ type CreateMongoDBAccessCredentialInput struct {
 }
 
 type UpdateMongoDBAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
-	DBName      *string `json:"db_name,omitempty"`
-	Host        *string `json:"host,omitempty"`
-	Port        *int    `json:"port,omitempty"`
-	Username    *string `json:"username,omitempty"`
-	Password    *string `json:"password,omitempty"`
-	AuthSource  *string `json:"auth_source,omitempty"`
-	TLS         *bool   `json:"tls,omitempty"`
-	TLSCA       *string `json:"tls_ca,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	DBName        *string `json:"db_name,omitempty"`
+	Host          *string `json:"host,omitempty"`
+	Port          *int    `json:"port,omitempty"`
+	Username      *string `json:"username,omitempty"`
+	Password      *string `json:"password,omitempty"`
+	AuthSource    *string `json:"auth_source,omitempty"`
+	TLS           *bool   `json:"tls,omitempty"`
+	TLSCA         *string `json:"tls_ca,omitempty"`
 }
 
 func CreateMongoDBAccessCredential(ctx context.Context, c *Client, input *CreateMongoDBAccessCredentialInput) (*MongoDBAccessCredential, error) {
