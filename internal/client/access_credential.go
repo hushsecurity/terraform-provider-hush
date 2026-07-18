@@ -22,6 +22,7 @@ type AccessCredential struct {
 	Description   string               `json:"description,omitempty"`
 	Type          AccessCredentialType `json:"type"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	Keys          []string             `json:"keys,omitempty"`
 	CreatedBy     string               `json:"created_by,omitempty"`
 }
@@ -45,6 +46,7 @@ type CreatePlaintextAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	Secret        string   `json:"secret"`
 }
 
@@ -56,8 +58,9 @@ type CreateKVAccessCredentialInput struct {
 }
 
 type UpdateAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
 }
 
 type AccessCredentialListResponse struct {
