@@ -789,6 +789,7 @@ type BedrockAccessCredential struct {
 	Type                   AccessCredentialType `json:"type"`
 	Kind                   string               `json:"kind,omitempty"`
 	DeploymentIDs          []string             `json:"deployment_ids"`
+	SecretStoreID          string               `json:"secret_store_id,omitempty"`
 	Region                 string               `json:"region"`
 	AccessKeyID            *string              `json:"access_key_id,omitempty"`
 	HasProviderCredentials bool                 `json:"has_provider_credentials"`
@@ -800,6 +801,7 @@ type CreateBedrockAccessCredentialInput struct {
 	Name            string   `json:"name"`
 	Description     string   `json:"description,omitempty"`
 	DeploymentIDs   []string `json:"deployment_ids"`
+	SecretStoreID   string   `json:"secret_store_id,omitempty"`
 	Region          string   `json:"region"`
 	AccessKeyID     *string  `json:"access_key_id,omitempty"`
 	SecretAccessKey *string  `json:"secret_access_key,omitempty"`
@@ -808,6 +810,7 @@ type CreateBedrockAccessCredentialInput struct {
 type UpdateBedrockAccessCredentialInput struct {
 	Name            *string `json:"name,omitempty"`
 	Description     *string `json:"description,omitempty"`
+	SecretStoreID   *string `json:"secret_store_id,omitempty"`
 	Region          *string `json:"region,omitempty"`
 	AccessKeyID     *string `json:"access_key_id,omitempty"`
 	SecretAccessKey *string `json:"secret_access_key,omitempty"`

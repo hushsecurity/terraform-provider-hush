@@ -43,6 +43,7 @@ func TestAccResourceBedrockAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_bedrock_access_credential.test", "has_provider_credentials", "true",
 					),
+					checkSecretStoreID("hush_bedrock_access_credential.test"),
 				),
 			},
 			{
@@ -86,11 +87,12 @@ func TestAccDataSourceBedrockAccessCredential(t *testing.T) {
 func bedrockAccessCredentialStep1() string {
 	return `
 resource "hush_bedrock_access_credential" "test" {
-  name           = "test-bedrock-cred"
-  description    = "test bedrock credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  region         = "` + mockBedrockRegion + `"
-  access_key_id  = "` + mockBedrockAccessKeyID + `"
+  name            = "test-bedrock-cred"
+  description     = "test bedrock credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  region          = "` + mockBedrockRegion + `"
+  access_key_id   = "` + mockBedrockAccessKeyID + `"
 
   secret_access_key = "` + mockBedrockSecretAccessKey + `"
 }
@@ -100,11 +102,12 @@ resource "hush_bedrock_access_credential" "test" {
 func bedrockAccessCredentialStep2() string {
 	return `
 resource "hush_bedrock_access_credential" "test" {
-  name           = "test-bedrock-cred-updated"
-  description    = "updated bedrock credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  region         = "` + mockBedrockRegion + `"
-  access_key_id  = "` + mockBedrockAccessKeyID + `"
+  name            = "test-bedrock-cred-updated"
+  description     = "updated bedrock credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  region          = "` + mockBedrockRegion + `"
+  access_key_id   = "` + mockBedrockAccessKeyID + `"
 
   secret_access_key = "` + mockBedrockSecretAccessKey + `"
 }

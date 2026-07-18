@@ -44,6 +44,7 @@ resource "hush_bedrock_access_credential" "example" {
 - `secret_access_key` (String, Sensitive) The AWS secret access key
 - `secret_access_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file.
 - `secret_access_key_wo_version` (String) Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret access key content changes. Can be any value (e.g., a timestamp, version number, or hash).
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 
