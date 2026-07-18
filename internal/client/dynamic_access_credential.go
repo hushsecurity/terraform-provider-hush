@@ -1991,6 +1991,7 @@ type KafkaAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	Engine        string               `json:"engine,omitempty"`
 	// Native-engine fields.
 	BootstrapServers string `json:"bootstrap_servers,omitempty"`
@@ -2009,6 +2010,7 @@ type CreateKafkaAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	Engine        string   `json:"engine"`
 	// Native-engine fields.
 	BootstrapServers string `json:"bootstrap_servers,omitempty"`
@@ -2026,8 +2028,9 @@ type CreateKafkaAccessCredentialInput struct {
 // UpdateKafkaAccessCredentialInput omits engine: it is immutable and ignored by
 // the API on update.
 type UpdateKafkaAccessCredentialInput struct {
-	Name        *string `json:"name,omitempty"`
-	Description *string `json:"description,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
 	// Native-engine fields.
 	BootstrapServers *string `json:"bootstrap_servers,omitempty"`
 	Username         *string `json:"username,omitempty"`
