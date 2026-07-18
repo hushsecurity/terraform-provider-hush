@@ -28,6 +28,7 @@ func TestAccResourceElasticsearchAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_elasticsearch_access_credential.test", "description", "test elasticsearch credential",
 					),
+					checkSecretStoreID("hush_elasticsearch_access_credential.test"),
 				),
 			},
 			{
@@ -70,27 +71,29 @@ func TestAccDataSourceElasticsearchAccessCredential(t *testing.T) {
 
 const elasticsearchAccessCredentialStep1 = `
 resource "hush_elasticsearch_access_credential" "test" {
-  name           = "test-es-cred"
-  description    = "test elasticsearch credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  host           = "` + mockElasticsearchHost + `"
-  port           = 9200
-  username       = "` + mockElasticsearchUsername + `"
-  password       = "` + mockElasticsearchPassword + `"
-  tls            = false
+  name            = "test-es-cred"
+  description     = "test elasticsearch credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  host            = "` + mockElasticsearchHost + `"
+  port            = 9200
+  username        = "` + mockElasticsearchUsername + `"
+  password        = "` + mockElasticsearchPassword + `"
+  tls             = false
 }
 `
 
 const elasticsearchAccessCredentialStep2 = `
 resource "hush_elasticsearch_access_credential" "test" {
-  name           = "test-es-cred-updated"
-  description    = "updated elasticsearch credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  host           = "` + mockElasticsearchHost + `"
-  port           = 9200
-  username       = "` + mockElasticsearchUsername + `"
-  password       = "` + mockElasticsearchPassword + `"
-  tls            = false
+  name            = "test-es-cred-updated"
+  description     = "updated elasticsearch credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  host            = "` + mockElasticsearchHost + `"
+  port            = 9200
+  username        = "` + mockElasticsearchUsername + `"
+  password        = "` + mockElasticsearchPassword + `"
+  tls             = false
 }
 `
 
