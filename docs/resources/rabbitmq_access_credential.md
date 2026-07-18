@@ -49,6 +49,7 @@ resource "hush_rabbitmq_access_credential" "example" {
 - `password_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The RabbitMQ password (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file.
 - `password_wo_version` (String) Used to trigger updates for `password_wo`. This value should be changed when the password content changes.
 - `port` (Number) The RabbitMQ AMQP port (default: 5672)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `tls` (Boolean) Whether to use TLS
 - `tls_ca` (String, Sensitive) The TLS CA certificate
 - `username` (String) The RabbitMQ username
