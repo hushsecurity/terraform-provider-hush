@@ -37,6 +37,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:               d.Get("name").(string),
 		Description:        d.Get("description").(string),
 		DeploymentIDs:      deploymentIDs,
+		SecretStoreID:      d.Get("secret_store_id").(string),
 		ProjectNumber:      d.Get("project_number").(string),
 		PoolID:             d.Get("pool_id").(string),
 		WorkloadProviderID: d.Get("workload_provider_id").(string),
@@ -92,6 +93,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"issuer_url":           credential.IssuerURL,
 		"type":                 string(credential.Type),
 		"kind":                 credential.Kind,
+		"secret_store_id":      credential.SecretStoreID,
 	}
 
 	for field, value := range fields {
@@ -116,6 +118,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("deployment_ids") {
 		deploymentIDs := make([]string, 0)

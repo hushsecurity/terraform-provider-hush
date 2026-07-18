@@ -39,6 +39,7 @@ resource "hush_gcp_wif_access_credential" "example" {
 
 - `audience` (String) The audience for the GCP WIF access credential
 - `description` (String) The description of the GCP WIF access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 

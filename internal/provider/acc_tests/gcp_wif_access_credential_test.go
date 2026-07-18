@@ -53,6 +53,7 @@ func TestAccResourceGcpWifAccessCredential(t *testing.T) {
 					resource.TestMatchResourceAttr(
 						"hush_gcp_wif_access_credential.test", "issuer_url", regexp.MustCompile(`^https://.+$`),
 					),
+					checkSecretStoreID("hush_gcp_wif_access_credential.test"),
 				),
 			},
 			{
@@ -123,6 +124,7 @@ resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred"
   description          = "test gcp wif credential"
   deployment_ids       = ["` + mockDeploymentID + `"]
+  secret_store_id      = "sst-mock-store-1"
   project_number       = "123456789012"
   pool_id              = "my-wif-pool"
   workload_provider_id = "my-wif-provider"
@@ -136,6 +138,7 @@ resource "hush_gcp_wif_access_credential" "test" {
   name                 = "test-gcp-wif-cred-updated"
   description          = "updated gcp wif credential"
   deployment_ids       = ["` + mockDeploymentID2 + `"]
+  secret_store_id      = "sst-mock-store-1"
   project_number       = "987654321098"
   pool_id              = "my-wif-pool-updated"
   workload_provider_id = "my-wif-provider-updated"

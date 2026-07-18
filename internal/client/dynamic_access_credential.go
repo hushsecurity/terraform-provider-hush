@@ -1598,6 +1598,7 @@ type GcpWifAccessCredential struct {
 	Type               AccessCredentialType `json:"type"`
 	Kind               string               `json:"kind,omitempty"`
 	DeploymentIDs      []string             `json:"deployment_ids"`
+	SecretStoreID      string               `json:"secret_store_id,omitempty"`
 	ProjectNumber      string               `json:"project_number,omitempty"`
 	PoolID             string               `json:"pool_id,omitempty"`
 	WorkloadProviderID string               `json:"workload_provider_id,omitempty"`
@@ -1611,6 +1612,7 @@ type CreateGcpWifAccessCredentialInput struct {
 	Name               string   `json:"name"`
 	Description        string   `json:"description,omitempty"`
 	DeploymentIDs      []string `json:"deployment_ids"`
+	SecretStoreID      string   `json:"secret_store_id,omitempty"`
 	ProjectNumber      string   `json:"project_number"`
 	PoolID             string   `json:"pool_id"`
 	WorkloadProviderID string   `json:"workload_provider_id"`
@@ -1620,6 +1622,7 @@ type CreateGcpWifAccessCredentialInput struct {
 type UpdateGcpWifAccessCredentialInput struct {
 	Name               *string  `json:"name,omitempty"`
 	Description        *string  `json:"description,omitempty"`
+	SecretStoreID      *string  `json:"secret_store_id,omitempty"`
 	DeploymentIDs      []string `json:"deployment_ids,omitempty"`
 	ProjectNumber      *string  `json:"project_number,omitempty"`
 	PoolID             *string  `json:"pool_id,omitempty"`
