@@ -47,5 +47,6 @@ output "project_number" {
 - `name` (String) The name of the GCP WIF access credential
 - `pool_id` (String) The workload identity pool ID
 - `project_number` (String) The GCP project number
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential
 - `workload_provider_id` (String) The workload identity provider ID
