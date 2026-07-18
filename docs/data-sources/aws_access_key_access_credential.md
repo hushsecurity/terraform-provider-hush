@@ -33,4 +33,5 @@ data "hush_aws_access_key_access_credential" "example" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the AWS access key access credential
 - `permission_boundary` (Boolean) Whether the linked Access Privilege policy should be attached to the dynamically created IAM user as a permission boundary instead of as a managed policy. When enabled, the Access Privilege must contain exactly one policy.
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential

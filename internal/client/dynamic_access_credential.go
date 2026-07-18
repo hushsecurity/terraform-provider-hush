@@ -1229,6 +1229,7 @@ type AWSAccessKeyAccessCredential struct {
 	Type               AccessCredentialType `json:"type"`
 	Kind               string               `json:"kind,omitempty"`
 	DeploymentIDs      []string             `json:"deployment_ids"`
+	SecretStoreID      string               `json:"secret_store_id,omitempty"`
 	AccessKeyID        string               `json:"access_key_id,omitempty"`
 	PermissionBoundary bool                 `json:"permission_boundary,omitempty"`
 	Status             string               `json:"status,omitempty"`
@@ -1239,6 +1240,7 @@ type CreateAWSAccessKeyAccessCredentialInput struct {
 	Name               string   `json:"name"`
 	Description        string   `json:"description,omitempty"`
 	DeploymentIDs      []string `json:"deployment_ids"`
+	SecretStoreID      string   `json:"secret_store_id,omitempty"`
 	AccessKeyID        string   `json:"access_key_id"`
 	SecretAccessKey    string   `json:"secret_access_key"`
 	PermissionBoundary bool     `json:"permission_boundary,omitempty"`
@@ -1247,6 +1249,7 @@ type CreateAWSAccessKeyAccessCredentialInput struct {
 type UpdateAWSAccessKeyAccessCredentialInput struct {
 	Name               *string `json:"name,omitempty"`
 	Description        *string `json:"description,omitempty"`
+	SecretStoreID      *string `json:"secret_store_id,omitempty"`
 	AccessKeyID        *string `json:"access_key_id,omitempty"`
 	SecretAccessKey    *string `json:"secret_access_key,omitempty"`
 	PermissionBoundary *bool   `json:"permission_boundary,omitempty"`
