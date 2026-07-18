@@ -1679,6 +1679,7 @@ type AzureWifAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	Audience      string               `json:"audience,omitempty"`
 	IssuerURL     string               `json:"issuer_url,omitempty"`
 	Status        string               `json:"status,omitempty"`
@@ -1689,11 +1690,13 @@ type CreateAzureWifAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 }
 
 type UpdateAzureWifAccessCredentialInput struct {
 	Name          *string  `json:"name,omitempty"`
 	Description   *string  `json:"description,omitempty"`
+	SecretStoreID *string  `json:"secret_store_id,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids,omitempty"`
 }
 
