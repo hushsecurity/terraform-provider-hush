@@ -17,6 +17,7 @@ const (
 	valueDesc         = "The value for the key-value pair"
 	keysDesc          = "List of keys available in this credential (computed)"
 	typeDesc          = "The type of access credential (always KV for this resource)"
+	secretStoreIDDesc = "The ID of the secret store where this credential is saved (optional)"
 )
 
 func KVAccessCredentialResourceSchema() map[string]*schema.Schema {
@@ -49,6 +50,12 @@ func KVAccessCredentialResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
 		},
+	}
+	s["secret_store_id"] = &schema.Schema{
+		Description:  secretStoreIDDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^sst-`), "secret_store_id must start with 'sst-'"),
 	}
 	s["items"] = &schema.Schema{
 		Description: itemsDesc,
@@ -115,6 +122,11 @@ func KVAccessCredentialDataSourceSchema() map[string]*schema.Schema {
 		},
 		"type": {
 			Description: typeDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"secret_store_id": {
+			Description: secretStoreIDDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},

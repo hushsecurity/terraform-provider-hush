@@ -54,6 +54,7 @@ type CreateKVAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	Items         []KVItem `json:"items"`
 }
 
