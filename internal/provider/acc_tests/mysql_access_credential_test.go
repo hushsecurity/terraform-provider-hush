@@ -39,6 +39,7 @@ func TestAccResourceMySQLAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_mysql_access_credential.test", "username", "testuser",
 					),
+					checkSecretStoreID("hush_mysql_access_credential.test"),
 				),
 			},
 			{
@@ -85,15 +86,16 @@ func TestAccDataSourceMySQLAccessCredential(t *testing.T) {
 func mysqlAccessCredentialStep1() string {
 	return `
 resource "hush_mysql_access_credential" "test" {
-  name           = "test-mysql-cred"
-  description    = "test mysql credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-mysql.example.com"
-  port           = 3306
-  ssl_mode       = "preferred"
-  username       = "testuser"
-  password       = "testpassword123"
+  name            = "test-mysql-cred"
+  description     = "test mysql credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mysql.example.com"
+  port            = 3306
+  ssl_mode        = "preferred"
+  username        = "testuser"
+  password        = "testpassword123"
 }
 `
 }
@@ -101,15 +103,16 @@ resource "hush_mysql_access_credential" "test" {
 func mysqlAccessCredentialStep2() string {
 	return `
 resource "hush_mysql_access_credential" "test" {
-  name           = "test-mysql-cred-updated"
-  description    = "updated mysql credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-mysql.example.com"
-  port           = 3306
-  ssl_mode       = "preferred"
-  username       = "testuser"
-  password       = "testpassword123"
+  name            = "test-mysql-cred-updated"
+  description     = "updated mysql credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mysql.example.com"
+  port            = 3306
+  ssl_mode        = "preferred"
+  username        = "testuser"
+  password        = "testpassword123"
 }
 `
 }
