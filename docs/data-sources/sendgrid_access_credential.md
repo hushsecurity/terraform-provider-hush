@@ -35,4 +35,5 @@ output "name" {
 - `description` (String) The description of the SendGrid access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the SendGrid access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential

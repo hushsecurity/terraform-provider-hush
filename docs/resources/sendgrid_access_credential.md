@@ -40,6 +40,7 @@ resource "hush_sendgrid_access_credential" "example" {
 - `api_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The SendGrid API key (write-only). More secure than `api_key` because Terraform will not store this value in the state file.
 - `api_key_wo_version` (String) Used to trigger updates for `api_key_wo`. Change when the API key changes.
 - `description` (String) The description of the SendGrid access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 
