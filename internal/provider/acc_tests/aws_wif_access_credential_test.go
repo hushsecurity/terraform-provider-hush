@@ -48,6 +48,7 @@ func TestAccResourceAwsWifAccessCredential(t *testing.T) {
 					resource.TestMatchResourceAttr(
 						"hush_aws_wif_access_credential.test", "issuer_url", regexp.MustCompile(`^https://.+$`),
 					),
+					checkSecretStoreID("hush_aws_wif_access_credential.test"),
 				),
 			},
 			{
@@ -100,9 +101,10 @@ func TestAccDataSourceAwsWifAccessCredential(t *testing.T) {
 func awsWifAccessCredentialStep1() string {
 	return `
 resource "hush_aws_wif_access_credential" "test" {
-  name           = "test-aws-wif-cred"
-  description    = "test aws wif credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
+  name            = "test-aws-wif-cred"
+  description     = "test aws wif credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
 }
 `
 }
@@ -110,9 +112,10 @@ resource "hush_aws_wif_access_credential" "test" {
 func awsWifAccessCredentialStep2() string {
 	return `
 resource "hush_aws_wif_access_credential" "test" {
-  name           = "test-aws-wif-cred-updated"
-  description    = "updated aws wif credential"
-  deployment_ids = ["` + mockDeploymentID2 + `"]
+  name            = "test-aws-wif-cred-updated"
+  description     = "updated aws wif credential"
+  deployment_ids  = ["` + mockDeploymentID2 + `"]
+  secret_store_id = "sst-mock-store-1"
 }
 `
 }
