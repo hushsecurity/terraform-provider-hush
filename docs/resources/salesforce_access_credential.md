@@ -44,6 +44,7 @@ resource "hush_salesforce_access_credential" "example" {
 - `client_secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The Salesforce OAuth2 client secret (write-only). More secure than `client_secret` because Terraform will not store this value in the state file.
 - `client_secret_wo_version` (String) Used to trigger updates for `client_secret_wo`. Change when the client secret changes.
 - `description` (String) The description of the Salesforce access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 

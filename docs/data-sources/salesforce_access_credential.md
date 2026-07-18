@@ -45,4 +45,5 @@ output "client_id" {
 - `instance_url` (String) The Salesforce instance URL
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Salesforce access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential
