@@ -52,4 +52,5 @@ output "db_name" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the MongoDB Atlas access credential
 - `public_key` (String) The MongoDB Atlas API public key (used together with `private_key`)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential
