@@ -29,6 +29,7 @@ func TestAccResourceGrokAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_grok_access_credential.test", "description", "test grok credential",
 					),
+					checkSecretStoreID("hush_grok_access_credential.test"),
 				),
 			},
 			{
@@ -71,21 +72,23 @@ func TestAccDataSourceGrokAccessCredential(t *testing.T) {
 
 const grokAccessCredentialStep1 = `
 resource "hush_grok_access_credential" "test" {
-  name           = "test-grok-cred"
-  description    = "test grok credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "` + mockGrokAPIKey + `"
-  team_id        = "` + mockGrokTeamID + `"
+  name            = "test-grok-cred"
+  description     = "test grok credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "` + mockGrokAPIKey + `"
+  team_id         = "` + mockGrokTeamID + `"
 }
 `
 
 const grokAccessCredentialStep2 = `
 resource "hush_grok_access_credential" "test" {
-  name           = "test-grok-cred-updated"
-  description    = "updated grok credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "` + mockGrokAPIKey + `"
-  team_id        = "` + mockGrokTeamID + `"
+  name            = "test-grok-cred-updated"
+  description     = "updated grok credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "` + mockGrokAPIKey + `"
+  team_id         = "` + mockGrokTeamID + `"
 }
 `
 
