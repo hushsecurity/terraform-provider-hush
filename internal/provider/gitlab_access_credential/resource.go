@@ -44,6 +44,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		Name:          d.Get("name").(string),
 		Description:   d.Get("description").(string),
 		DeploymentIDs: deploymentIDs,
+		SecretStoreID: d.Get("secret_store_id").(string),
 		Token:         getToken(d),
 		BaseURL:       d.Get("base_url").(string),
 		ResourceType:  d.Get("resource_type").(string),
@@ -86,14 +87,15 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 	d.SetId(credential.ID)
 
 	fields := map[string]any{
-		"name":           credential.Name,
-		"description":    credential.Description,
-		"deployment_ids": credential.DeploymentIDs,
-		"base_url":       credential.BaseURL,
-		"resource_type":  credential.ResourceType,
-		"resource_id":    credential.ResourceID,
-		"type":           string(credential.Type),
-		"kind":           credential.Kind,
+		"name":            credential.Name,
+		"description":     credential.Description,
+		"deployment_ids":  credential.DeploymentIDs,
+		"base_url":        credential.BaseURL,
+		"resource_type":   credential.ResourceType,
+		"resource_id":     credential.ResourceID,
+		"type":            string(credential.Type),
+		"kind":            credential.Kind,
+		"secret_store_id": credential.SecretStoreID,
 	}
 
 	for field, value := range fields {
@@ -118,6 +120,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("description") {
 		v := d.Get("description").(string)
 		input.Description = &v
+	}
+	if d.HasChange("secret_store_id") {
+		v := d.Get("secret_store_id").(string)
+		input.SecretStoreID = &v
 	}
 	if d.HasChange("token") || d.HasChange("token_wo") || d.HasChange("token_wo_version") {
 		v := getToken(d)

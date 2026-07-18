@@ -46,4 +46,5 @@ output "resource_type" {
 - `name` (String) The name of the GitLab access credential
 - `resource_id` (String) The GitLab group or project ID
 - `resource_type` (String) The type of GitLab resource to manage (group or project)
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential

@@ -42,6 +42,7 @@ resource "hush_gitlab_access_credential" "example" {
 
 - `base_url` (String) The GitLab instance URL (default: https://gitlab.com)
 - `description` (String) The description of the GitLab access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `token` (String, Sensitive) The GitLab API token
 - `token_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The GitLab API token (write-only). More secure than `token` because Terraform will not store this value in the state file.
 - `token_wo_version` (String) Used to trigger updates for `token_wo`. Change when the token changes.
