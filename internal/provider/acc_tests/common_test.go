@@ -198,6 +198,12 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetJiraIntegration(context.Background(), c, resourceId)
 			case "secret_store":
 				_, err = client.GetSecretStore(context.Background(), c, resourceId)
+			case "plaintext_access_credential":
+				_, err = client.GetPlaintextAccessCredential(context.Background(), c, resourceId)
+			case "kv_access_credential":
+				_, err = client.GetKVAccessCredential(context.Background(), c, resourceId)
+			case "twilio_access_credential":
+				_, err = client.GetTwilioAccessCredential(context.Background(), c, resourceId)
 			case "temporal_cloud_access_credential":
 				_, err = client.GetTemporalCloudAccessCredential(context.Background(), c, resourceId)
 			case "temporal_cloud_access_privilege":
