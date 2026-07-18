@@ -41,6 +41,7 @@ func TestAccResourceApigeeAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_apigee_access_credential.test", "has_provider_credentials", "true",
 					),
+					checkSecretStoreID("hush_apigee_access_credential.test"),
 				),
 			},
 			{
@@ -84,9 +85,10 @@ func TestAccDataSourceApigeeAccessCredential(t *testing.T) {
 func apigeeAccessCredentialStep1() string {
 	return `
 resource "hush_apigee_access_credential" "test" {
-  name              = "test-apigee-cred"
-  description       = "test apigee credential"
-  deployment_ids    = ["` + mockDeploymentID + `"]
+  name                = "test-apigee-cred"
+  description         = "test apigee credential"
+  deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   service_account_key = <<-EOF
 ` + mockApigeeServiceAccountKey + `
 EOF
@@ -97,9 +99,10 @@ EOF
 func apigeeAccessCredentialStep2() string {
 	return `
 resource "hush_apigee_access_credential" "test" {
-  name              = "test-apigee-cred-updated"
-  description       = "updated apigee credential"
-  deployment_ids    = ["` + mockDeploymentID + `"]
+  name                = "test-apigee-cred-updated"
+  description         = "updated apigee credential"
+  deployment_ids      = ["` + mockDeploymentID + `"]
+  secret_store_id     = "sst-mock-store-1"
   service_account_key = <<-EOF
 ` + mockApigeeServiceAccountKey + `
 EOF

@@ -862,6 +862,7 @@ type ApigeeAccessCredential struct {
 	Type                   AccessCredentialType `json:"type"`
 	Kind                   string               `json:"kind,omitempty"`
 	DeploymentIDs          []string             `json:"deployment_ids"`
+	SecretStoreID          string               `json:"secret_store_id,omitempty"`
 	HasProviderCredentials bool                 `json:"has_provider_credentials"`
 	Status                 string               `json:"status,omitempty"`
 	StatusDetail           string               `json:"status_detail,omitempty"`
@@ -871,12 +872,14 @@ type CreateApigeeAccessCredentialInput struct {
 	Name              string   `json:"name"`
 	Description       string   `json:"description,omitempty"`
 	DeploymentIDs     []string `json:"deployment_ids"`
+	SecretStoreID     string   `json:"secret_store_id,omitempty"`
 	ServiceAccountKey *string  `json:"service_account_key,omitempty"`
 }
 
 type UpdateApigeeAccessCredentialInput struct {
 	Name              *string `json:"name,omitempty"`
 	Description       *string `json:"description,omitempty"`
+	SecretStoreID     *string `json:"secret_store_id,omitempty"`
 	ServiceAccountKey *string `json:"service_account_key,omitempty"`
 }
 
