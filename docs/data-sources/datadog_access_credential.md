@@ -25,5 +25,6 @@ Use this data source to retrieve information about a Datadog access credential i
 - `description` (String) The description of the Datadog access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Datadog access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `site` (String) The Datadog site (e.g., datadoghq.com, us3.datadoghq.com, us5.datadoghq.com, datadoghq.eu, ap1.datadoghq.com)
 - `type` (String) The type of access credential
