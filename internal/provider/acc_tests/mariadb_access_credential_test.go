@@ -39,6 +39,7 @@ func TestAccResourceMariaDBAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_mariadb_access_credential.test", "username", "testuser",
 					),
+					checkSecretStoreID("hush_mariadb_access_credential.test"),
 				),
 			},
 			{
@@ -85,15 +86,16 @@ func TestAccDataSourceMariaDBAccessCredential(t *testing.T) {
 func mariadbAccessCredentialStep1() string {
 	return `
 resource "hush_mariadb_access_credential" "test" {
-  name           = "test-mariadb-cred"
-  description    = "test mariadb credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-mariadb.example.com"
-  port           = 3306
-  ssl_mode       = "preferred"
-  username       = "testuser"
-  password       = "testpassword123"
+  name            = "test-mariadb-cred"
+  description     = "test mariadb credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mariadb.example.com"
+  port            = 3306
+  ssl_mode        = "preferred"
+  username        = "testuser"
+  password        = "testpassword123"
 }
 `
 }
@@ -101,15 +103,16 @@ resource "hush_mariadb_access_credential" "test" {
 func mariadbAccessCredentialStep2() string {
 	return `
 resource "hush_mariadb_access_credential" "test" {
-  name           = "test-mariadb-cred-updated"
-  description    = "updated mariadb credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-mariadb.example.com"
-  port           = 3306
-  ssl_mode       = "preferred"
-  username       = "testuser"
-  password       = "testpassword123"
+  name            = "test-mariadb-cred-updated"
+  description     = "updated mariadb credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mariadb.example.com"
+  port            = 3306
+  ssl_mode        = "preferred"
+  username        = "testuser"
+  password        = "testpassword123"
 }
 `
 }
