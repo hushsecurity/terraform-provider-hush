@@ -24,6 +24,7 @@ func TestAccResourceTemporalCloudAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_temporal_cloud_access_credential.test", "description", "test temporal cloud credential",
 					),
+					checkSecretStoreID("hush_temporal_cloud_access_credential.test"),
 				),
 			},
 			{
@@ -67,10 +68,11 @@ func TestAccDataSourceTemporalCloudAccessCredential(t *testing.T) {
 func temporalCloudAccessCredentialStep1() string {
 	return `
 resource "hush_temporal_cloud_access_credential" "test" {
-  name           = "test-temporal-cred"
-  description    = "test temporal cloud credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "test-temporal-api-key"
+  name            = "test-temporal-cred"
+  description     = "test temporal cloud credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "test-temporal-api-key"
 }
 `
 }
@@ -78,10 +80,11 @@ resource "hush_temporal_cloud_access_credential" "test" {
 func temporalCloudAccessCredentialStep2() string {
 	return `
 resource "hush_temporal_cloud_access_credential" "test" {
-  name           = "test-temporal-cred-updated"
-  description    = "updated temporal cloud credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  api_key        = "test-temporal-api-key"
+  name            = "test-temporal-cred-updated"
+  description     = "updated temporal cloud credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  api_key         = "test-temporal-api-key"
 }
 `
 }

@@ -39,6 +39,7 @@ resource "hush_temporal_cloud_access_credential" "example" {
 - `api_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The Temporal Cloud API key (write-only). This is a write-only attribute that is more secure than `api_key` because Terraform will not store this value in the state file. Either `api_key` or `api_key_wo` must be specified.
 - `api_key_wo_version` (String) Used to trigger updates for `api_key_wo`. This value should be changed when the API key content changes. Can be any value (e.g., a timestamp, version number, or hash).
 - `description` (String) The description of the Temporal Cloud access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 
 ### Read-Only
 
