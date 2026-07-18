@@ -1820,6 +1820,7 @@ type SalesforceAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	InstanceURL   string               `json:"instance_url"`
 	ClientID      string               `json:"client_id"`
 	Status        string               `json:"status,omitempty"`
@@ -1830,17 +1831,19 @@ type CreateSalesforceAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	InstanceURL   string   `json:"instance_url"`
 	ClientID      string   `json:"client_id"`
 	ClientSecret  string   `json:"client_secret"`
 }
 
 type UpdateSalesforceAccessCredentialInput struct {
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	InstanceURL  *string `json:"instance_url,omitempty"`
-	ClientID     *string `json:"client_id,omitempty"`
-	ClientSecret *string `json:"client_secret,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	InstanceURL   *string `json:"instance_url,omitempty"`
+	ClientID      *string `json:"client_id,omitempty"`
+	ClientSecret  *string `json:"client_secret,omitempty"`
 }
 
 func CreateSalesforceAccessCredential(ctx context.Context, c *Client, input *CreateSalesforceAccessCredentialInput) (*SalesforceAccessCredential, error) {

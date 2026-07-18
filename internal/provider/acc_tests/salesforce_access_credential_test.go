@@ -24,6 +24,7 @@ func TestAccResourceSalesforceAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_salesforce_access_credential.test", "description", "test salesforce credential",
 					),
+					checkSecretStoreID("hush_salesforce_access_credential.test"),
 				),
 			},
 			{
@@ -70,6 +71,7 @@ resource "hush_salesforce_access_credential" "test" {
   name            = "test-salesforce-cred"
   description     = "test salesforce credential"
   deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
   instance_url    = "https://mock-instance.salesforce.com"
   client_id       = "mock-salesforce-client-id"
   client_secret   = "mock-salesforce-client-secret"
@@ -83,6 +85,7 @@ resource "hush_salesforce_access_credential" "test" {
   name            = "test-salesforce-cred-updated"
   description     = "updated salesforce credential"
   deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
   instance_url    = "https://mock-instance.salesforce.com"
   client_id       = "mock-salesforce-client-id"
   client_secret   = "mock-salesforce-client-secret"
