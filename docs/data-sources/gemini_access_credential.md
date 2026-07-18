@@ -40,4 +40,5 @@ output "project_id" {
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the Gemini access credential
 - `project_id` (String) The GCP project ID
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential
