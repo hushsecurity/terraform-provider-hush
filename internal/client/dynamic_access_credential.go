@@ -1538,6 +1538,7 @@ type GitlabAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	BaseURL       string               `json:"base_url"`
 	ResourceType  string               `json:"resource_type"`
 	ResourceID    string               `json:"resource_id"`
@@ -1549,6 +1550,7 @@ type CreateGitlabAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	Token         string   `json:"token"`
 	BaseURL       string   `json:"base_url"`
 	ResourceType  string   `json:"resource_type"`
@@ -1556,12 +1558,13 @@ type CreateGitlabAccessCredentialInput struct {
 }
 
 type UpdateGitlabAccessCredentialInput struct {
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	Token        *string `json:"token,omitempty"`
-	BaseURL      *string `json:"base_url,omitempty"`
-	ResourceType *string `json:"resource_type,omitempty"`
-	ResourceID   *string `json:"resource_id,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	Token         *string `json:"token,omitempty"`
+	BaseURL       *string `json:"base_url,omitempty"`
+	ResourceType  *string `json:"resource_type,omitempty"`
+	ResourceID    *string `json:"resource_id,omitempty"`
 }
 
 func CreateGitlabAccessCredential(ctx context.Context, c *Client, input *CreateGitlabAccessCredentialInput) (*GitlabAccessCredential, error) {

@@ -33,6 +33,7 @@ func TestAccResourceGitlabAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_gitlab_access_credential.test", "resource_type", "group",
 					),
+					checkSecretStoreID("hush_gitlab_access_credential.test"),
 				),
 			},
 			{
@@ -78,23 +79,25 @@ func TestAccDataSourceGitlabAccessCredential(t *testing.T) {
 
 const gitlabAccessCredentialStep1 = `
 resource "hush_gitlab_access_credential" "test" {
-  name           = "test-gitlab-cred"
-  description    = "test gitlab credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  token          = "` + mockGitlabToken + `"
-  resource_type  = "group"
-  resource_id    = "` + mockGitlabResourceID + `"
+  name            = "test-gitlab-cred"
+  description     = "test gitlab credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  token           = "` + mockGitlabToken + `"
+  resource_type   = "group"
+  resource_id     = "` + mockGitlabResourceID + `"
 }
 `
 
 const gitlabAccessCredentialStep2 = `
 resource "hush_gitlab_access_credential" "test" {
-  name           = "test-gitlab-cred-updated"
-  description    = "updated gitlab credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  token          = "` + mockGitlabToken + `"
-  resource_type  = "group"
-  resource_id    = "` + mockGitlabResourceID + `"
+  name            = "test-gitlab-cred-updated"
+  description     = "updated gitlab credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  token           = "` + mockGitlabToken + `"
+  resource_type   = "group"
+  resource_id     = "` + mockGitlabResourceID + `"
 }
 `
 
