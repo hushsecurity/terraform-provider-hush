@@ -31,4 +31,5 @@ data "hush_gcp_sa_access_credential" "example" {
 - `description` (String) The description of the GCP SA access credential
 - `kind` (String) The kind of access credential
 - `name` (String) The name of the GCP SA access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `type` (String) The type of access credential

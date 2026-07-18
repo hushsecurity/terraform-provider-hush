@@ -35,6 +35,7 @@ resource "hush_gcp_sa_access_credential" "example" {
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
 - `description` (String) The description of the GCP SA access credential
+- `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `service_account_key` (String, Sensitive) The GCP SA key JSON
 - `service_account_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The GCP SA key JSON (write-only). This is a write-only attribute that is more secure than `service_account_key` because Terraform will not store this value in the state file. Either `service_account_key` or `service_account_key_wo` must be specified.
 - `service_account_key_wo_version` (String) Used to trigger updates for `service_account_key_wo`. This value should be changed when the service account key content changes. Can be any value (e.g., a timestamp, version number, or hash).
