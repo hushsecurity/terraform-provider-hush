@@ -1310,6 +1310,7 @@ type TwilioAccessCredential struct {
 	Type          AccessCredentialType `json:"type"`
 	Kind          string               `json:"kind,omitempty"`
 	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
 	AccountSID    string               `json:"account_sid"`
 	APIKeySID     string               `json:"api_key_sid"`
 	Status        string               `json:"status,omitempty"`
@@ -1320,17 +1321,19 @@ type CreateTwilioAccessCredentialInput struct {
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
 	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
 	AccountSID    string   `json:"account_sid"`
 	APIKeySID     string   `json:"api_key_sid"`
 	APIKeySecret  string   `json:"api_key_secret"`
 }
 
 type UpdateTwilioAccessCredentialInput struct {
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	AccountSID   *string `json:"account_sid,omitempty"`
-	APIKeySID    *string `json:"api_key_sid,omitempty"`
-	APIKeySecret *string `json:"api_key_secret,omitempty"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	AccountSID    *string `json:"account_sid,omitempty"`
+	APIKeySID     *string `json:"api_key_sid,omitempty"`
+	APIKeySecret  *string `json:"api_key_secret,omitempty"`
 }
 
 func CreateTwilioAccessCredential(ctx context.Context, c *Client, input *CreateTwilioAccessCredentialInput) (*TwilioAccessCredential, error) {
