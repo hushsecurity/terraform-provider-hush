@@ -39,6 +39,7 @@ func TestAccResourcePostgresAccessCredential(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_postgres_access_credential.test", "username", "testuser",
 					),
+					checkSecretStoreID("hush_postgres_access_credential.test"),
 				),
 			},
 			{
@@ -88,15 +89,16 @@ func TestAccDataSourcePostgresAccessCredential(t *testing.T) {
 func postgresAccessCredentialStep1() string {
 	return `
 resource "hush_postgres_access_credential" "test" {
-  name           = "test-postgres-cred"
-  description    = "test postgres credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-db.example.com"
-  port           = 5432
-  ssl_mode       = "prefer"
-  username       = "testuser"
-  password       = "testpassword123"
+  name            = "test-postgres-cred"
+  description     = "test postgres credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-db.example.com"
+  port            = 5432
+  ssl_mode        = "prefer"
+  username        = "testuser"
+  password        = "testpassword123"
 }
 `
 }
@@ -104,15 +106,16 @@ resource "hush_postgres_access_credential" "test" {
 func postgresAccessCredentialStep2() string {
 	return `
 resource "hush_postgres_access_credential" "test" {
-  name           = "test-postgres-cred-updated"
-  description    = "updated postgres credential"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  db_name        = "testdb"
-  host           = "test-db.example.com"
-  port           = 5432
-  ssl_mode       = "prefer"
-  username       = "testuser"
-  password       = "testpassword123"
+  name            = "test-postgres-cred-updated"
+  description     = "updated postgres credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-db.example.com"
+  port            = 5432
+  ssl_mode        = "prefer"
+  username        = "testuser"
+  password        = "testpassword123"
 }
 `
 }
