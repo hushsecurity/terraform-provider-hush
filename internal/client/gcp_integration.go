@@ -102,13 +102,14 @@ func GetGCPIntegration(ctx context.Context, c *Client, id string) (*GCPIntegrati
 }
 
 func GetGCPIntegrationsByName(ctx context.Context, c *Client, name string) ([]GCPIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=gcp", integrationsEndpoint, encodedName)
-	var resp GCPIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=gcp", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]GCPIntegration, *string, error) {
+		var resp GCPIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateGCPIntegration(ctx context.Context, c *Client, id string, input *UpdateGCPIntegrationInput) (*GCPIntegration, error) {

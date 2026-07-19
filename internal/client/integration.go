@@ -97,13 +97,14 @@ func GetGitlabIntegration(ctx context.Context, c *Client, id string) (*GitlabInt
 }
 
 func GetGitlabIntegrationsByName(ctx context.Context, c *Client, name string) ([]GitlabIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=gitlab", integrationsEndpoint, encodedName)
-	var resp GitlabIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=gitlab", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]GitlabIntegration, *string, error) {
+		var resp GitlabIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateGitlabIntegration(ctx context.Context, c *Client, id string, input *UpdateGitlabIntegrationInput) (*GitlabIntegration, error) {
@@ -187,13 +188,14 @@ func GetConfluenceIntegration(ctx context.Context, c *Client, id string) (*Confl
 }
 
 func GetConfluenceIntegrationsByName(ctx context.Context, c *Client, name string) ([]ConfluenceIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=confluence", integrationsEndpoint, encodedName)
-	var resp ConfluenceIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=confluence", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]ConfluenceIntegration, *string, error) {
+		var resp ConfluenceIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateConfluenceIntegration(ctx context.Context, c *Client, id string, input *UpdateConfluenceIntegrationInput) (*ConfluenceIntegration, error) {
@@ -282,13 +284,14 @@ func GetJiraIntegration(ctx context.Context, c *Client, id string) (*JiraIntegra
 }
 
 func GetJiraIntegrationsByName(ctx context.Context, c *Client, name string) ([]JiraIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=jira", integrationsEndpoint, encodedName)
-	var resp JiraIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=jira", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]JiraIntegration, *string, error) {
+		var resp JiraIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateJiraIntegration(ctx context.Context, c *Client, id string, input *UpdateJiraIntegrationInput) (*JiraIntegration, error) {
@@ -375,13 +378,14 @@ func GetBitbucketIntegration(ctx context.Context, c *Client, id string) (*Bitbuc
 }
 
 func GetBitbucketIntegrationsByName(ctx context.Context, c *Client, name string) ([]BitbucketIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=bitbucket", integrationsEndpoint, encodedName)
-	var resp BitbucketIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=bitbucket", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]BitbucketIntegration, *string, error) {
+		var resp BitbucketIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateBitbucketIntegration(ctx context.Context, c *Client, id string, input *UpdateBitbucketIntegrationInput) (*BitbucketIntegration, error) {
@@ -466,13 +470,14 @@ func GetInfisicalIntegration(ctx context.Context, c *Client, id string) (*Infisi
 }
 
 func GetInfisicalIntegrationsByName(ctx context.Context, c *Client, name string) ([]InfisicalIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=infisical", integrationsEndpoint, encodedName)
-	var resp InfisicalIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=infisical", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]InfisicalIntegration, *string, error) {
+		var resp InfisicalIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateInfisicalIntegration(ctx context.Context, c *Client, id string, input *UpdateInfisicalIntegrationInput) (*InfisicalIntegration, error) {
@@ -563,13 +568,14 @@ func GetSonatypeIntegration(ctx context.Context, c *Client, id string) (*Sonatyp
 }
 
 func GetSonatypeIntegrationsByName(ctx context.Context, c *Client, name string) ([]SonatypeIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=sonatype", integrationsEndpoint, encodedName)
-	var resp SonatypeIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=sonatype", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]SonatypeIntegration, *string, error) {
+		var resp SonatypeIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateSonatypeIntegration(ctx context.Context, c *Client, id string, input *UpdateSonatypeIntegrationInput) (*SonatypeIntegration, error) {
@@ -658,13 +664,14 @@ func GetArtifactoryIntegration(ctx context.Context, c *Client, id string) (*Arti
 }
 
 func GetArtifactoryIntegrationsByName(ctx context.Context, c *Client, name string) ([]ArtifactoryIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=artifactory", integrationsEndpoint, encodedName)
-	var resp ArtifactoryIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=artifactory", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]ArtifactoryIntegration, *string, error) {
+		var resp ArtifactoryIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateArtifactoryIntegration(ctx context.Context, c *Client, id string, input *UpdateArtifactoryIntegrationInput) (*ArtifactoryIntegration, error) {

@@ -91,25 +91,23 @@ func DeleteNotificationConfiguration(ctx context.Context, c *Client, id string) 
 }
 
 type NotificationConfigurationListResponse struct {
-	Items      []NotificationConfiguration `json:"items"`
-	NextCursor *string                     `json:"next_cursor"`
-	HasMore    bool                        `json:"has_more"`
+	Items    []NotificationConfiguration `json:"items"`
+	NextPage *string                     `json:"next_page"`
 }
 
 func GetNotificationConfigurationsByName(ctx context.Context, c *Client, name string) ([]NotificationConfiguration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s", notificationConfigurationsEndpoint, encodedName)
-
-	var resp NotificationConfigurationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s", notificationConfigurationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]NotificationConfiguration, *string, error) {
+		var resp NotificationConfigurationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func ListNotificationConfigurations(ctx context.Context, c *Client, enabled *bool, trigger *Trigger, aggregation *AggregationDuration) ([]NotificationConfiguration, error) {
-	path := notificationConfigurationsEndpoint
+	base := notificationConfigurationsEndpoint
 	params := url.Values{}
 
 	if enabled != nil {
@@ -123,15 +121,16 @@ func ListNotificationConfigurations(ctx context.Context, c *Client, enabled *boo
 	}
 
 	if len(params) > 0 {
-		path = fmt.Sprintf("%s?%s", path, params.Encode())
+		base = fmt.Sprintf("%s?%s", base, params.Encode())
 	}
 
-	var resp NotificationConfigurationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp.Items, nil
+	return collectPages(func(cursor string) ([]NotificationConfiguration, *string, error) {
+		var resp NotificationConfigurationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func GetNotificationConfigurationsByTrigger(ctx context.Context, c *Client, trigger string) ([]NotificationConfiguration, error) {
