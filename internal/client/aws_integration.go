@@ -105,13 +105,14 @@ func GetAWSIntegration(ctx context.Context, c *Client, id string) (*AWSIntegrati
 }
 
 func GetAWSIntegrationsByName(ctx context.Context, c *Client, name string) ([]AWSIntegration, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s&type=aws", integrationsEndpoint, encodedName)
-	var resp AWSIntegrationListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s&type=aws", integrationsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]AWSIntegration, *string, error) {
+		var resp AWSIntegrationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func UpdateAWSIntegration(ctx context.Context, c *Client, id string, input *UpdateAWSIntegrationInput) (*AWSIntegration, error) {

@@ -120,21 +120,19 @@ func DeleteNotificationChannel(ctx context.Context, c *Client, id string) error 
 }
 
 type NotificationChannelListResponse struct {
-	Items      []NotificationChannel `json:"items"`
-	NextCursor *string               `json:"next_cursor"`
-	HasMore    bool                  `json:"has_more"`
+	Items    []NotificationChannel `json:"items"`
+	NextPage *string               `json:"next_page"`
 }
 
 func GetNotificationChannelsByName(ctx context.Context, c *Client, name string) ([]NotificationChannel, error) {
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s", notificationChannelsEndpoint, encodedName)
-
-	var resp NotificationChannelListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s", notificationChannelsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]NotificationChannel, *string, error) {
+		var resp NotificationChannelListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 func ListNotificationChannels(ctx context.Context, c *Client, enabled *bool) ([]NotificationChannel, error) {

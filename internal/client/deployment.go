@@ -121,23 +121,20 @@ func DeleteDeployment(ctx context.Context, c *Client, id string) error {
 
 // DeploymentListResponse represents the response from listing deployments
 type DeploymentListResponse struct {
-	Items      []Deployment `json:"items"`
-	NextCursor *string      `json:"next_cursor"`
-	HasMore    bool         `json:"has_more"`
+	Items    []Deployment `json:"items"`
+	NextPage *string      `json:"next_page"`
 }
 
-// GetDeploymentsByName retrieves deployments by name
+// GetDeploymentsByName retrieves all deployments matching name, following pagination.
 func GetDeploymentsByName(ctx context.Context, c *Client, name string) ([]Deployment, error) {
-	// URL encode the name parameter to handle special characters
-	encodedName := url.QueryEscape(name)
-	path := fmt.Sprintf("%s?name=%s", deploymentsEndpoint, encodedName)
-
-	var resp DeploymentListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp.Items, nil
+	base := fmt.Sprintf("%s?name=%s", deploymentsEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]Deployment, *string, error) {
+		var resp DeploymentListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
 }
 
 // AccessBridgeStatus represents the response from the access_bridge endpoint
