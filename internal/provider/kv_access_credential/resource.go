@@ -118,7 +118,7 @@ func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	c := meta.(*client.Client)
 	id := d.Id()
 
-	input := &client.UpdateAccessCredentialInput{}
+	input := &client.UpdateKVAccessCredentialInput{}
 
 	if d.HasChange("name") {
 		name := d.Get("name").(string)
@@ -133,6 +133,20 @@ func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if d.HasChange("secret_store_id") {
 		secretStoreID := d.Get("secret_store_id").(string)
 		input.SecretStoreID = &secretStoreID
+	}
+
+	if d.HasChange("items") {
+		items := make([]client.KVItem, 0)
+		if v, ok := d.GetOk("items"); ok {
+			for _, item := range v.([]any) {
+				itemMap := item.(map[string]any)
+				items = append(items, client.KVItem{
+					Key:   itemMap["key"].(string),
+					Value: itemMap["value"].(string),
+				})
+			}
+		}
+		input.Items = items
 	}
 
 	_, err := client.UpdateKVAccessCredential(ctx, c, id, input)

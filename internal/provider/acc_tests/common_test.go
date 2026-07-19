@@ -92,6 +92,33 @@ func checkSecretStoreID(resourceName string) resource.TestCheckFunc {
 	return resource.TestCheckResourceAttr(resourceName, "secret_store_id", mockSecretStoreID)
 }
 
+// recordID captures a resource's id so a later step can assert it was not recreated.
+func recordID(resourceName string, target *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		*target = rs.Primary.ID
+		return nil
+	}
+}
+
+// checkIDUnchanged asserts the resource still has the id captured by recordID,
+// i.e. it was updated in place rather than destroyed and recreated.
+func checkIDUnchanged(resourceName string, previous *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		if rs.Primary.ID != *previous {
+			return fmt.Errorf("%s was recreated: id changed %s -> %s", resourceName, *previous, rs.Primary.ID)
+		}
+		return nil
+	}
+}
+
 func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		c := provider.Meta().(*client.Client)

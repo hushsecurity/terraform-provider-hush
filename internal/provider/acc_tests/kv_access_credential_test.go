@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccResourceKVAccessCredential(t *testing.T) {
+	var id string
 	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("kv_access_credential", "v1/access_credentials"),
@@ -22,6 +23,17 @@ func TestAccResourceKVAccessCredential(t *testing.T) {
 						"hush_kv_access_credential.test", "name", "test-kv-cred",
 					),
 					checkSecretStoreID("hush_kv_access_credential.test"),
+					recordID("hush_kv_access_credential.test", &id),
+				),
+			},
+			{
+				// Changing items is an in-place update, not a replacement.
+				Config: kvAccessCredentialStep2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_kv_access_credential.test", "items.0.value", "xyz789",
+					),
+					checkIDUnchanged("hush_kv_access_credential.test", &id),
 				),
 			},
 		},
@@ -55,6 +67,19 @@ resource "hush_kv_access_credential" "test" {
   items {
     key   = "API_KEY"
     value = "abc123"
+  }
+}
+`
+
+const kvAccessCredentialStep2 = `
+resource "hush_kv_access_credential" "test" {
+  name            = "test-kv-cred"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+
+  items {
+    key   = "API_KEY"
+    value = "xyz789"
   }
 }
 `

@@ -105,7 +105,7 @@ func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData
 	c := meta.(*client.Client)
 	id := d.Id()
 
-	input := &client.UpdateAccessCredentialInput{}
+	input := &client.UpdatePlaintextAccessCredentialInput{}
 
 	if d.HasChange("name") {
 		name := d.Get("name").(string)
@@ -120,6 +120,11 @@ func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData
 	if d.HasChange("secret_store_id") {
 		secretStoreID := d.Get("secret_store_id").(string)
 		input.SecretStoreID = &secretStoreID
+	}
+
+	if d.HasChange("secret") || d.HasChange("secret_wo") || d.HasChange("secret_wo_version") {
+		secret := writeonly.GetString(d, "secret", "secret_wo")
+		input.Secret = &secret
 	}
 
 	_, err := client.UpdatePlaintextAccessCredential(ctx, c, id, input)

@@ -58,10 +58,18 @@ type CreateKVAccessCredentialInput struct {
 	Items         []KVItem `json:"items"`
 }
 
-type UpdateAccessCredentialInput struct {
+type UpdatePlaintextAccessCredentialInput struct {
 	Name          *string `json:"name,omitempty"`
 	Description   *string `json:"description,omitempty"`
 	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	Secret        *string `json:"secret,omitempty"`
+}
+
+type UpdateKVAccessCredentialInput struct {
+	Name          *string  `json:"name,omitempty"`
+	Description   *string  `json:"description,omitempty"`
+	SecretStoreID *string  `json:"secret_store_id,omitempty"`
+	Items         []KVItem `json:"items,omitempty"`
 }
 
 type AccessCredentialListResponse struct {
@@ -119,7 +127,7 @@ func GetKVAccessCredential(ctx context.Context, c *Client, id string) (*AccessCr
 	return &cred, nil
 }
 
-func UpdatePlaintextAccessCredential(ctx context.Context, c *Client, id string, input *UpdateAccessCredentialInput) (*AccessCredential, error) {
+func UpdatePlaintextAccessCredential(ctx context.Context, c *Client, id string, input *UpdatePlaintextAccessCredentialInput) (*AccessCredential, error) {
 	path := fmt.Sprintf("%s/plaintext/%s", accessCredentialsEndpoint, id)
 	var result AccessCredential
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &result); err != nil {
@@ -128,7 +136,7 @@ func UpdatePlaintextAccessCredential(ctx context.Context, c *Client, id string, 
 	return &result, nil
 }
 
-func UpdateKVAccessCredential(ctx context.Context, c *Client, id string, input *UpdateAccessCredentialInput) (*AccessCredential, error) {
+func UpdateKVAccessCredential(ctx context.Context, c *Client, id string, input *UpdateKVAccessCredentialInput) (*AccessCredential, error) {
 	path := fmt.Sprintf("%s/kv/%s", accessCredentialsEndpoint, id)
 	var result AccessCredential
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &result); err != nil {
