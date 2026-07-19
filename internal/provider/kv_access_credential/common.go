@@ -62,7 +62,6 @@ func KVAccessCredentialResourceSchema() map[string]*schema.Schema {
 		Type:        schema.TypeList,
 		Required:    true,
 		MinItems:    1,
-		ForceNew:    true, // Items cannot be updated, requires recreation
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"key": {

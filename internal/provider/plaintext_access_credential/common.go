@@ -61,7 +61,6 @@ func PlaintextAccessCredentialResourceSchema() map[string]*schema.Schema {
 		Type:          schema.TypeString,
 		Optional:      true,
 		Sensitive:     true,
-		ForceNew:      true, // Secret cannot be updated, requires recreation
 		ConflictsWith: []string{"secret_wo"},
 		ExactlyOneOf:  []string{"secret", "secret_wo"},
 	}
@@ -79,7 +78,6 @@ func PlaintextAccessCredentialResourceSchema() map[string]*schema.Schema {
 		Description:  secretWOVersionDesc,
 		Type:         schema.TypeString,
 		Optional:     true,
-		ForceNew:     true,
 		RequiredWith: []string{"secret_wo"},
 	}
 
