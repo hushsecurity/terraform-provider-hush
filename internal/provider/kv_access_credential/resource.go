@@ -132,7 +132,7 @@ func kvAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	if d.HasChange("secret_store_id") {
 		secretStoreID := d.Get("secret_store_id").(string)
-		input.SecretStoreID = &secretStoreID
+		input.SecretStoreID = client.NewSecretStoreIDUpdate(secretStoreID)
 	}
 
 	if d.HasChange("items") {

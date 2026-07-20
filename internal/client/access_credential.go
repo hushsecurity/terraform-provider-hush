@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -59,17 +60,17 @@ type CreateKVAccessCredentialInput struct {
 }
 
 type UpdatePlaintextAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	Secret        *string `json:"secret,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Secret        *string              `json:"secret,omitempty"`
 }
 
 type UpdateKVAccessCredentialInput struct {
-	Name          *string  `json:"name,omitempty"`
-	Description   *string  `json:"description,omitempty"`
-	SecretStoreID *string  `json:"secret_store_id,omitempty"`
-	Items         []KVItem `json:"items,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Items         []KVItem             `json:"items,omitempty"`
 }
 
 type AccessCredentialListResponse struct {
@@ -77,6 +78,28 @@ type AccessCredentialListResponse struct {
 	Total      int                `json:"total"`
 	HasNext    bool               `json:"has_next"`
 	NextCursor *string            `json:"next_cursor"`
+}
+
+// secretStoreIDUpdate marshals to null when ID is empty (detaching the credential
+// from its secret store) and to the id otherwise. A nil wrapper on an update input
+// is omitted, meaning no change. secret_store_id needs three states on update --
+// omitted (unchanged), an id (re-point), and explicit null (detach) -- which
+// omitempty on a plain *string cannot express: a pointer to "" marshals as "",
+// which midgard rejects (the field must be a valid sst- id or null). This mirrors
+// oidcProviderUpdate in deployment.go.
+type secretStoreIDUpdate struct{ ID string }
+
+func (s secretStoreIDUpdate) MarshalJSON() ([]byte, error) {
+	if s.ID == "" {
+		return []byte("null"), nil
+	}
+	return json.Marshal(s.ID)
+}
+
+// NewSecretStoreIDUpdate wraps a secret_store_id (empty to detach) for an update
+// request, forcing the secret_store_id field to be sent.
+func NewSecretStoreIDUpdate(id string) *secretStoreIDUpdate {
+	return &secretStoreIDUpdate{ID: id}
 }
 
 func CreatePlaintextAccessCredential(ctx context.Context, c *Client, input *CreatePlaintextAccessCredentialInput) (*AccessCredential, error) {
