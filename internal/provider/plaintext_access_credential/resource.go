@@ -119,7 +119,7 @@ func plaintextAccessCredentialUpdate(ctx context.Context, d *schema.ResourceData
 
 	if d.HasChange("secret_store_id") {
 		secretStoreID := d.Get("secret_store_id").(string)
-		input.SecretStoreID = &secretStoreID
+		input.SecretStoreID = client.NewSecretStoreIDUpdate(secretStoreID)
 	}
 
 	if d.HasChange("secret") || d.HasChange("secret_wo") || d.HasChange("secret_wo_version") {

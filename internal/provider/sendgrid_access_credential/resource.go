@@ -117,7 +117,7 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	}
 	if d.HasChange("secret_store_id") {
 		v := d.Get("secret_store_id").(string)
-		input.SecretStoreID = &v
+		input.SecretStoreID = client.NewSecretStoreIDUpdate(v)
 	}
 	if d.HasChange("api_key") || d.HasChange("api_key_wo") || d.HasChange("api_key_wo_version") {
 		v := getAPIKey(d)

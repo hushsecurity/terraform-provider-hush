@@ -70,16 +70,16 @@ type CreatePostgresAccessCredentialInput struct {
 }
 
 type UpdatePostgresAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	DBName        *string `json:"db_name,omitempty"`
-	Host          *string `json:"host,omitempty"`
-	Port          *int    `json:"port,omitempty"`
-	SSLMode       *string `json:"ssl_mode,omitempty"`
-	SSLCA         *string `json:"ssl_ca,omitempty"`
-	Username      *string `json:"username,omitempty"`
-	Password      *string `json:"password,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DBName        *string              `json:"db_name,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	Port          *int                 `json:"port,omitempty"`
+	SSLMode       *string              `json:"ssl_mode,omitempty"`
+	SSLCA         *string              `json:"ssl_ca,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
 }
 
 func CreatePostgresAccessCredential(ctx context.Context, c *Client, input *CreatePostgresAccessCredentialInput) (*PostgresAccessCredential, error) {
@@ -156,17 +156,17 @@ type CreateMongoDBAccessCredentialInput struct {
 }
 
 type UpdateMongoDBAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	DBName        *string `json:"db_name,omitempty"`
-	Host          *string `json:"host,omitempty"`
-	Port          *int    `json:"port,omitempty"`
-	Username      *string `json:"username,omitempty"`
-	Password      *string `json:"password,omitempty"`
-	AuthSource    *string `json:"auth_source,omitempty"`
-	TLS           *bool   `json:"tls,omitempty"`
-	TLSCA         *string `json:"tls_ca,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DBName        *string              `json:"db_name,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	Port          *int                 `json:"port,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
+	AuthSource    *string              `json:"auth_source,omitempty"`
+	TLS           *bool                `json:"tls,omitempty"`
+	TLSCA         *string              `json:"tls_ca,omitempty"`
 }
 
 func CreateMongoDBAccessCredential(ctx context.Context, c *Client, input *CreateMongoDBAccessCredentialInput) (*MongoDBAccessCredential, error) {
@@ -240,16 +240,16 @@ type CreateMongoDBAtlasAccessCredentialInput struct {
 }
 
 type UpdateMongoDBAtlasAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	GroupID       *string `json:"group_id,omitempty"`
-	DBName        *string `json:"db_name,omitempty"`
-	Host          *string `json:"host,omitempty"`
-	ClientID      *string `json:"client_id,omitempty"`
-	ClientSecret  *string `json:"client_secret,omitempty"`
-	PublicKey     *string `json:"public_key,omitempty"`
-	PrivateKey    *string `json:"private_key,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	GroupID       *string              `json:"group_id,omitempty"`
+	DBName        *string              `json:"db_name,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	ClientID      *string              `json:"client_id,omitempty"`
+	ClientSecret  *string              `json:"client_secret,omitempty"`
+	PublicKey     *string              `json:"public_key,omitempty"`
+	PrivateKey    *string              `json:"private_key,omitempty"`
 }
 
 func CreateMongoDBAtlasAccessCredential(ctx context.Context, c *Client, input *CreateMongoDBAtlasAccessCredentialInput) (*MongoDBAtlasAccessCredential, error) {
@@ -324,16 +324,16 @@ type CreateMySQLAccessCredentialInput struct {
 }
 
 type UpdateMySQLAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	DBName        *string `json:"db_name,omitempty"`
-	Host          *string `json:"host,omitempty"`
-	Port          *int    `json:"port,omitempty"`
-	SSLMode       *string `json:"ssl_mode,omitempty"`
-	SSLCA         *string `json:"ssl_ca,omitempty"`
-	Username      *string `json:"username,omitempty"`
-	Password      *string `json:"password,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DBName        *string              `json:"db_name,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	Port          *int                 `json:"port,omitempty"`
+	SSLMode       *string              `json:"ssl_mode,omitempty"`
+	SSLCA         *string              `json:"ssl_ca,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
 }
 
 func CreateMySQLAccessCredential(ctx context.Context, c *Client, input *CreateMySQLAccessCredentialInput) (*MySQLAccessCredential, error) {
@@ -408,16 +408,16 @@ type CreateMariaDBAccessCredentialInput struct {
 }
 
 type UpdateMariaDBAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	DBName        *string `json:"db_name,omitempty"`
-	Host          *string `json:"host,omitempty"`
-	Port          *int    `json:"port,omitempty"`
-	SSLMode       *string `json:"ssl_mode,omitempty"`
-	SSLCA         *string `json:"ssl_ca,omitempty"`
-	Username      *string `json:"username,omitempty"`
-	Password      *string `json:"password,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DBName        *string              `json:"db_name,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	Port          *int                 `json:"port,omitempty"`
+	SSLMode       *string              `json:"ssl_mode,omitempty"`
+	SSLCA         *string              `json:"ssl_ca,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
 }
 
 func CreateMariaDBAccessCredential(ctx context.Context, c *Client, input *CreateMariaDBAccessCredentialInput) (*MariaDBAccessCredential, error) {
@@ -482,11 +482,11 @@ type CreateOpenAIAccessCredentialInput struct {
 }
 
 type UpdateOpenAIAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	APIKey        *string `json:"api_key,omitempty"`
-	ProjectID     *string `json:"project_id,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
+	ProjectID     *string              `json:"project_id,omitempty"`
 }
 
 func CreateOpenAIAccessCredential(ctx context.Context, c *Client, input *CreateOpenAIAccessCredentialInput) (*OpenAIAccessCredential, error) {
@@ -551,11 +551,11 @@ type CreateGeminiAccessCredentialInput struct {
 }
 
 type UpdateGeminiAccessCredentialInput struct {
-	Name              *string `json:"name,omitempty"`
-	Description       *string `json:"description,omitempty"`
-	SecretStoreID     *string `json:"secret_store_id,omitempty"`
-	ServiceAccountKey *string `json:"service_account_key,omitempty"`
-	ProjectID         *string `json:"project_id,omitempty"`
+	Name              *string              `json:"name,omitempty"`
+	Description       *string              `json:"description,omitempty"`
+	SecretStoreID     *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	ServiceAccountKey *string              `json:"service_account_key,omitempty"`
+	ProjectID         *string              `json:"project_id,omitempty"`
 }
 
 func CreateGeminiAccessCredential(ctx context.Context, c *Client, input *CreateGeminiAccessCredentialInput) (*GeminiAccessCredential, error) {
@@ -620,11 +620,11 @@ type CreateGrokAccessCredentialInput struct {
 }
 
 type UpdateGrokAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	APIKey        *string `json:"api_key,omitempty"`
-	TeamID        *string `json:"team_id,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
+	TeamID        *string              `json:"team_id,omitempty"`
 }
 
 func CreateGrokAccessCredential(ctx context.Context, c *Client, input *CreateGrokAccessCredentialInput) (*GrokAccessCredential, error) {
@@ -722,21 +722,21 @@ type CreateRedisAccessCredentialInput struct {
 // UpdateRedisAccessCredentialInput omits engine: it is immutable and ignored by
 // the API on update.
 type UpdateRedisAccessCredentialInput struct {
-	Name            *string `json:"name,omitempty"`
-	Description     *string `json:"description,omitempty"`
-	SecretStoreID   *string `json:"secret_store_id,omitempty"`
-	Host            *string `json:"host,omitempty"`
-	Port            *int    `json:"port,omitempty"`
-	Username        *string `json:"username,omitempty"`
-	Password        *string `json:"password,omitempty"`
-	Database        *int    `json:"database,omitempty"`
-	TLS             *bool   `json:"tls,omitempty"`
-	TLSCA           *string `json:"tls_ca,omitempty"`
-	CacheEngine     *string `json:"cache_engine,omitempty"`
-	Region          *string `json:"region,omitempty"`
-	UserGroupID     *string `json:"user_group_id,omitempty"`
-	AccessKeyID     *string `json:"access_key_id,omitempty"`
-	SecretAccessKey *string `json:"secret_access_key,omitempty"`
+	Name            *string              `json:"name,omitempty"`
+	Description     *string              `json:"description,omitempty"`
+	SecretStoreID   *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Host            *string              `json:"host,omitempty"`
+	Port            *int                 `json:"port,omitempty"`
+	Username        *string              `json:"username,omitempty"`
+	Password        *string              `json:"password,omitempty"`
+	Database        *int                 `json:"database,omitempty"`
+	TLS             *bool                `json:"tls,omitempty"`
+	TLSCA           *string              `json:"tls_ca,omitempty"`
+	CacheEngine     *string              `json:"cache_engine,omitempty"`
+	Region          *string              `json:"region,omitempty"`
+	UserGroupID     *string              `json:"user_group_id,omitempty"`
+	AccessKeyID     *string              `json:"access_key_id,omitempty"`
+	SecretAccessKey *string              `json:"secret_access_key,omitempty"`
 	// Aiven-engine fields.
 	Project     *string `json:"project,omitempty"`
 	ServiceName *string `json:"service_name,omitempty"`
@@ -808,12 +808,12 @@ type CreateBedrockAccessCredentialInput struct {
 }
 
 type UpdateBedrockAccessCredentialInput struct {
-	Name            *string `json:"name,omitempty"`
-	Description     *string `json:"description,omitempty"`
-	SecretStoreID   *string `json:"secret_store_id,omitempty"`
-	Region          *string `json:"region,omitempty"`
-	AccessKeyID     *string `json:"access_key_id,omitempty"`
-	SecretAccessKey *string `json:"secret_access_key,omitempty"`
+	Name            *string              `json:"name,omitempty"`
+	Description     *string              `json:"description,omitempty"`
+	SecretStoreID   *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Region          *string              `json:"region,omitempty"`
+	AccessKeyID     *string              `json:"access_key_id,omitempty"`
+	SecretAccessKey *string              `json:"secret_access_key,omitempty"`
 }
 
 func CreateBedrockAccessCredential(ctx context.Context, c *Client, input *CreateBedrockAccessCredentialInput) (*BedrockAccessCredential, error) {
@@ -877,10 +877,10 @@ type CreateApigeeAccessCredentialInput struct {
 }
 
 type UpdateApigeeAccessCredentialInput struct {
-	Name              *string `json:"name,omitempty"`
-	Description       *string `json:"description,omitempty"`
-	SecretStoreID     *string `json:"secret_store_id,omitempty"`
-	ServiceAccountKey *string `json:"service_account_key,omitempty"`
+	Name              *string              `json:"name,omitempty"`
+	Description       *string              `json:"description,omitempty"`
+	SecretStoreID     *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	ServiceAccountKey *string              `json:"service_account_key,omitempty"`
 }
 
 func CreateApigeeAccessCredential(ctx context.Context, c *Client, input *CreateApigeeAccessCredentialInput) (*ApigeeAccessCredential, error) {
@@ -953,15 +953,15 @@ type CreateElasticsearchAccessCredentialInput struct {
 }
 
 type UpdateElasticsearchAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	Host          *string `json:"host,omitempty"`
-	Port          *int    `json:"port,omitempty"`
-	Username      *string `json:"username,omitempty"`
-	Password      *string `json:"password,omitempty"`
-	TLS           *bool   `json:"tls,omitempty"`
-	TLSCA         *string `json:"tls_ca,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	Port          *int                 `json:"port,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
+	TLS           *bool                `json:"tls,omitempty"`
+	TLSCA         *string              `json:"tls_ca,omitempty"`
 }
 
 func CreateElasticsearchAccessCredential(ctx context.Context, c *Client, input *CreateElasticsearchAccessCredentialInput) (*ElasticsearchAccessCredential, error) {
@@ -1040,18 +1040,18 @@ type CreateRabbitmqAccessCredentialInput struct {
 }
 
 type UpdateRabbitmqAccessCredentialInput struct {
-	Name           *string `json:"name,omitempty"`
-	Description    *string `json:"description,omitempty"`
-	SecretStoreID  *string `json:"secret_store_id,omitempty"`
-	Host           *string `json:"host,omitempty"`
-	Port           *int    `json:"port,omitempty"`
-	ManagementPort *int    `json:"management_port,omitempty"`
-	Username       *string `json:"username,omitempty"`
-	Password       *string `json:"password,omitempty"`
-	Vhost          *string `json:"vhost,omitempty"`
-	TLS            *bool   `json:"tls,omitempty"`
-	TLSCA          *string `json:"tls_ca,omitempty"`
-	AutoRotateRoot *bool   `json:"auto_rotate_root,omitempty"`
+	Name           *string              `json:"name,omitempty"`
+	Description    *string              `json:"description,omitempty"`
+	SecretStoreID  *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Host           *string              `json:"host,omitempty"`
+	Port           *int                 `json:"port,omitempty"`
+	ManagementPort *int                 `json:"management_port,omitempty"`
+	Username       *string              `json:"username,omitempty"`
+	Password       *string              `json:"password,omitempty"`
+	Vhost          *string              `json:"vhost,omitempty"`
+	TLS            *bool                `json:"tls,omitempty"`
+	TLSCA          *string              `json:"tls_ca,omitempty"`
+	AutoRotateRoot *bool                `json:"auto_rotate_root,omitempty"`
 }
 
 func CreateRabbitmqAccessCredential(ctx context.Context, c *Client, input *CreateRabbitmqAccessCredentialInput) (*RabbitmqAccessCredential, error) {
@@ -1114,10 +1114,10 @@ type CreateGCPSAAccessCredentialInput struct {
 }
 
 type UpdateGCPSAAccessCredentialInput struct {
-	Name              *string `json:"name,omitempty"`
-	Description       *string `json:"description,omitempty"`
-	SecretStoreID     *string `json:"secret_store_id,omitempty"`
-	ServiceAccountKey *string `json:"service_account_key,omitempty"`
+	Name              *string              `json:"name,omitempty"`
+	Description       *string              `json:"description,omitempty"`
+	SecretStoreID     *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	ServiceAccountKey *string              `json:"service_account_key,omitempty"`
 }
 
 func CreateGCPSAAccessCredential(ctx context.Context, c *Client, input *CreateGCPSAAccessCredentialInput) (*GCPSAAccessCredential, error) {
@@ -1184,12 +1184,12 @@ type CreateAzureAppAccessCredentialInput struct {
 }
 
 type UpdateAzureAppAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	TenantID      *string `json:"tenant_id,omitempty"`
-	ClientID      *string `json:"client_id,omitempty"`
-	ClientSecret  *string `json:"client_secret,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	TenantID      *string              `json:"tenant_id,omitempty"`
+	ClientID      *string              `json:"client_id,omitempty"`
+	ClientSecret  *string              `json:"client_secret,omitempty"`
 }
 
 func CreateAzureAppAccessCredential(ctx context.Context, c *Client, input *CreateAzureAppAccessCredentialInput) (*AzureAppAccessCredential, error) {
@@ -1256,12 +1256,12 @@ type CreateAWSAccessKeyAccessCredentialInput struct {
 }
 
 type UpdateAWSAccessKeyAccessCredentialInput struct {
-	Name               *string `json:"name,omitempty"`
-	Description        *string `json:"description,omitempty"`
-	SecretStoreID      *string `json:"secret_store_id,omitempty"`
-	AccessKeyID        *string `json:"access_key_id,omitempty"`
-	SecretAccessKey    *string `json:"secret_access_key,omitempty"`
-	PermissionBoundary *bool   `json:"permission_boundary,omitempty"`
+	Name               *string              `json:"name,omitempty"`
+	Description        *string              `json:"description,omitempty"`
+	SecretStoreID      *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	AccessKeyID        *string              `json:"access_key_id,omitempty"`
+	SecretAccessKey    *string              `json:"secret_access_key,omitempty"`
+	PermissionBoundary *bool                `json:"permission_boundary,omitempty"`
 }
 
 func CreateAWSAccessKeyAccessCredential(ctx context.Context, c *Client, input *CreateAWSAccessKeyAccessCredentialInput) (*AWSAccessKeyAccessCredential, error) {
@@ -1328,12 +1328,12 @@ type CreateTwilioAccessCredentialInput struct {
 }
 
 type UpdateTwilioAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	AccountSID    *string `json:"account_sid,omitempty"`
-	APIKeySID     *string `json:"api_key_sid,omitempty"`
-	APIKeySecret  *string `json:"api_key_secret,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	AccountSID    *string              `json:"account_sid,omitempty"`
+	APIKeySID     *string              `json:"api_key_sid,omitempty"`
+	APIKeySecret  *string              `json:"api_key_secret,omitempty"`
 }
 
 func CreateTwilioAccessCredential(ctx context.Context, c *Client, input *CreateTwilioAccessCredentialInput) (*TwilioAccessCredential, error) {
@@ -1411,18 +1411,18 @@ type CreateSnowflakeAccessCredentialInput struct {
 }
 
 type UpdateSnowflakeAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	Account       *string `json:"account,omitempty"`
-	Warehouse     *string `json:"warehouse,omitempty"`
-	Database      *string `json:"database,omitempty"`
-	Schema        *string `json:"schema,omitempty"`
-	Role          *string `json:"role,omitempty"`
-	Username      *string `json:"username,omitempty"`
-	Password      *string `json:"password,omitempty"`
-	PrivateKey    *string `json:"private_key,omitempty"`
-	AuthMethod    *string `json:"auth_method,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Account       *string              `json:"account,omitempty"`
+	Warehouse     *string              `json:"warehouse,omitempty"`
+	Database      *string              `json:"database,omitempty"`
+	Schema        *string              `json:"schema,omitempty"`
+	Role          *string              `json:"role,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
+	PrivateKey    *string              `json:"private_key,omitempty"`
+	AuthMethod    *string              `json:"auth_method,omitempty"`
 }
 
 func CreateSnowflakeAccessCredential(ctx context.Context, c *Client, input *CreateSnowflakeAccessCredentialInput) (*SnowflakeAccessCredential, error) {
@@ -1486,10 +1486,10 @@ type CreateAwsWifAccessCredentialInput struct {
 }
 
 type UpdateAwsWifAccessCredentialInput struct {
-	Name          *string  `json:"name,omitempty"`
-	Description   *string  `json:"description,omitempty"`
-	SecretStoreID *string  `json:"secret_store_id,omitempty"`
-	DeploymentIDs []string `json:"deployment_ids,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids,omitempty"`
 }
 
 func CreateAwsWifAccessCredential(ctx context.Context, c *Client, input *CreateAwsWifAccessCredentialInput) (*AwsWifAccessCredential, error) {
@@ -1558,13 +1558,13 @@ type CreateGitlabAccessCredentialInput struct {
 }
 
 type UpdateGitlabAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	Token         *string `json:"token,omitempty"`
-	BaseURL       *string `json:"base_url,omitempty"`
-	ResourceType  *string `json:"resource_type,omitempty"`
-	ResourceID    *string `json:"resource_id,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Token         *string              `json:"token,omitempty"`
+	BaseURL       *string              `json:"base_url,omitempty"`
+	ResourceType  *string              `json:"resource_type,omitempty"`
+	ResourceID    *string              `json:"resource_id,omitempty"`
 }
 
 func CreateGitlabAccessCredential(ctx context.Context, c *Client, input *CreateGitlabAccessCredentialInput) (*GitlabAccessCredential, error) {
@@ -1635,14 +1635,14 @@ type CreateGcpWifAccessCredentialInput struct {
 }
 
 type UpdateGcpWifAccessCredentialInput struct {
-	Name               *string  `json:"name,omitempty"`
-	Description        *string  `json:"description,omitempty"`
-	SecretStoreID      *string  `json:"secret_store_id,omitempty"`
-	DeploymentIDs      []string `json:"deployment_ids,omitempty"`
-	ProjectNumber      *string  `json:"project_number,omitempty"`
-	PoolID             *string  `json:"pool_id,omitempty"`
-	WorkloadProviderID *string  `json:"workload_provider_id,omitempty"`
-	Audience           *string  `json:"audience,omitempty"`
+	Name               *string              `json:"name,omitempty"`
+	Description        *string              `json:"description,omitempty"`
+	SecretStoreID      *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DeploymentIDs      []string             `json:"deployment_ids,omitempty"`
+	ProjectNumber      *string              `json:"project_number,omitempty"`
+	PoolID             *string              `json:"pool_id,omitempty"`
+	WorkloadProviderID *string              `json:"workload_provider_id,omitempty"`
+	Audience           *string              `json:"audience,omitempty"`
 }
 
 func CreateGcpWifAccessCredential(ctx context.Context, c *Client, input *CreateGcpWifAccessCredentialInput) (*GcpWifAccessCredential, error) {
@@ -1706,10 +1706,10 @@ type CreateAzureWifAccessCredentialInput struct {
 }
 
 type UpdateAzureWifAccessCredentialInput struct {
-	Name          *string  `json:"name,omitempty"`
-	Description   *string  `json:"description,omitempty"`
-	SecretStoreID *string  `json:"secret_store_id,omitempty"`
-	DeploymentIDs []string `json:"deployment_ids,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids,omitempty"`
 }
 
 func CreateAzureWifAccessCredential(ctx context.Context, c *Client, input *CreateAzureWifAccessCredentialInput) (*AzureWifAccessCredential, error) {
@@ -1775,12 +1775,12 @@ type CreateDatadogAccessCredentialInput struct {
 }
 
 type UpdateDatadogAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	APIKey        *string `json:"api_key,omitempty"`
-	AppKey        *string `json:"app_key,omitempty"`
-	Site          *string `json:"site,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
+	AppKey        *string              `json:"app_key,omitempty"`
+	Site          *string              `json:"site,omitempty"`
 }
 
 func CreateDatadogAccessCredential(ctx context.Context, c *Client, input *CreateDatadogAccessCredentialInput) (*DatadogAccessCredential, error) {
@@ -1847,12 +1847,12 @@ type CreateSalesforceAccessCredentialInput struct {
 }
 
 type UpdateSalesforceAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	InstanceURL   *string `json:"instance_url,omitempty"`
-	ClientID      *string `json:"client_id,omitempty"`
-	ClientSecret  *string `json:"client_secret,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	InstanceURL   *string              `json:"instance_url,omitempty"`
+	ClientID      *string              `json:"client_id,omitempty"`
+	ClientSecret  *string              `json:"client_secret,omitempty"`
 }
 
 func CreateSalesforceAccessCredential(ctx context.Context, c *Client, input *CreateSalesforceAccessCredentialInput) (*SalesforceAccessCredential, error) {
@@ -1915,10 +1915,10 @@ type CreateSendGridAccessCredentialInput struct {
 }
 
 type UpdateSendGridAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	APIKey        *string `json:"api_key,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
 }
 
 func CreateSendGridAccessCredential(ctx context.Context, c *Client, input *CreateSendGridAccessCredentialInput) (*SendGridAccessCredential, error) {
@@ -1981,10 +1981,10 @@ type CreateTemporalCloudAccessCredentialInput struct {
 }
 
 type UpdateTemporalCloudAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
-	APIKey        *string `json:"api_key,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
 }
 
 func CreateTemporalCloudAccessCredential(ctx context.Context, c *Client, input *CreateTemporalCloudAccessCredentialInput) (*TemporalCloudAccessCredential, error) {
@@ -2070,9 +2070,9 @@ type CreateKafkaAccessCredentialInput struct {
 // UpdateKafkaAccessCredentialInput omits engine: it is immutable and ignored by
 // the API on update.
 type UpdateKafkaAccessCredentialInput struct {
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	SecretStoreID *string `json:"secret_store_id,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
 	// Native-engine fields.
 	BootstrapServers *string `json:"bootstrap_servers,omitempty"`
 	Username         *string `json:"username,omitempty"`
