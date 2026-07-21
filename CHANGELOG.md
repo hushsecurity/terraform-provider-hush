@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.20.1] - 2026-07-21
+
+### Fixed
+
+* **Plaintext and KV access credentials**: rotating the secret is now an in-place update instead of a destroy-and-recreate. Changing `secret` (or `secret_wo`/`secret_wo_version`) on `hush_plaintext_access_credential`, or `items` on `hush_kv_access_credential`, no longer forces replacement, so the credential keeps its id.
+* **Data-source lookups by name**: the `hush_*_integration`, `hush_deployment`, `hush_notification_channel`, and `hush_notification_configuration` data sources now read all pages when resolving by `name` (or `trigger`), returning the complete set of matches instead of only the first page.
+
 ## [1.20.0] - 2026-07-19
 
 ### Added
@@ -377,6 +384,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.20.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.0...v1.20.1
 [1.20.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.18.0...v1.19.0
 [1.18.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.17.0...v1.18.0
