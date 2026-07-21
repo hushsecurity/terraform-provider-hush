@@ -104,23 +104,12 @@ func DeleteSecretStore(ctx context.Context, c *Client, id string) error {
 // backend's server-side name filter and paging through every result. Names are not
 // unique, so this may return more than one store.
 func GetSecretStoresByName(ctx context.Context, c *Client, name string) ([]SecretStore, error) {
-	encodedName := url.QueryEscape(name)
-	var matches []SecretStore
-	cursor := ""
-	for {
-		path := fmt.Sprintf("%s?name=%s", secretStoresEndpoint, encodedName)
-		if cursor != "" {
-			path += "&cursor=" + url.QueryEscape(cursor)
-		}
+	base := fmt.Sprintf("%s?name=%s", secretStoresEndpoint, url.QueryEscape(name))
+	return collectPages(func(cursor string) ([]SecretStore, *string, error) {
 		var page SecretStoreListResponse
-		if err := c.doRequest(ctx, http.MethodGet, path, nil, &page); err != nil {
-			return nil, err
+		if err := c.doRequest(ctx, http.MethodGet, withCursor(base, cursor), nil, &page); err != nil {
+			return nil, nil, err
 		}
-		matches = append(matches, page.Items...)
-		if page.NextPage == nil || *page.NextPage == "" {
-			break
-		}
-		cursor = *page.NextPage
-	}
-	return matches, nil
+		return page.Items, page.NextPage, nil
+	})
 }
