@@ -134,17 +134,3 @@ func GetNotificationChannelsByName(ctx context.Context, c *Client, name string) 
 		return resp.Items, resp.NextPage, nil
 	})
 }
-
-func ListNotificationChannels(ctx context.Context, c *Client, enabled *bool) ([]NotificationChannel, error) {
-	path := notificationChannelsEndpoint
-	if enabled != nil {
-		path = fmt.Sprintf("%s?enabled=%t", path, *enabled)
-	}
-
-	var resp NotificationChannelListResponse
-	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
-		return nil, err
-	}
-
-	return resp.Items, nil
-}

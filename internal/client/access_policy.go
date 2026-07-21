@@ -143,13 +143,6 @@ type UpdateAccessPolicyInput struct {
 	DeliveryConfig      any                     `json:"delivery_config,omitempty"`
 }
 
-type AccessPolicyListResponse struct {
-	Items      []AccessPolicy `json:"items"`
-	Total      int            `json:"total"`
-	HasNext    bool           `json:"has_next"`
-	NextCursor *string        `json:"next_cursor"`
-}
-
 func CreateAccessPolicy(ctx context.Context, c *Client, input *CreateAccessPolicyInput) (*AccessPolicy, error) {
 	var result AccessPolicy
 	if err := c.doRequest(ctx, http.MethodPost, accessPoliciesEndpoint, input, &result); err != nil {
@@ -192,12 +185,4 @@ func DeleteAccessPolicy(ctx context.Context, c *Client, id string) error {
 		return err
 	}
 	return nil
-}
-
-func ListAccessPolicies(ctx context.Context, c *Client) (*AccessPolicyListResponse, error) {
-	var resp AccessPolicyListResponse
-	if err := c.doRequest(ctx, http.MethodGet, accessPoliciesEndpoint, nil, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
 }
