@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -45,6 +47,7 @@ type MockServer struct {
 	routes   []route
 	hooks    map[string]map[Operation][]HookFunc
 	fixtures *Fixtures
+	pageSize int // when > 0, list responses are paginated with this page size
 	mu       sync.RWMutex
 }
 
@@ -65,6 +68,15 @@ func (ms *MockServer) URL() string { return ms.Server.URL }
 
 // Close shuts down the mock server.
 func (ms *MockServer) Close() { ms.Server.Close() }
+
+// SetPageSize enables cursor pagination of list responses with the given page
+// size. Zero (the default) disables it: a list returns every match in one page,
+// as before.
+func (ms *MockServer) SetPageSize(n int) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+	ms.pageSize = n
+}
 
 // SeedObject inserts a pre-existing object into the mock store.
 // Useful for resources that require pre-existing data (e.g., predefined configs).
@@ -220,12 +232,42 @@ func (ms *MockServer) handleList(w http.ResponseWriter, r *http.Request, storeKe
 		items = []any{}
 	}
 
+	total := len(items)
+	var nextPage *string
+	if ms.pageSize > 0 {
+		// Stable order so cursor offsets are consistent across pages; map
+		// iteration order is otherwise random.
+		sort.Slice(items, func(i, j int) bool {
+			return fmt.Sprintf("%v", items[i].(map[string]any)["id"]) <
+				fmt.Sprintf("%v", items[j].(map[string]any)["id"])
+		})
+		start := 0
+		if cur := r.URL.Query().Get("cursor"); cur != "" {
+			if n, err := strconv.Atoi(cur); err == nil && n > 0 {
+				start = n
+			}
+		}
+		if start > len(items) {
+			start = len(items)
+		}
+		end := start + ms.pageSize
+		if end > len(items) {
+			end = len(items)
+		}
+		if end < len(items) {
+			np := strconv.Itoa(end)
+			nextPage = &np
+		}
+		items = items[start:end]
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"items":    items,
-		"total":    len(items),
-		"has_more": false,
-		"has_next": false,
+		"items":     items,
+		"total":     total,
+		"next_page": nextPage,
+		"has_more":  nextPage != nil,
+		"has_next":  nextPage != nil,
 	})
 }
 
@@ -304,7 +346,7 @@ func (ms *MockServer) runHooks(resourceKey string, op Operation, obj map[string]
 
 func (ms *MockServer) matchesFilters(obj map[string]any, params map[string][]string) bool {
 	for key, values := range params {
-		if len(values) == 0 {
+		if key == "cursor" || len(values) == 0 {
 			continue
 		}
 		val := fmt.Sprintf("%v", obj[key])
