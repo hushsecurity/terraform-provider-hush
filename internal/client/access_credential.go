@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 )
 
 const accessCredentialsEndpoint = "/v1/access_credentials"
@@ -71,13 +70,6 @@ type UpdateKVAccessCredentialInput struct {
 	Description   *string              `json:"description,omitempty"`
 	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
 	Items         []KVItem             `json:"items,omitempty"`
-}
-
-type AccessCredentialListResponse struct {
-	Items      []AccessCredential `json:"items"`
-	Total      int                `json:"total"`
-	HasNext    bool               `json:"has_next"`
-	NextCursor *string            `json:"next_cursor"`
 }
 
 // secretStoreIDUpdate marshals to null when ID is empty (detaching the credential
@@ -175,23 +167,4 @@ func DeleteAccessCredential(ctx context.Context, c *Client, id string) error {
 		return err
 	}
 	return nil
-}
-
-func ListAccessCredentials(ctx context.Context, c *Client, credType *AccessCredentialType) (*AccessCredentialListResponse, error) {
-	params := url.Values{}
-	if credType != nil {
-		params.Set("type", string(*credType))
-	}
-
-	path := accessCredentialsEndpoint
-	if len(params) > 0 {
-		path += "?" + params.Encode()
-	}
-
-	var resp AccessCredentialListResponse
-	err := c.doRequest(ctx, http.MethodGet, path, nil, &resp)
-	if err != nil {
-		return nil, err
-	}
-	return &resp, nil
 }
