@@ -22,11 +22,16 @@ const (
 	passwordDesc        = "The deployment password for authentication"
 	imagePullSecretDesc = "The image pull secret for accessing private container images"
 
-	oidcProviderDesc        = "Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password."
+	oidcProviderDesc        = "Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password. Repeat the block to trust more than one issuer. Every block is stored in the API's 'oidc_providers' field, and each issuer may appear once."
 	oidcIssuerDesc          = "The OIDC issuer URL (must be HTTPS). Its OpenID configuration and JWKS are used to verify presented assertions."
 	oidcAudienceDesc        = "The audience claim expected in presented OIDC assertions."
 	oidcAllowedSubjectsDesc = "Optional list of allowed subject claims. A trailing '*' acts as a prefix wildcard (for example 'system:serviceaccount:hush-security:*'). When omitted, any subject is accepted."
 )
+
+// maxOidcProviders mirrors the API cap on the field these blocks are stored
+// in. Every entry is another key set able to mint tokens for the deployment,
+// so the ceiling is worth stating here rather than discovering on a round trip.
+const maxOidcProviders = 8
 
 func DeploymentResourceSchema() map[string]*schema.Schema {
 	s := DeploymentDataSourceSchema()
@@ -90,7 +95,9 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 		Description: oidcProviderDesc,
 		Type:        schema.TypeList,
 		Optional:    true,
-		MaxItems:    1,
+		// The API caps the list it is stored in. Rejecting here says so while
+		// the caller can still act on it, rather than after a round trip.
+		MaxItems: maxOidcProviders,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"issuer": {
@@ -258,22 +265,32 @@ func setDeploymentFields(d *schema.ResourceData, deployment *client.Deployment) 
 		}
 	}
 
-	if err := d.Set("oidc_provider", flattenOidcProvider(deployment.OidcProvider)); err != nil {
+	if err := d.Set("oidc_provider", flattenOidcProviders(deployment)); err != nil {
 		return diag.FromErr(fmt.Errorf("failed to set oidc_provider: %w", err))
 	}
 
 	return nil
 }
 
-// flattenOidcProvider converts the API OIDC config into the single-element list
-// the nested block schema expects, or an empty list when none is configured.
-func flattenOidcProvider(oidc *client.OidcConfig) []map[string]any {
-	if oidc == nil {
-		return []map[string]any{}
+// flattenOidcProviders converts whichever OIDC field the deployment holds into
+// the block list, or an empty list when it holds neither.
+//
+// The list is preferred and the singular field is the fallback, so a deployment
+// this provider has not written since the list was introduced reads back as one
+// block and produces no diff against a configuration that declares one.
+func flattenOidcProviders(deployment *client.Deployment) []map[string]any {
+	configs := deployment.OidcProviders
+	if len(configs) == 0 && deployment.OidcProvider != nil {
+		configs = []client.OidcConfig{*deployment.OidcProvider}
 	}
-	return []map[string]any{{
-		"issuer":           oidc.Issuer,
-		"audience":         oidc.Audience,
-		"allowed_subjects": oidc.AllowedSubjects,
-	}}
+
+	out := make([]map[string]any, 0, len(configs))
+	for _, oidc := range configs {
+		out = append(out, map[string]any{
+			"issuer":           oidc.Issuer,
+			"audience":         oidc.Audience,
+			"allowed_subjects": oidc.AllowedSubjects,
+		})
+	}
+	return out
 }

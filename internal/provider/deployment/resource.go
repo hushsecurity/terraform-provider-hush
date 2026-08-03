@@ -23,19 +23,53 @@ func Resource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Schema: DeploymentResourceSchema(),
+		CustomizeDiff: deploymentCustomizeDiff,
+		Schema:        DeploymentResourceSchema(),
 	}
+}
+
+// deploymentCustomizeDiff refuses a duplicate issuer at plan time. The API
+// refuses one too, but selection matches on the issuer and takes the first
+// entry, so a second entry for one issuer is unreachable and the audience or
+// subjects it carried would be dropped without a word -- worth saying while the
+// caller can still change it.
+//
+// Literals only. An issuer taken from another resource is unknown at plan time
+// and ResourceDiff yields the zero value for it -- d.NewValueKnown reports the
+// same thing without relying on that -- so it is skipped rather than reported,
+// because refusing a configuration that is very likely fine is worse than
+// leaving it to the API. For those the API stays the only check.
+func deploymentCustomizeDiff(
+	ctx context.Context, d *schema.ResourceDiff, m any,
+) error {
+	seen := make(map[string]struct{})
+	for _, entry := range d.Get("oidc_provider").([]any) {
+		fields, ok := entry.(map[string]any)
+		if !ok {
+			continue
+		}
+		issuer, _ := fields["issuer"].(string)
+		if issuer == "" {
+			continue
+		}
+		if _, dup := seen[issuer]; dup {
+			return fmt.Errorf(
+				"oidc_provider: issuer %q is configured more than once", issuer)
+		}
+		seen[issuer] = struct{}{}
+	}
+	return nil
 }
 
 func deploymentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
 	input := &client.CreateDeploymentInput{
-		Name:         d.Get("name").(string),
-		Description:  d.Get("description").(string),
-		EnvType:      d.Get("env_type").(string),
-		Kind:         d.Get("kind").(string),
-		OidcProvider: expandOidcProvider(d),
+		Name:          d.Get("name").(string),
+		Description:   d.Get("description").(string),
+		EnvType:       d.Get("env_type").(string),
+		Kind:          d.Get("kind").(string),
+		OidcProviders: expandOidcProviders(d),
 	}
 
 	resp, err := client.CreateDeploymentWithCredentials(ctx, c, input)
@@ -90,8 +124,16 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 		input.Kind = &kind
 		hasChanges = true
 	}
+	// Write the list and clear the singular field in the same request. The API
+	// resolves each field from the change or, when absent, from the stored
+	// deployment, and refuses a change that would leave it holding both -- so
+	// sending the list alone would be measured against a stored singular and
+	// refused. Clearing it here is also what migrates a deployment that still
+	// holds the singular, without ever passing through a state that trusts no
+	// issuer.
 	if d.HasChange("oidc_provider") {
-		input.OidcProvider = client.NewOidcProviderUpdate(expandOidcProvider(d))
+		input.OidcProviders = client.NewOidcProvidersUpdate(expandOidcProviders(d))
+		input.OidcProvider = client.NewOidcProviderUpdate(nil)
 		hasChanges = true
 	}
 
@@ -112,26 +154,33 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 	return nil
 }
 
-// expandOidcProvider reads the oidc_provider block from configuration,
-// returning nil when the block is absent.
-func expandOidcProvider(d *schema.ResourceData) *client.OidcConfig {
+// expandOidcProviders reads the oidc_provider blocks from configuration,
+// returning nil when none is present. One block per trusted issuer, all of
+// them stored in the API's oidc_providers field.
+func expandOidcProviders(d *schema.ResourceData) []client.OidcConfig {
 	raw := d.Get("oidc_provider").([]any)
-	if len(raw) == 0 || raw[0] == nil {
+	if len(raw) == 0 {
 		return nil
 	}
-	m := raw[0].(map[string]any)
-
-	cfg := &client.OidcConfig{
-		Issuer:   m["issuer"].(string),
-		Audience: m["audience"].(string),
-	}
-	if subs, ok := m["allowed_subjects"].([]any); ok && len(subs) > 0 {
-		cfg.AllowedSubjects = make([]string, len(subs))
-		for i, s := range subs {
-			cfg.AllowedSubjects[i] = s.(string)
+	out := make([]client.OidcConfig, 0, len(raw))
+	for _, entry := range raw {
+		if entry == nil {
+			continue
 		}
+		fields := entry.(map[string]any)
+		cfg := client.OidcConfig{
+			Issuer:   fields["issuer"].(string),
+			Audience: fields["audience"].(string),
+		}
+		if subs, ok := fields["allowed_subjects"].([]any); ok && len(subs) > 0 {
+			cfg.AllowedSubjects = make([]string, len(subs))
+			for i, s := range subs {
+				cfg.AllowedSubjects[i] = s.(string)
+			}
+		}
+		out = append(out, cfg)
 	}
-	return cfg
+	return out
 }
 
 func deploymentDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {

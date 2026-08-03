@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.22.0] - 2026-08-07
+
+### Added
+
+* **Multiple deployment OIDC providers**: `oidc_provider` on `hush_deployment` may now be repeated, up to eight times, so a deployment can trust more than one issuer. Each issuer may appear once.
+
+  Existing configurations need no change. Note that the blocks are stored in the API's `oidc_providers` field: the provider writes that field and clears the singular `oidc_provider` in the same request. A deployment created by this release is stored that way from the start; one that predates it moves the first time its blocks change. Both fields are read, so a deployment written before this release still reads back correctly.
+
+  **Downgrading is one way.** Once a deployment is stored in `oidc_providers`, provider 1.21.0 and earlier read no issuers from it, show a permanent diff proposing to add `oidc_provider`, and fail with `422 set oidc_provider or oidc_providers, not both` on apply. Pin or roll forward together -- a teammate or a CI job left on the older provider cannot manage such a deployment.
+
+```hcl
+resource "hush_deployment" "multi_oidc" {
+  name     = "multi-oidc-deployment"
+  env_type = "dev"
+  kind     = "k8s"
+
+  oidc_provider {
+    issuer           = "https://oidc.eks.eu-central-1.amazonaws.com/id/AAAA1111BBBB2222CCCC3333DDDD4444"
+    audience         = "https://kubernetes.default.svc"
+    allowed_subjects = ["system:serviceaccount:hush-security:*"]
+  }
+
+  oidc_provider {
+    issuer           = "https://oidc.eks.eu-central-1.amazonaws.com/id/EEEE5555FFFF6666AAAA7777BBBB8888"
+    audience         = "https://kubernetes.default.svc"
+    allowed_subjects = ["system:serviceaccount:hush-security:*"]
+  }
+}
+```
+
 ## [1.21.0] - 2026-08-04
 
 ### Added
@@ -412,6 +442,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.22.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.1...v1.21.0
 [1.20.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.0...v1.20.1
 [1.20.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.19.0...v1.20.0

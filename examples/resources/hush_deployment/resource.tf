@@ -20,6 +20,26 @@ resource "hush_deployment" "oidc" {
   }
 }
 
+# A deployment that trusts more than one issuer. Repeat the block per issuer --
+# the provider stores them all in the API's oidc_providers field.
+resource "hush_deployment" "multi_oidc" {
+  name     = "multi-oidc-deployment"
+  env_type = "dev"
+  kind     = "k8s"
+
+  oidc_provider {
+    issuer           = "https://oidc.eks.eu-central-1.amazonaws.com/id/AAAA1111BBBB2222CCCC3333DDDD4444"
+    audience         = "https://kubernetes.default.svc"
+    allowed_subjects = ["system:serviceaccount:hush-security:*"]
+  }
+
+  oidc_provider {
+    issuer           = "https://oidc.eks.eu-central-1.amazonaws.com/id/EEEE5555FFFF6666AAAA7777BBBB8888"
+    audience         = "https://kubernetes.default.svc"
+    allowed_subjects = ["system:serviceaccount:hush-security:*"]
+  }
+}
+
 output "deployment" {
   value = hush_deployment.example
 }
