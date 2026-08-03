@@ -229,6 +229,40 @@ resource "hush_redis_access_credential" "ec" {
 `
 }
 
+func redisAccessCredentialWOSecretAccessKeyStep1() string {
+	return `
+resource "hush_redis_access_credential" "ec_wo" {
+  name                         = "test-elasticache-wo-secret"
+  deployment_ids               = ["` + mockDeploymentID + `"]
+  host                         = "my-cluster.cache.amazonaws.com"
+  engine                       = "elasticache"
+  cache_engine                 = "valkey"
+  region                       = "eu-north-1"
+  user_group_id                = "my-user-group"
+  access_key_id                = "AKIAIOSFODNN7EXAMPLE"
+  secret_access_key_wo         = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  secret_access_key_wo_version = "1"
+}
+`
+}
+
+func redisAccessCredentialWOSecretAccessKeyStep2() string {
+	return `
+resource "hush_redis_access_credential" "ec_wo" {
+  name                         = "test-elasticache-wo-secret"
+  deployment_ids               = ["` + mockDeploymentID + `"]
+  host                         = "my-cluster.cache.amazonaws.com"
+  engine                       = "elasticache"
+  cache_engine                 = "valkey"
+  region                       = "eu-north-1"
+  user_group_id                = "my-user-group"
+  access_key_id                = "AKIAIOSFODNN7EXAMPLE"
+  secret_access_key_wo         = "rotated/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  secret_access_key_wo_version = "2"
+}
+`
+}
+
 func redisAccessCredentialElastiCacheFederation() string {
 	return `
 resource "hush_redis_access_credential" "ec_fed" {
@@ -286,6 +320,34 @@ func TestAccResourceRedisAccessCredentialAiven(t *testing.T) {
 	})
 }
 
+// Write-only secret_access_key paired with a plain access_key_id; bumping the
+// version must trigger Update and converge with no perpetual diff.
+func TestAccResourceRedisAccessCredentialWOSecretAccessKeyRotation(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialWOSecretAccessKeyStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.ec_wo", "access_key_id", "AKIAIOSFODNN7EXAMPLE",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.ec_wo", "secret_access_key_wo_version", "1",
+					),
+				),
+			},
+			{
+				Config: redisAccessCredentialWOSecretAccessKeyStep2(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.ec_wo", "secret_access_key_wo_version", "2",
+				),
+			},
+		},
+	})
+}
+
 // Write-only secret rotation for the Aiven engine's token. Bumping
 // token_wo_version must trigger Update and converge with no perpetual diff.
 func TestAccResourceRedisAccessCredentialWOTokenRotation(t *testing.T) {
@@ -335,6 +397,16 @@ func TestAccResourceRedisAccessCredentialEngineFieldValidation(t *testing.T) {
 				// elasticache engine with a redis-only field (password) set.
 				Config:      redisAccessCredentialElastiCacheWithPassword(),
 				ExpectError: regexp.MustCompile(`engine "elasticache" does not allow:.*password`),
+			},
+			{
+				// elasticache engine with only half of the AWS credential pair.
+				Config:      redisAccessCredentialElastiCacheAccessKeyIDOnly(),
+				ExpectError: regexp.MustCompile(`requires access_key_id and secret_access_key to both be set`),
+			},
+			{
+				// elasticache engine with only the write-only half of the pair.
+				Config:      redisAccessCredentialElastiCacheWOSecretOnly(),
+				ExpectError: regexp.MustCompile(`requires access_key_id and secret_access_key to both be set`),
 			},
 			{
 				// aiven engine, token (a required field) omitted.
@@ -454,6 +526,37 @@ resource "hush_redis_access_credential" "bad" {
   region         = "eu-north-1"
   user_group_id  = "my-user-group"
   password       = "should-not-be-here"
+}
+`
+}
+
+func redisAccessCredentialElastiCacheAccessKeyIDOnly() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "elasticache"
+  host           = "my-cluster.cache.amazonaws.com"
+  cache_engine   = "valkey"
+  region         = "eu-north-1"
+  user_group_id  = "my-user-group"
+  access_key_id  = "AKIAIOSFODNN7EXAMPLE"
+}
+`
+}
+
+func redisAccessCredentialElastiCacheWOSecretOnly() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name                         = "test-redis-bad"
+  deployment_ids               = ["` + mockDeploymentID + `"]
+  engine                       = "elasticache"
+  host                         = "my-cluster.cache.amazonaws.com"
+  cache_engine                 = "valkey"
+  region                       = "eu-north-1"
+  user_group_id                = "my-user-group"
+  secret_access_key_wo         = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  secret_access_key_wo_version = "1"
 }
 `
 }
