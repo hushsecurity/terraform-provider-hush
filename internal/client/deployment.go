@@ -18,35 +18,42 @@ type OidcConfig struct {
 }
 
 type Deployment struct {
-	ID           string      `json:"id,omitempty"`
-	Name         string      `json:"name"`
-	Description  string      `json:"description,omitempty"`
-	EnvType      string      `json:"env_type"`
-	Status       string      `json:"status,omitempty"`
-	Kind         string      `json:"kind,omitempty"`
-	OidcProvider *OidcConfig `json:"oidc_provider,omitempty"`
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	EnvType     string `json:"env_type"`
+	Status      string `json:"status,omitempty"`
+	Kind        string `json:"kind,omitempty"`
+	// The API holds one field or the other, never both, and refuses a change
+	// that would leave it holding the pair. Both are read: a deployment this
+	// provider has not written since the list was introduced still answers
+	// through the singular field.
+	OidcProvider  *OidcConfig  `json:"oidc_provider,omitempty"`
+	OidcProviders []OidcConfig `json:"oidc_providers,omitempty"`
 }
 
 // CreateDeploymentInput represents the input for creating a deployment
 type CreateDeploymentInput struct {
-	Name         string      `json:"name"`
-	Description  string      `json:"description,omitempty"`
-	EnvType      string      `json:"env_type"`
-	Kind         string      `json:"kind,omitempty"`
-	OidcProvider *OidcConfig `json:"oidc_provider,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	EnvType     string `json:"env_type"`
+	Kind        string `json:"kind,omitempty"`
+	// Only the list is ever written. The singular field is left out, which a
+	// create reads as absent, so the two are never sent together.
+	OidcProviders []OidcConfig `json:"oidc_providers,omitempty"`
 }
 
 // UpdateDeploymentInput represents the input for updating a deployment. Each
-// scalar is a pointer with omitempty so only changed fields are sent. The
-// oidc_provider field needs three states -- omitted (unchanged), set, and
-// explicit null (removed) -- which omitempty alone cannot express, so it uses
-// the oidcProviderUpdate wrapper.
+// scalar is a pointer with omitempty so only changed fields are sent. The OIDC
+// fields need three states -- omitted (unchanged), set, and explicit null
+// (removed) -- which omitempty alone cannot express, so each uses a wrapper.
 type UpdateDeploymentInput struct {
-	Name         *string             `json:"name,omitempty"`
-	Description  *string             `json:"description,omitempty"`
-	EnvType      *string             `json:"env_type,omitempty"`
-	Kind         *string             `json:"kind,omitempty"`
-	OidcProvider *oidcProviderUpdate `json:"oidc_provider,omitempty"`
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	EnvType       *string              `json:"env_type,omitempty"`
+	Kind          *string              `json:"kind,omitempty"`
+	OidcProvider  *oidcProviderUpdate  `json:"oidc_provider,omitempty"`
+	OidcProviders *oidcProvidersUpdate `json:"oidc_providers,omitempty"`
 }
 
 // oidcProviderUpdate marshals to null when Config is nil (removal) and to the
@@ -64,6 +71,23 @@ func (o oidcProviderUpdate) MarshalJSON() ([]byte, error) {
 // update request, forcing the oidc_provider field to be sent.
 func NewOidcProviderUpdate(config *OidcConfig) *oidcProviderUpdate {
 	return &oidcProviderUpdate{Config: config}
+}
+
+// oidcProvidersUpdate is the list counterpart of oidcProviderUpdate. The API
+// rejects an empty list, so removal is an explicit null rather than [].
+type oidcProvidersUpdate struct{ Configs []OidcConfig }
+
+func (o oidcProvidersUpdate) MarshalJSON() ([]byte, error) {
+	if len(o.Configs) == 0 {
+		return []byte("null"), nil
+	}
+	return json.Marshal(o.Configs)
+}
+
+// NewOidcProvidersUpdate wraps a list of OIDC configs (empty for removal) for
+// an update request, forcing the oidc_providers field to be sent.
+func NewOidcProvidersUpdate(configs []OidcConfig) *oidcProvidersUpdate {
+	return &oidcProvidersUpdate{Configs: configs}
 }
 
 // DeploymentCredentialsResponse embeds Deployment and adds credentials
