@@ -80,6 +80,20 @@ func validateEngineFields(d *schema.ResourceDiff) error {
 		return fmt.Errorf("engine %q does not allow: %s", engine, strings.Join(present, ", "))
 	}
 
+	if engine == engineElastiCache {
+		return validateElastiCacheAPICredentials(d)
+	}
+
+	return nil
+}
+
+// validateElastiCacheAPICredentials enforces the API's pair rule: access_key_id
+// and secret_access_key are both set or both omitted (omit both for WIF).
+func validateElastiCacheAPICredentials(d *schema.ResourceDiff) error {
+	if attrSet(d, "access_key_id") != attrSet(d, "secret_access_key") {
+		return fmt.Errorf("engine %q requires access_key_id and secret_access_key to both be set or both be omitted "+
+			"(omit both to use AWS workload identity federation)", engineElastiCache)
+	}
 	return nil
 }
 

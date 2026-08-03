@@ -36,7 +36,7 @@ const (
 	cacheEngineDesc        = "The AWS ElastiCache cache engine. Required and only valid when `engine` is `elasticache`. One of `redis`, `valkey`. Not valid when `engine` is `aiven` (Hush resolves the variant from the live service)."
 	regionDesc             = "The AWS region of the ElastiCache cluster. Required and only valid when `engine` is `elasticache`."
 	userGroupIDDesc        = "The ElastiCache user group ID to add provisioned users to. Required and only valid when `engine` is `elasticache`."
-	accessKeyIDDesc        = "The AWS access key ID used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `secret_access_key`. Omit both to use AWS workload identity federation (IRSA / instance profile / WIF)."
+	accessKeyIDDesc        = "The AWS access key ID used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `secret_access_key` (or `secret_access_key_wo`); omit both to use AWS workload identity federation (IRSA / instance profile / WIF)."
 	secretAccessKeyDesc    = "The AWS secret access key used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `access_key_id`. Omit both to use AWS workload identity federation."
 	secretAccessKeyWODesc  = "The AWS secret access key (write-only). This is a write-only attribute that is more secure than `secret_access_key` because Terraform will not store this value in the state file."
 	secretAccessKeyWOVDesc = "Used to trigger updates for `secret_access_key_wo`. This value should be changed when the secret content changes."
@@ -169,10 +169,9 @@ func ResourceSchema() map[string]*schema.Schema {
 		Optional:    true,
 	}
 	s["access_key_id"] = &schema.Schema{
-		Description:  accessKeyIDDesc,
-		Type:         schema.TypeString,
-		Optional:     true,
-		RequiredWith: []string{"secret_access_key"},
+		Description: accessKeyIDDesc,
+		Type:        schema.TypeString,
+		Optional:    true,
 	}
 	s["secret_access_key"] = &schema.Schema{
 		Description:   secretAccessKeyDesc,
@@ -180,7 +179,6 @@ func ResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		Sensitive:     true,
 		ConflictsWith: []string{"secret_access_key_wo"},
-		RequiredWith:  []string{"access_key_id"},
 	}
 	s["secret_access_key_wo"] = &schema.Schema{
 		Description:   secretAccessKeyWODesc,

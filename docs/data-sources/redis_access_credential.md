@@ -51,7 +51,7 @@ output "tls" {
 
 ### Read-Only
 
-- `access_key_id` (String) The AWS access key ID used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `secret_access_key`. Omit both to use AWS workload identity federation (IRSA / instance profile / WIF).
+- `access_key_id` (String) The AWS access key ID used to call the ElastiCache API. Only valid when `engine` is `elasticache`. Must be set together with `secret_access_key` (or `secret_access_key_wo`); omit both to use AWS workload identity federation (IRSA / instance profile / WIF).
 - `cache_engine` (String) The AWS ElastiCache cache engine. Required and only valid when `engine` is `elasticache`. One of `redis`, `valkey`. Not valid when `engine` is `aiven` (Hush resolves the variant from the live service).
 - `database` (Number) The Redis database number (0-15, default: 0). Only valid when `engine` is `redis` or `elasticache`.
 - `deployment_ids` (List of String) List of deployment IDs that can access this credential. Currently limited to a single deployment

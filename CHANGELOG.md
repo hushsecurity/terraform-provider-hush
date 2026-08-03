@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.21.0] - 2026-08-02
+
+### Fixed
+
+* **Redis access credentials**: `secret_access_key_wo` is now usable with the `elasticache` engine. Pairing it with `access_key_id` was rejected with ``"access_key_id": all of `access_key_id,secret_access_key` must be specified``, leaving the plain `secret_access_key` (which is stored in state) as the only option. Supplying it without `access_key_id` was not caught until the API rejected the apply. The pair is now validated at plan time and either the plain or the write-only secret satisfies it.
+
 ## [1.20.1] - 2026-07-21
 
 ### Fixed
@@ -384,6 +390,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.21.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.1...v1.21.0
 [1.20.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.0...v1.20.1
 [1.20.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.19.0...v1.20.0
 [1.19.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.18.0...v1.19.0
