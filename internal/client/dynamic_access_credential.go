@@ -687,8 +687,15 @@ type RedisAccessCredential struct {
 	AccessKeyID     string               `json:"access_key_id,omitempty"`
 	SecretAccessKey string               `json:"secret_access_key,omitempty"`
 	// Aiven-engine fields.
-	Project      string `json:"project,omitempty"`
-	ServiceName  string `json:"service_name,omitempty"`
+	Project     string `json:"project,omitempty"`
+	ServiceName string `json:"service_name,omitempty"`
+	// Azure Managed Redis engine fields.
+	TenantID       string `json:"tenant_id,omitempty"`
+	ClientID       string `json:"client_id,omitempty"`
+	SubscriptionID string `json:"subscription_id,omitempty"`
+	ResourceGroup  string `json:"resource_group,omitempty"`
+	ClusterName    string `json:"cluster_name,omitempty"`
+
 	Status       string `json:"status,omitempty"`
 	StatusDetail string `json:"status_detail,omitempty"`
 }
@@ -717,6 +724,14 @@ type CreateRedisAccessCredentialInput struct {
 	Project     string `json:"project,omitempty"`
 	ServiceName string `json:"service_name,omitempty"`
 	Token       string `json:"token,omitempty"`
+	// Azure Managed Redis engine fields. client_id/client_secret are optional:
+	// omitting both makes the access-manager use its default Azure credentials.
+	TenantID       string `json:"tenant_id,omitempty"`
+	ClientID       string `json:"client_id,omitempty"`
+	ClientSecret   string `json:"client_secret,omitempty"`
+	SubscriptionID string `json:"subscription_id,omitempty"`
+	ResourceGroup  string `json:"resource_group,omitempty"`
+	ClusterName    string `json:"cluster_name,omitempty"`
 }
 
 // UpdateRedisAccessCredentialInput omits engine: it is immutable and ignored by
@@ -741,6 +756,15 @@ type UpdateRedisAccessCredentialInput struct {
 	Project     *string `json:"project,omitempty"`
 	ServiceName *string `json:"service_name,omitempty"`
 	Token       *string `json:"token,omitempty"`
+	// Azure Managed Redis engine fields. The app credentials are nullable: the
+	// pair can be dropped to fall back to the access-manager's default Azure
+	// credentials, and the API rejects an empty string for either half.
+	TenantID       *string         `json:"tenant_id,omitempty"`
+	ClientID       *nullableString `json:"client_id,omitempty"`
+	ClientSecret   *nullableString `json:"client_secret,omitempty"`
+	SubscriptionID *string         `json:"subscription_id,omitempty"`
+	ResourceGroup  *string         `json:"resource_group,omitempty"`
+	ClusterName    *string         `json:"cluster_name,omitempty"`
 }
 
 func CreateRedisAccessCredential(ctx context.Context, c *Client, input *CreateRedisAccessCredentialInput) (*RedisAccessCredential, error) {

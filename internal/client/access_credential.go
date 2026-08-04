@@ -94,6 +94,24 @@ func NewSecretStoreIDUpdate(id string) *secretStoreIDUpdate {
 	return &secretStoreIDUpdate{ID: id}
 }
 
+// nullableString serves the same three-state need as secretStoreIDUpdate for
+// plain string fields that midgard constrains to a non-empty value: omitted
+// (unchanged), a value, or explicit null (unset).
+type nullableString struct{ Value string }
+
+func (n nullableString) MarshalJSON() ([]byte, error) {
+	if n.Value == "" {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.Value)
+}
+
+// NewNullableString wraps a string (empty to unset) for an update request,
+// forcing the field to be sent.
+func NewNullableString(v string) *nullableString {
+	return &nullableString{Value: v}
+}
+
 func CreatePlaintextAccessCredential(ctx context.Context, c *Client, input *CreatePlaintextAccessCredentialInput) (*AccessCredential, error) {
 	path := accessCredentialsEndpoint + "/plaintext"
 	var resp AccessCredential

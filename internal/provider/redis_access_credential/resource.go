@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/go-cty/cty"
@@ -42,6 +43,15 @@ func customizeDiff(ctx context.Context, d *schema.ResourceDiff, meta any) error 
 	return validateEngineFields(d)
 }
 
+// Field groups owned by a single engine, used to build the per-engine forbidden
+// lists below.
+var (
+	connectionFields  = []string{"host", "port", "username", "database", "tls", "tls_ca", "password"}
+	elastiCacheFields = []string{"cache_engine", "region", "user_group_id", "access_key_id", "secret_access_key"}
+	aivenFields       = []string{"project", "service_name", "token"}
+	azureFields       = []string{"tenant_id", "client_id", "client_secret", "subscription_id", "resource_group", "cluster_name"}
+)
+
 func validateEngineFields(d *schema.ResourceDiff) error {
 	engine := d.Get("engine").(string)
 
@@ -49,13 +59,16 @@ func validateEngineFields(d *schema.ResourceDiff) error {
 	switch engine {
 	case engineRedis:
 		required = []string{"host", "password"}
-		forbidden = []string{"cache_engine", "region", "user_group_id", "access_key_id", "secret_access_key", "project", "service_name", "token"}
+		forbidden = slices.Concat(elastiCacheFields, aivenFields, azureFields)
 	case engineElastiCache:
 		required = []string{"host", "cache_engine", "region", "user_group_id"}
-		forbidden = []string{"password", "project", "service_name", "token"}
+		forbidden = slices.Concat([]string{"password"}, aivenFields, azureFields)
 	case engineAiven:
 		required = []string{"project", "service_name", "token"}
-		forbidden = []string{"host", "port", "username", "database", "tls", "tls_ca", "password", "cache_engine", "region", "user_group_id", "access_key_id", "secret_access_key"}
+		forbidden = slices.Concat(connectionFields, elastiCacheFields, azureFields)
+	case engineAzureManagedRedis:
+		required = []string{"tenant_id", "subscription_id", "resource_group", "cluster_name"}
+		forbidden = slices.Concat(connectionFields, elastiCacheFields, aivenFields)
 	default:
 		return nil
 	}
@@ -80,8 +93,11 @@ func validateEngineFields(d *schema.ResourceDiff) error {
 		return fmt.Errorf("engine %q does not allow: %s", engine, strings.Join(present, ", "))
 	}
 
-	if engine == engineElastiCache {
+	switch engine {
+	case engineElastiCache:
 		return validateElastiCacheAPICredentials(d)
+	case engineAzureManagedRedis:
+		return validateAzureAppCredentials(d)
 	}
 
 	return nil
@@ -97,6 +113,46 @@ func validateElastiCacheAPICredentials(d *schema.ResourceDiff) error {
 	return nil
 }
 
+// validateAzureAppCredentials enforces the two rules the API applies to the
+// azure_managed_redis app credentials: client_id and client_secret come as a
+// pair (omit both to fall back to the access-manager's default Azure
+// credentials), and a stored secret is issued for one app in one tenant, so
+// re-pointing either half requires a fresh secret.
+func validateAzureAppCredentials(d *schema.ResourceDiff) error {
+	hasID := attrSet(d, "client_id")
+	hasSecret := attrSet(d, "client_secret")
+	if hasID != hasSecret {
+		return fmt.Errorf("engine %q requires client_id and client_secret to both be set or both be omitted "+
+			"(omit both to use the access-manager's default Azure credentials)", engineAzureManagedRedis)
+	}
+
+	if d.Id() == "" {
+		return nil
+	}
+	var rebound []string
+	for _, f := range []string{"client_id", "tenant_id"} {
+		if d.HasChange(f) {
+			rebound = append(rebound, f)
+		}
+	}
+	// A rotation is signalled by the plain secret changing or by the write-only
+	// secret's version being bumped; the write-only value itself is not in state.
+	secretResent := d.HasChange("client_secret") || d.HasChange("client_secret_wo_version")
+	if len(rebound) > 0 && !secretResent {
+		// With no stored client_id there is no secret to rotate: the API rejects
+		// the move either way, but adopting the pair is what unblocks it.
+		if stored, _ := d.GetChange("client_id"); stored.(string) == "" {
+			return fmt.Errorf("this credential uses the access-manager's default Azure credentials; changing %s "+
+				"requires setting client_id and client_secret together in the same change, or recreating the credential",
+				strings.Join(rebound, ", "))
+		}
+		return fmt.Errorf("changing %s requires a new client_secret (or client_secret_wo with a bumped client_secret_wo_version)",
+			strings.Join(rebound, ", "))
+	}
+
+	return nil
+}
+
 // attrSet reports whether attr is configured. Each secret may be supplied via
 // its plain attribute or its write-only counterpart, so either counts as set.
 func attrSet(d *schema.ResourceDiff, attr string) bool {
@@ -107,6 +163,8 @@ func attrSet(d *schema.ResourceDiff, attr string) bool {
 		return rawSet(d, "secret_access_key") || rawSet(d, "secret_access_key_wo")
 	case "token":
 		return rawSet(d, "token") || rawSet(d, "token_wo")
+	case "client_secret":
+		return rawSet(d, "client_secret") || rawSet(d, "client_secret_wo")
 	default:
 		return rawSet(d, attr)
 	}
@@ -159,6 +217,18 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.Project = d.Get("project").(string)
 		input.ServiceName = d.Get("service_name").(string)
 		input.Token = writeonly.GetString(d, "token", "token_wo")
+	case engineAzureManagedRedis:
+		// Hush resolves host/port from ARM and mints Entra ID service
+		// principals, so only the Azure locators and the optional app
+		// credentials are sent.
+		input.TenantID = d.Get("tenant_id").(string)
+		input.SubscriptionID = d.Get("subscription_id").(string)
+		input.ResourceGroup = d.Get("resource_group").(string)
+		input.ClusterName = d.Get("cluster_name").(string)
+		if v, ok := d.GetOk("client_id"); ok {
+			input.ClientID = v.(string)
+		}
+		input.ClientSecret = writeonly.GetString(d, "client_secret", "client_secret_wo")
 	default:
 		// redis and elasticache share the connection fields.
 		db := d.Get("database").(int)
@@ -230,15 +300,20 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"engine":          credential.Engine,
 		"project":         credential.Project,
 		"service_name":    credential.ServiceName,
+		"tenant_id":       credential.TenantID,
+		"client_id":       credential.ClientID,
+		"subscription_id": credential.SubscriptionID,
+		"resource_group":  credential.ResourceGroup,
+		"cluster_name":    credential.ClusterName,
 		"type":            string(credential.Type),
 		"kind":            credential.Kind,
 		"secret_store_id": credential.SecretStoreID,
 	}
 
-	// The redis/elasticache connection and AWS fields are unset for the aiven
-	// engine; skipping them keeps their schema defaults (e.g. port=6379) in
-	// state and avoids a perpetual diff.
-	if credential.Engine != engineAiven {
+	// The redis/elasticache connection and AWS fields are unset for the aiven and
+	// azure_managed_redis engines; skipping them keeps their schema defaults
+	// (e.g. port=6379) in state and avoids a perpetual diff.
+	if credential.Engine != engineAiven && credential.Engine != engineAzureManagedRedis {
 		fields["host"] = credential.Host
 		fields["port"] = credential.Port
 		fields["username"] = credential.Username
@@ -337,6 +412,28 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("token") || d.HasChange("token_wo") || d.HasChange("token_wo_version") {
 		token := writeonly.GetString(d, "token", "token_wo")
 		input.Token = &token
+	}
+	if d.HasChange("tenant_id") {
+		v := d.Get("tenant_id").(string)
+		input.TenantID = &v
+	}
+	if d.HasChange("client_id") {
+		input.ClientID = client.NewNullableString(d.Get("client_id").(string))
+	}
+	if d.HasChange("client_secret") || d.HasChange("client_secret_wo") || d.HasChange("client_secret_wo_version") {
+		input.ClientSecret = client.NewNullableString(writeonly.GetString(d, "client_secret", "client_secret_wo"))
+	}
+	if d.HasChange("subscription_id") {
+		v := d.Get("subscription_id").(string)
+		input.SubscriptionID = &v
+	}
+	if d.HasChange("resource_group") {
+		v := d.Get("resource_group").(string)
+		input.ResourceGroup = &v
+	}
+	if d.HasChange("cluster_name") {
+		v := d.Get("cluster_name").(string)
+		input.ClusterName = &v
 	}
 
 	_, err := client.UpdateRedisAccessCredential(ctx, c, id, input)
