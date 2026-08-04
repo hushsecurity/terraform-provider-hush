@@ -20,7 +20,7 @@ var (
 )
 
 var (
-	uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+	uuidRegex = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 	// ARM naming rules for the two Azure locators, mirroring midgard's
 	// AzureResourceGroup and AzureRedisClusterName.
 	resourceGroupRegex = regexp.MustCompile(`^[-\w.()]*[-\w()]$`)
@@ -54,12 +54,12 @@ const (
 	tokenDesc              = "The Aiven API token used to manage the service (required when `engine` is `aiven`)."
 	tokenWODesc            = "The Aiven API token (write-only). This is a write-only attribute that is more secure than `token` because Terraform will not store this value in the state file. Used when `engine` is `aiven`."
 	tokenWOVerDesc         = "Used to trigger updates for `token_wo`. This value should be changed when the token content changes. Can be any value (e.g., a timestamp, version number, or hash)."
-	tenantIDDesc           = "The Azure tenant ID (UUID) of the directory that owns the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
+	tenantIDDesc           = "The Azure tenant ID (lowercase UUID) of the directory that owns the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
 	clientIDDesc           = "The client ID of the Azure application Hush uses to manage the cluster's Entra ID users. Only valid when `engine` is `azure_managed_redis`. Must be set together with `client_secret` (or `client_secret_wo`); omit both to use the access-manager's default Azure credentials (managed identity / workload identity)."
 	clientSecretDesc       = "The client secret of the Azure application identified by `client_id`. Only valid when `engine` is `azure_managed_redis`. Must be set together with `client_id`."
 	clientSecretWODesc     = "The client secret of the Azure application identified by `client_id` (write-only). This is a write-only attribute that is more secure than `client_secret` because Terraform will not store this value in the state file."
 	clientSecretWOVDesc    = "Used to trigger updates for `client_secret_wo`. This value should be changed when the client secret content changes. Can be any value (e.g., a timestamp, version number, or hash)."
-	subscriptionIDDesc     = "The Azure subscription ID (UUID) that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
+	subscriptionIDDesc     = "The Azure subscription ID (lowercase UUID) that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
 	resourceGroupDesc      = "The Azure resource group that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
 	clusterNameDesc        = "The name of the Azure Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
 	typeDesc               = "The type of access credential"
@@ -252,7 +252,7 @@ func ResourceSchema() map[string]*schema.Schema {
 		Description:  tenantIDDesc,
 		Type:         schema.TypeString,
 		Optional:     true,
-		ValidateFunc: validation.StringMatch(uuidRegex, "tenant_id must be a valid UUID"),
+		ValidateFunc: validation.StringMatch(uuidRegex, "tenant_id must be a lowercase UUID"),
 	}
 	s["client_id"] = &schema.Schema{
 		Description:  clientIDDesc,
@@ -286,7 +286,7 @@ func ResourceSchema() map[string]*schema.Schema {
 		Description:  subscriptionIDDesc,
 		Type:         schema.TypeString,
 		Optional:     true,
-		ValidateFunc: validation.StringMatch(uuidRegex, "subscription_id must be a valid UUID"),
+		ValidateFunc: validation.StringMatch(uuidRegex, "subscription_id must be a lowercase UUID"),
 	}
 	s["resource_group"] = &schema.Schema{
 		Description: resourceGroupDesc,

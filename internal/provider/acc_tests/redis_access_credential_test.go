@@ -2,6 +2,7 @@ package acc_tests
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -713,6 +714,16 @@ func TestAccResourceRedisAccessCredentialEngineFieldValidation(t *testing.T) {
 				Config:      redisAccessCredentialAivenWithAzureField(),
 				ExpectError: regexp.MustCompile(`engine "aiven" does not allow:.*tenant_id`),
 			},
+			{
+				// The API stores these as UUIDs and returns them lowercased, so an
+				// uppercase value would never converge; reject it up front.
+				Config:      redisAccessCredentialAzureUppercaseTenantID(),
+				ExpectError: regexp.MustCompile(`tenant_id must be a lowercase UUID`),
+			},
+			{
+				Config:      redisAccessCredentialAzureUppercaseSubscriptionID(),
+				ExpectError: regexp.MustCompile(`subscription_id must be a lowercase UUID`),
+			},
 		},
 	})
 }
@@ -882,14 +893,16 @@ resource "hush_redis_access_credential" "bad" {
 `
 }
 
+// The hex letters are deliberate: the UUID class is lowercase-only, so a
+// digits-only fixture would pass even if the class were narrowed to [0-9].
 const (
-	redisAzureTenantID       = "11111111-1111-1111-1111-111111111111"
-	redisAzureOtherTenantID  = "33333333-3333-3333-3333-333333333333"
-	redisAzureSubscriptionID = "22222222-2222-2222-2222-222222222222"
-	redisAzureClientID       = "44444444-4444-4444-4444-444444444444"
-	redisAzureOtherClientID  = "55555555-5555-5555-5555-555555555555"
+	redisAzureTenantID       = "1111aaaa-1111-1111-1111-111111111111"
+	redisAzureOtherTenantID  = "3333cccc-3333-3333-3333-333333333333"
+	redisAzureSubscriptionID = "2222bbbb-2222-2222-2222-222222222222"
+	redisAzureClientID       = "4444dddd-4444-4444-4444-444444444444"
+	redisAzureOtherClientID  = "5555eeee-5555-5555-5555-555555555555"
 
-	redisAzureOtherSubscriptionID = "66666666-6666-6666-6666-666666666666"
+	redisAzureOtherSubscriptionID = "6666ffff-6666-6666-6666-666666666666"
 )
 
 func redisAccessCredentialAzureStep1() string {
@@ -1149,6 +1162,34 @@ resource "hush_redis_access_credential" "migrate" {
   cluster_name    = "my-redis-cluster"
   client_id       = "` + redisAzureClientID + `"
   client_secret   = "test-client-secret-v1"
+}
+`
+}
+
+func redisAccessCredentialAzureUppercaseTenantID() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name            = "test-redis-bad"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + strings.ToUpper(redisAzureTenantID) + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+}
+`
+}
+
+func redisAccessCredentialAzureUppercaseSubscriptionID() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name            = "test-redis-bad"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + strings.ToUpper(redisAzureSubscriptionID) + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
 }
 `
 }
