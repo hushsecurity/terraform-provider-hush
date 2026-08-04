@@ -225,9 +225,7 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.SubscriptionID = d.Get("subscription_id").(string)
 		input.ResourceGroup = d.Get("resource_group").(string)
 		input.ClusterName = d.Get("cluster_name").(string)
-		if v, ok := d.GetOk("client_id"); ok {
-			input.ClientID = v.(string)
-		}
+		input.ClientID = d.Get("client_id").(string)
 		input.ClientSecret = writeonly.GetString(d, "client_secret", "client_secret_wo")
 	default:
 		// redis and elasticache share the connection fields.
