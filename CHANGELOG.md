@@ -31,6 +31,7 @@ The engine requires an access-manager at v0.18.0 or later on the target deployme
 
 ### Fixed
 
+* **Redis access credentials**: importing a `hush_redis_access_credential` on the `aiven` engine and applying no longer fails with ``field(s) not valid for engine 'aiven': port``. The read skips the connection fields for that engine, so after `terraform import` they were absent from state and the next plan filled `port` from its schema default and sent it, which the API rejects. Pinning `port` in the configuration did not help either, since the engine forbids it at plan time. Updates now carry only the fields belonging to the credential's own engine.
 * **Redis access credentials**: `secret_access_key_wo` is now usable with the `elasticache` engine. Pairing it with `access_key_id` was rejected with ``"access_key_id": all of `access_key_id,secret_access_key` must be specified``, leaving the plain `secret_access_key` (which is stored in state) as the only option. Supplying it without `access_key_id` was not caught until the API rejected the apply. The pair is now validated at plan time and either the plain or the write-only secret satisfies it.
 
 ## [1.20.1] - 2026-07-21

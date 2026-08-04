@@ -353,87 +353,92 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		v := d.Get("secret_store_id").(string)
 		input.SecretStoreID = client.NewSecretStoreIDUpdate(v)
 	}
-	if d.HasChange("host") {
-		v := d.Get("host").(string)
-		input.Host = &v
-	}
-	if d.HasChange("port") {
-		v := d.Get("port").(int)
-		input.Port = &v
-	}
-	if d.HasChange("username") {
-		v := d.Get("username").(string)
-		input.Username = &v
-	}
-	if d.HasChange("database") {
-		v := d.Get("database").(int)
-		input.Database = &v
-	}
-	if d.HasChange("tls") {
-		v := d.Get("tls").(bool)
-		input.TLS = &v
-	}
-	if d.HasChange("tls_ca") {
-		v := d.Get("tls_ca").(string)
-		input.TLSCA = &v
-	}
-	if d.HasChange("password") || d.HasChange("password_wo") || d.HasChange("password_wo_version") {
-		password := writeonly.GetString(d, "password", "password_wo")
-		input.Password = &password
-	}
-	if d.HasChange("cache_engine") {
-		v := d.Get("cache_engine").(string)
-		input.CacheEngine = &v
-	}
-	if d.HasChange("region") {
-		v := d.Get("region").(string)
-		input.Region = &v
-	}
-	if d.HasChange("user_group_id") {
-		v := d.Get("user_group_id").(string)
-		input.UserGroupID = &v
-	}
-	if d.HasChange("access_key_id") {
-		v := d.Get("access_key_id").(string)
-		input.AccessKeyID = &v
-	}
-	if d.HasChange("secret_access_key") || d.HasChange("secret_access_key_wo") || d.HasChange("secret_access_key_wo_version") {
-		secret := writeonly.GetString(d, "secret_access_key", "secret_access_key_wo")
-		input.SecretAccessKey = &secret
-	}
-	if d.HasChange("project") {
-		v := d.Get("project").(string)
-		input.Project = &v
-	}
-	if d.HasChange("service_name") {
-		v := d.Get("service_name").(string)
-		input.ServiceName = &v
-	}
-	if d.HasChange("token") || d.HasChange("token_wo") || d.HasChange("token_wo_version") {
-		token := writeonly.GetString(d, "token", "token_wo")
-		input.Token = &token
-	}
-	if d.HasChange("tenant_id") {
-		v := d.Get("tenant_id").(string)
-		input.TenantID = &v
-	}
-	if d.HasChange("client_id") {
-		input.ClientID = client.NewNullableString(d.Get("client_id").(string))
-	}
-	if d.HasChange("client_secret") || d.HasChange("client_secret_wo") || d.HasChange("client_secret_wo_version") {
-		input.ClientSecret = client.NewNullableString(writeonly.GetString(d, "client_secret", "client_secret_wo"))
-	}
-	if d.HasChange("subscription_id") {
-		v := d.Get("subscription_id").(string)
-		input.SubscriptionID = &v
-	}
-	if d.HasChange("resource_group") {
-		v := d.Get("resource_group").(string)
-		input.ResourceGroup = &v
-	}
-	if d.HasChange("cluster_name") {
-		v := d.Get("cluster_name").(string)
-		input.ClusterName = &v
+	switch d.Get("engine").(string) {
+	case engineAiven:
+		if d.HasChange("project") {
+			v := d.Get("project").(string)
+			input.Project = &v
+		}
+		if d.HasChange("service_name") {
+			v := d.Get("service_name").(string)
+			input.ServiceName = &v
+		}
+		if d.HasChange("token") || d.HasChange("token_wo") || d.HasChange("token_wo_version") {
+			token := writeonly.GetString(d, "token", "token_wo")
+			input.Token = &token
+		}
+	case engineAzureManagedRedis:
+		if d.HasChange("tenant_id") {
+			v := d.Get("tenant_id").(string)
+			input.TenantID = &v
+		}
+		if d.HasChange("client_id") {
+			input.ClientID = client.NewNullableString(d.Get("client_id").(string))
+		}
+		if d.HasChange("client_secret") || d.HasChange("client_secret_wo") || d.HasChange("client_secret_wo_version") {
+			input.ClientSecret = client.NewNullableString(writeonly.GetString(d, "client_secret", "client_secret_wo"))
+		}
+		if d.HasChange("subscription_id") {
+			v := d.Get("subscription_id").(string)
+			input.SubscriptionID = &v
+		}
+		if d.HasChange("resource_group") {
+			v := d.Get("resource_group").(string)
+			input.ResourceGroup = &v
+		}
+		if d.HasChange("cluster_name") {
+			v := d.Get("cluster_name").(string)
+			input.ClusterName = &v
+		}
+	default:
+		if d.HasChange("host") {
+			v := d.Get("host").(string)
+			input.Host = &v
+		}
+		if d.HasChange("port") {
+			v := d.Get("port").(int)
+			input.Port = &v
+		}
+		if d.HasChange("username") {
+			v := d.Get("username").(string)
+			input.Username = &v
+		}
+		if d.HasChange("database") {
+			v := d.Get("database").(int)
+			input.Database = &v
+		}
+		if d.HasChange("tls") {
+			v := d.Get("tls").(bool)
+			input.TLS = &v
+		}
+		if d.HasChange("tls_ca") {
+			v := d.Get("tls_ca").(string)
+			input.TLSCA = &v
+		}
+		if d.HasChange("password") || d.HasChange("password_wo") || d.HasChange("password_wo_version") {
+			password := writeonly.GetString(d, "password", "password_wo")
+			input.Password = &password
+		}
+		if d.HasChange("cache_engine") {
+			v := d.Get("cache_engine").(string)
+			input.CacheEngine = &v
+		}
+		if d.HasChange("region") {
+			v := d.Get("region").(string)
+			input.Region = &v
+		}
+		if d.HasChange("user_group_id") {
+			v := d.Get("user_group_id").(string)
+			input.UserGroupID = &v
+		}
+		if d.HasChange("access_key_id") {
+			v := d.Get("access_key_id").(string)
+			input.AccessKeyID = &v
+		}
+		if d.HasChange("secret_access_key") || d.HasChange("secret_access_key_wo") || d.HasChange("secret_access_key_wo_version") {
+			secret := writeonly.GetString(d, "secret_access_key", "secret_access_key_wo")
+			input.SecretAccessKey = &secret
+		}
 	}
 
 	_, err := client.UpdateRedisAccessCredential(ctx, c, id, input)
