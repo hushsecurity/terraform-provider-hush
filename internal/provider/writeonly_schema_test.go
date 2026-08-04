@@ -12,7 +12,8 @@ import (
 // inversion shipped on hush_redis_access_credential's elasticache engine, where
 // access_key_id required secret_access_key and secret_access_key_wo was
 // therefore unusable. Pair such attributes in CustomizeDiff, which can accept
-// either variant.
+// either variant. ExactlyOneOf and AtLeastOneOf reach the same inversion when
+// they name the plain half alone, and ConflictsWith reaches its mirror image.
 func TestWriteOnlySecretPairing(t *testing.T) {
 	for name, res := range New("test")().ResourcesMap {
 		for attr, s := range res.Schema {
@@ -24,6 +25,24 @@ func TestWriteOnlySecretPairing(t *testing.T) {
 				if slices.Contains(os.RequiredWith, plain) {
 					t.Errorf("%s: %q lists %q in RequiredWith, so %q can never be used; "+
 						"enforce the pair in CustomizeDiff instead", name, other, plain, attr)
+				}
+				// Group constraints are satisfied by either half, so naming both
+				// is the correct idiom; naming only the plain one is not.
+				for _, c := range []struct {
+					kind string
+					list []string
+				}{{"ExactlyOneOf", os.ExactlyOneOf}, {"AtLeastOneOf", os.AtLeastOneOf}} {
+					if slices.Contains(c.list, plain) && !slices.Contains(c.list, attr) {
+						t.Errorf("%s: %q lists %q in %s without %q, so %q cannot satisfy it",
+							name, other, plain, c.kind, attr, attr)
+					}
+				}
+				// The mirror-image mistake: an exclusion that the write-only
+				// variant slips past.
+				if other != attr && other != plain &&
+					slices.Contains(os.ConflictsWith, plain) && !slices.Contains(os.ConflictsWith, attr) {
+					t.Errorf("%s: %q conflicts with %q but not %q, so the exclusion is "+
+						"bypassed by using the write-only variant", name, other, plain, attr)
 				}
 			}
 		}
