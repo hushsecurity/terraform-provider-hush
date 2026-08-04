@@ -119,6 +119,20 @@ func checkIDUnchanged(resourceName string, previous *string) resource.TestCheckF
 	}
 }
 
+// checkIDChanged asserts the resource was replaced, not updated in place.
+func checkIDChanged(resourceName string, previous *string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[resourceName]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", resourceName)
+		}
+		if rs.Primary.ID == *previous {
+			return fmt.Errorf("%s was updated in place: id is still %s, expected a replacement", resourceName, *previous)
+		}
+		return nil
+	}
+}
+
 func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.State) error {
 	return func(s *terraform.State) error {
 		c := provider.Meta().(*client.Client)

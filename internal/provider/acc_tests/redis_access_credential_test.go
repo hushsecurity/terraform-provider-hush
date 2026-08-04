@@ -548,6 +548,71 @@ func TestAccResourceRedisAccessCredentialAzureRebindNeedsSecret(t *testing.T) {
 	})
 }
 
+// engine is ForceNew, so changing it plans a replacement -- a create, which the
+// rebind rule must not fire on. The default-credential destination has no
+// secret to offer it.
+func TestAccResourceRedisAccessCredentialEngineChangeToAzure(t *testing.T) {
+	var redisID string
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialMigrateRedis(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.migrate", "engine", "redis",
+					),
+					recordID("hush_redis_access_credential.migrate", &redisID),
+				),
+			},
+			{
+				Config: redisAccessCredentialMigrateAzureDefaultCredentials(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.migrate", "engine", "azure_managed_redis",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.migrate", "tenant_id", redisAzureTenantID,
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.migrate", "client_id", "",
+					),
+					checkIDChanged("hush_redis_access_credential.migrate", &redisID),
+				),
+			},
+		},
+	})
+}
+
+// The same migration carrying app credentials, which satisfies the rebind rule
+// only because a first-time client_secret reads as a change.
+func TestAccResourceRedisAccessCredentialEngineChangeToAzureWithAppCredentials(t *testing.T) {
+	var redisID string
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialMigrateRedis(),
+				Check:  recordID("hush_redis_access_credential.migrate", &redisID),
+			},
+			{
+				Config: redisAccessCredentialMigrateAzureAppCredentials(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.migrate", "engine", "azure_managed_redis",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.migrate", "client_id", redisAzureClientID,
+					),
+					checkIDChanged("hush_redis_access_credential.migrate", &redisID),
+				),
+			},
+		},
+	})
+}
+
 // A credential on the default Azure credentials has no secret to rotate, so the
 // rebind rule must point at adopting the pair rather than at a fresh secret.
 func TestAccResourceRedisAccessCredentialAzureDefaultCredsRebind(t *testing.T) {
@@ -1042,6 +1107,48 @@ resource "hush_redis_access_credential" "bad" {
   resource_group  = "my-redis-rg"
   cluster_name    = "my-redis-cluster"
   host            = "should-not-be-here.example.com"
+}
+`
+}
+
+func redisAccessCredentialMigrateRedis() string {
+	return `
+resource "hush_redis_access_credential" "migrate" {
+  name           = "test-redis-migrate"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "redis"
+  host           = "test-redis.example.com"
+  password       = "testpassword123"
+}
+`
+}
+
+func redisAccessCredentialMigrateAzureDefaultCredentials() string {
+	return `
+resource "hush_redis_access_credential" "migrate" {
+  name            = "test-redis-migrate"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+}
+`
+}
+
+func redisAccessCredentialMigrateAzureAppCredentials() string {
+	return `
+resource "hush_redis_access_credential" "migrate" {
+  name            = "test-redis-migrate"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_id       = "` + redisAzureClientID + `"
+  client_secret   = "test-client-secret-v1"
 }
 `
 }

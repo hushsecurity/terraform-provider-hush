@@ -126,7 +126,7 @@ func validateAzureAppCredentials(d *schema.ResourceDiff) error {
 			"(omit both to use the access-manager's default Azure credentials)", engineAzureManagedRedis)
 	}
 
-	if d.Id() == "" {
+	if d.Id() == "" || d.HasChange("engine") {
 		return nil
 	}
 	var rebound []string
