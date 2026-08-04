@@ -68,8 +68,8 @@ output "tls" {
 - `resource_group` (String) The Azure resource group that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`.
 - `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `service_name` (String) The Aiven Valkey service name. Required when `engine` is `aiven`.
-- `subscription_id` (String) The Azure subscription ID (UUID) that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`.
-- `tenant_id` (String) The Azure tenant ID (UUID) of the directory that owns the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`.
+- `subscription_id` (String) The Azure subscription ID (lowercase UUID) that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`.
+- `tenant_id` (String) The Azure tenant ID (lowercase UUID) of the directory that owns the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`.
 - `tls` (Boolean) Whether to use TLS for the Redis connection. Only valid when `engine` is `redis` or `elasticache`.
 - `tls_ca` (String) The TLS CA certificate for the Redis connection. Only valid when `engine` is `redis` or `elasticache`.
 - `type` (String) The type of access credential
