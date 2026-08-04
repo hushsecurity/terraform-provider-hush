@@ -23,8 +23,9 @@ var (
 	uuidRegex = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
 	// ARM naming rules for the two Azure locators, mirroring midgard's
 	// AzureResourceGroup and AzureRedisClusterName.
-	resourceGroupRegex = regexp.MustCompile(`^[-\w.()]*[-\w()]$`)
-	clusterNameRegex   = regexp.MustCompile(`^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$`)
+	resourceGroupRegex = regexp.MustCompile(
+		`^[-\p{L}\p{Nl}\p{M}\p{Nd}\p{Pc}\x{200C}\x{200D}.()]*[-\p{L}\p{Nl}\p{M}\p{Nd}\p{Pc}\x{200C}\x{200D}()]$`)
+	clusterNameRegex = regexp.MustCompile(`^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$`)
 )
 
 const (
