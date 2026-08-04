@@ -2,11 +2,93 @@ package acc_tests
 
 import (
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
+
+const redisAzureImportID = "acr-mock-azure-import"
+
+// midgard's _NON_AZURE_FIELDS: a PATCH naming any of these against a stored
+// azure_managed_redis credential is rejected. The mock does not model engine
+// rules, so the rule is reproduced here.
+var redisNonAzureFields = []string{
+	"host", "port", "password", "username", "database", "tls", "tls_ca", "cache_engine",
+	"region", "user_group_id", "access_key_id", "secret_access_key",
+	"project", "service_name", "token",
+}
+
+// Seeded rather than created, so it exists in the backend but not in state --
+// the starting point for terraform import. Re-seeded per run, since the test's
+// destroy deletes it.
+func seedRedisAzureImport(ms *testutil.MockServer) {
+	ms.SeedObject("access_credentials", redisAzureImportID, map[string]any{
+		"id":              redisAzureImportID,
+		"name":            "test-redis-azure-import",
+		"description":     "pre-seeded azure managed redis credential",
+		"deployment_ids":  []any{mockDeploymentID},
+		"engine":          "azure_managed_redis",
+		"tenant_id":       redisAzureTenantID,
+		"subscription_id": redisAzureSubscriptionID,
+		"resource_group":  "my-redis-rg",
+		"cluster_name":    "my-redis-cluster",
+		"status":          "ok",
+	})
+}
+
+func init() {
+	registerMockSetup(func(ms *testutil.MockServer) {
+		seedRedisAzureImport(ms)
+		// The seeded credential carries none of these, so one appearing on the
+		// merged object means the update sent it.
+		ms.OnOperation("access_credentials/redis", testutil.OpUpdate, func(_ testutil.Operation, obj map[string]any) *testutil.HookError {
+			if obj["engine"] != "azure_managed_redis" {
+				return nil
+			}
+			for field := range obj {
+				if slices.Contains(redisNonAzureFields, field) {
+					return &testutil.HookError{
+						Status: 422,
+						Detail: "field(s) not valid for engine 'azure_managed_redis': " + field,
+					}
+				}
+			}
+			return nil
+		})
+	})
+}
+
+// resourceRead skips the connection fields for this engine, so an imported
+// credential has none of them in state and the next plan fills them from their
+// schema defaults. Sending those on the update is rejected by the API.
+func TestAccResourceRedisAccessCredentialAzureImport(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				PreConfig:          func() { seedRedisAzureImport(mockServer) },
+				Config:             redisAccessCredentialAzureImported(),
+				ResourceName:       "hush_redis_access_credential.imported",
+				ImportState:        true,
+				ImportStateId:      redisAzureImportID,
+				ImportStatePersist: true,
+			},
+			{
+				Config: redisAccessCredentialAzureImported(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.imported", "cluster_name", "my-redis-cluster",
+				),
+			},
+			{
+				Config:   redisAccessCredentialAzureImported(),
+				PlanOnly: true,
+			},
+		},
+	})
+}
 
 func TestAccResourceRedisAccessCredential(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
@@ -1120,6 +1202,21 @@ resource "hush_redis_access_credential" "bad" {
   resource_group  = "my-redis-rg"
   cluster_name    = "my-redis-cluster"
   host            = "should-not-be-here.example.com"
+}
+`
+}
+
+func redisAccessCredentialAzureImported() string {
+	return `
+resource "hush_redis_access_credential" "imported" {
+  name            = "test-redis-azure-import"
+  description     = "pre-seeded azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
 }
 `
 }
