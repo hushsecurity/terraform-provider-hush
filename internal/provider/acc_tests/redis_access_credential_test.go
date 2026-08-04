@@ -371,6 +371,201 @@ func TestAccResourceRedisAccessCredentialWOTokenRotation(t *testing.T) {
 	})
 }
 
+// Exercises the Azure Managed Redis engine branch: the ARM locators plus the
+// optional app credentials. No connection fields are sent; Hush resolves the
+// endpoint from ARM and mints Entra ID service principals.
+func TestAccResourceRedisAccessCredentialAzureManagedRedis(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialAzureStep1(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestMatchResourceAttr(
+						"hush_redis_access_credential.azure", "id", regexp.MustCompile(`^acr-.+$`),
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "engine", "azure_managed_redis",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "tenant_id", redisAzureTenantID,
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "subscription_id", redisAzureSubscriptionID,
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "resource_group", "my-redis-rg",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "cluster_name", "my-redis-cluster",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "client_id", redisAzureClientID,
+					),
+					// The azure engine must not carry a host (Hush resolves it).
+					resource.TestCheckNoResourceAttr(
+						"hush_redis_access_credential.azure", "host",
+					),
+				),
+			},
+			{
+				// Re-pointing the credential at another tenant, with the fresh
+				// client_secret that the rebind requires.
+				Config: redisAccessCredentialAzureStep2(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "description", "updated azure managed redis credential",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "tenant_id", redisAzureOtherTenantID,
+					),
+				),
+			},
+			{
+				// The remaining locators are exempt from the rebind rule: one app
+				// can drive several clusters, so moving them needs no new secret.
+				Config: redisAccessCredentialAzureStep3(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "subscription_id", redisAzureOtherSubscriptionID,
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "resource_group", "other-redis-rg",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "cluster_name", "other-redis-cluster",
+					),
+				),
+			},
+		},
+	})
+}
+
+// Federation: omitting both client_id and client_secret must be accepted (the
+// access-manager falls back to its default Azure credentials).
+func TestAccResourceRedisAccessCredentialAzureDefaultCredentials(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialAzureDefaultCredentials(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure_fed", "engine", "azure_managed_redis",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure_fed", "client_id", "",
+					),
+				),
+			},
+		},
+	})
+}
+
+// Dropping client_id and client_secret from a credential that had them must
+// unset both (sent as explicit nulls, which the API requires) and leave the
+// credential on the access-manager's default Azure credentials.
+func TestAccResourceRedisAccessCredentialAzureDropAppCredentials(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialAzureStep1(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.azure", "client_id", redisAzureClientID,
+				),
+			},
+			{
+				Config: redisAccessCredentialAzureNoAppCredentials(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.azure", "client_id", "",
+				),
+			},
+		},
+	})
+}
+
+// Write-only secret rotation for the Azure engine's client_secret. Bumping
+// client_secret_wo_version must trigger Update and converge with no perpetual
+// diff.
+func TestAccResourceRedisAccessCredentialWOClientSecretRotation(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialWOClientSecretStep1(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.azure", "client_secret_wo_version", "1",
+				),
+			},
+			{
+				Config: redisAccessCredentialWOClientSecretStep2(),
+				Check: resource.TestCheckResourceAttr(
+					"hush_redis_access_credential.azure", "client_secret_wo_version", "2",
+				),
+			},
+			{
+				// A bumped client_secret_wo_version is the write-only way to
+				// satisfy the rebind rule, since the secret itself is not in state.
+				Config: redisAccessCredentialWOClientSecretRebind(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "client_id", redisAzureOtherClientID,
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure", "client_secret_wo_version", "3",
+					),
+				),
+			},
+		},
+	})
+}
+
+// Negative test: the stored client_secret is issued for one app in one tenant,
+// so re-pointing client_id (or tenant_id) without a fresh secret must fail at
+// plan time rather than 400 mid-apply.
+func TestAccResourceRedisAccessCredentialAzureRebindNeedsSecret(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialAzureStep1(),
+			},
+			{
+				Config:      redisAccessCredentialAzureClientIDChanged(),
+				ExpectError: regexp.MustCompile(`changing client_id requires a new client_secret`),
+			},
+			{
+				Config:      redisAccessCredentialAzureTenantIDChanged(),
+				ExpectError: regexp.MustCompile(`changing tenant_id requires a new client_secret`),
+			},
+		},
+	})
+}
+
+// A credential on the default Azure credentials has no secret to rotate, so the
+// rebind rule must point at adopting the pair rather than at a fresh secret.
+func TestAccResourceRedisAccessCredentialAzureDefaultCredsRebind(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
+		Steps: []resource.TestStep{
+			{
+				Config: redisAccessCredentialAzureDefaultCredentials(),
+			},
+			{
+				Config:      redisAccessCredentialAzureDefaultCredentialsOtherTenant(),
+				ExpectError: regexp.MustCompile(`uses the access-manager's default Azure credentials; changing tenant_id`),
+			},
+		},
+	})
+}
+
 // Negative tests: every branch of validateEngineFields (CustomizeDiff), both the
 // missing-required and forbidden-field paths. Each fails at plan time, before
 // any request reaches the mock.
@@ -417,6 +612,41 @@ func TestAccResourceRedisAccessCredentialEngineFieldValidation(t *testing.T) {
 				// aiven engine with a connection field (host) set.
 				Config:      redisAccessCredentialAivenWithHost(),
 				ExpectError: regexp.MustCompile(`engine "aiven" does not allow:.*host`),
+			},
+			{
+				// azure_managed_redis engine, cluster_name (a required field) omitted.
+				Config:      redisAccessCredentialAzureMissingRequired(),
+				ExpectError: regexp.MustCompile(`engine "azure_managed_redis" requires:.*cluster_name`),
+			},
+			{
+				// azure_managed_redis engine with a connection field (host) set.
+				Config:      redisAccessCredentialAzureWithHost(),
+				ExpectError: regexp.MustCompile(`engine "azure_managed_redis" does not allow:.*host`),
+			},
+			{
+				// azure_managed_redis engine with only half of the app credential pair.
+				Config:      redisAccessCredentialAzureClientIDOnly(),
+				ExpectError: regexp.MustCompile(`requires client_id and client_secret to both be set`),
+			},
+			{
+				// azure_managed_redis engine with the other half of the pair.
+				Config:      redisAccessCredentialAzureClientSecretOnly(),
+				ExpectError: regexp.MustCompile(`requires client_id and client_secret to both be set`),
+			},
+			{
+				// redis engine with an azure-only field set.
+				Config:      redisAccessCredentialRedisWithAzureField(),
+				ExpectError: regexp.MustCompile(`engine "redis" does not allow:.*tenant_id`),
+			},
+			{
+				// elasticache engine with an azure-only field set.
+				Config:      redisAccessCredentialElastiCacheWithAzureField(),
+				ExpectError: regexp.MustCompile(`engine "elasticache" does not allow:.*cluster_name`),
+			},
+			{
+				// aiven engine with an azure-only field set.
+				Config:      redisAccessCredentialAivenWithAzureField(),
+				ExpectError: regexp.MustCompile(`engine "aiven" does not allow:.*tenant_id`),
 			},
 		},
 	})
@@ -583,6 +813,307 @@ resource "hush_redis_access_credential" "bad" {
   service_name   = "my-valkey-service"
   token          = "test-aiven-token"
   host           = "should-not-be-here.example.com"
+}
+`
+}
+
+const (
+	redisAzureTenantID       = "11111111-1111-1111-1111-111111111111"
+	redisAzureOtherTenantID  = "33333333-3333-3333-3333-333333333333"
+	redisAzureSubscriptionID = "22222222-2222-2222-2222-222222222222"
+	redisAzureClientID       = "44444444-4444-4444-4444-444444444444"
+	redisAzureOtherClientID  = "55555555-5555-5555-5555-555555555555"
+
+	redisAzureOtherSubscriptionID = "66666666-6666-6666-6666-666666666666"
+)
+
+func redisAccessCredentialAzureStep1() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name            = "test-redis-azure"
+  description     = "test azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_id       = "` + redisAzureClientID + `"
+  client_secret   = "test-client-secret-v1"
+}
+`
+}
+
+func redisAccessCredentialAzureStep2() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name            = "test-redis-azure"
+  description     = "updated azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureOtherTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_id       = "` + redisAzureClientID + `"
+  client_secret   = "test-client-secret-v2"
+}
+`
+}
+
+// Same app and tenant as step 2, moved to another subscription, resource group
+// and cluster, with the step 2 secret left in place.
+func redisAccessCredentialAzureStep3() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name            = "test-redis-azure"
+  description     = "updated azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureOtherTenantID + `"
+  subscription_id = "` + redisAzureOtherSubscriptionID + `"
+  resource_group  = "other-redis-rg"
+  cluster_name    = "other-redis-cluster"
+  client_id       = "` + redisAzureClientID + `"
+  client_secret   = "test-client-secret-v2"
+}
+`
+}
+
+// Same credential as step 1 with the app credentials removed.
+func redisAccessCredentialAzureNoAppCredentials() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name            = "test-redis-azure"
+  description     = "test azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+}
+`
+}
+
+func redisAccessCredentialAzureDefaultCredentials() string {
+	return `
+resource "hush_redis_access_credential" "azure_fed" {
+  name            = "test-redis-azure-fed"
+  description     = "test azure managed redis credential with default credentials"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+}
+`
+}
+
+// Same credential as redisAccessCredentialAzureDefaultCredentials, moved to
+// another tenant, still with no app credentials.
+func redisAccessCredentialAzureDefaultCredentialsOtherTenant() string {
+	return `
+resource "hush_redis_access_credential" "azure_fed" {
+  name            = "test-redis-azure-fed"
+  description     = "test azure managed redis credential with default credentials"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureOtherTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+}
+`
+}
+
+func redisAccessCredentialWOClientSecretStep1() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name                     = "test-redis-wo-client-secret"
+  deployment_ids           = ["` + mockDeploymentID + `"]
+  engine                   = "azure_managed_redis"
+  tenant_id                = "` + redisAzureTenantID + `"
+  subscription_id          = "` + redisAzureSubscriptionID + `"
+  resource_group           = "my-redis-rg"
+  cluster_name             = "my-redis-cluster"
+  client_id                = "` + redisAzureClientID + `"
+  client_secret_wo         = "client-secret-v1"
+  client_secret_wo_version = "1"
+}
+`
+}
+
+func redisAccessCredentialWOClientSecretStep2() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name                     = "test-redis-wo-client-secret"
+  deployment_ids           = ["` + mockDeploymentID + `"]
+  engine                   = "azure_managed_redis"
+  tenant_id                = "` + redisAzureTenantID + `"
+  subscription_id          = "` + redisAzureSubscriptionID + `"
+  resource_group           = "my-redis-rg"
+  cluster_name             = "my-redis-cluster"
+  client_id                = "` + redisAzureClientID + `"
+  client_secret_wo         = "client-secret-v2"
+  client_secret_wo_version = "2"
+}
+`
+}
+
+// Rebinding client_id, with the fresh secret supplied write-only.
+func redisAccessCredentialWOClientSecretRebind() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name                     = "test-redis-wo-client-secret"
+  deployment_ids           = ["` + mockDeploymentID + `"]
+  engine                   = "azure_managed_redis"
+  tenant_id                = "` + redisAzureTenantID + `"
+  subscription_id          = "` + redisAzureSubscriptionID + `"
+  resource_group           = "my-redis-rg"
+  cluster_name             = "my-redis-cluster"
+  client_id                = "` + redisAzureOtherClientID + `"
+  client_secret_wo         = "client-secret-v3"
+  client_secret_wo_version = "3"
+}
+`
+}
+
+// Same as step 1 but pointing at another app, with the original secret left in
+// place.
+func redisAccessCredentialAzureClientIDChanged() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name            = "test-redis-azure"
+  description     = "test azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_id       = "` + redisAzureOtherClientID + `"
+  client_secret   = "test-client-secret-v1"
+}
+`
+}
+
+// Same as step 1 but pointing at another tenant, with the original secret left
+// in place.
+func redisAccessCredentialAzureTenantIDChanged() string {
+	return `
+resource "hush_redis_access_credential" "azure" {
+  name            = "test-redis-azure"
+  description     = "test azure managed redis credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureOtherTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_id       = "` + redisAzureClientID + `"
+  client_secret   = "test-client-secret-v1"
+}
+`
+}
+
+func redisAccessCredentialAzureMissingRequired() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name            = "test-redis-bad"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+}
+`
+}
+
+func redisAccessCredentialAzureWithHost() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name            = "test-redis-bad"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  host            = "should-not-be-here.example.com"
+}
+`
+}
+
+func redisAccessCredentialAzureClientIDOnly() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name            = "test-redis-bad"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_id       = "` + redisAzureClientID + `"
+}
+`
+}
+
+func redisAccessCredentialAzureClientSecretOnly() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name            = "test-redis-bad"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  engine          = "azure_managed_redis"
+  tenant_id       = "` + redisAzureTenantID + `"
+  subscription_id = "` + redisAzureSubscriptionID + `"
+  resource_group  = "my-redis-rg"
+  cluster_name    = "my-redis-cluster"
+  client_secret   = "test-client-secret-v1"
+}
+`
+}
+
+func redisAccessCredentialRedisWithAzureField() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "redis"
+  host           = "redis.example.com"
+  password       = "testpassword123"
+  tenant_id      = "` + redisAzureTenantID + `"
+}
+`
+}
+
+func redisAccessCredentialElastiCacheWithAzureField() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "elasticache"
+  host           = "my-cluster.cache.amazonaws.com"
+  cache_engine   = "valkey"
+  region         = "eu-north-1"
+  user_group_id  = "my-user-group"
+  cluster_name   = "should-not-be-here"
+}
+`
+}
+
+func redisAccessCredentialAivenWithAzureField() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name           = "test-redis-bad"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  engine         = "aiven"
+  project        = "my-aiven-project"
+  service_name   = "my-valkey-service"
+  token          = "test-aiven-token"
+  tenant_id      = "` + redisAzureTenantID + `"
 }
 `
 }

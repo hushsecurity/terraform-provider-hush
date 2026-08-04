@@ -45,3 +45,22 @@ resource "hush_redis_access_credential" "aiven_example" {
   token_wo         = var.aiven_token
   token_wo_version = "1"
 }
+
+# Create an Azure Managed Redis dynamic access credential.
+# Provisions Entra ID service principals with access to the cluster. Hush
+# resolves the host/port from ARM, so no connection fields are set. Omit
+# client_id/client_secret to fall back to the access-manager's default Azure
+# credentials (managed identity / workload identity).
+resource "hush_redis_access_credential" "azure_managed_redis_example" {
+  name                     = "prod-azure-managed-redis"
+  description              = "Production Azure Managed Redis credential"
+  deployment_ids           = [hush_deployment.example.id]
+  engine                   = "azure_managed_redis"
+  tenant_id                = "00000000-0000-0000-0000-000000000000"
+  subscription_id          = "11111111-1111-1111-1111-111111111111"
+  resource_group           = "my-resource-group"
+  cluster_name             = "my-redis-cluster"
+  client_id                = "22222222-2222-2222-2222-222222222222"
+  client_secret_wo         = var.azure_client_secret
+  client_secret_wo_version = "1"
+}

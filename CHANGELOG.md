@@ -8,6 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [1.21.0] - 2026-08-02
 
+### Added
+
+* **Redis access credentials**: new `azure_managed_redis` engine for `hush_redis_access_credential`, alongside `redis`, `elasticache`, and `aiven`. Provisions per-credential Entra ID service principals for an Azure Managed Redis cluster via the Azure APIs. Set `engine = "azure_managed_redis"` with `tenant_id`, `subscription_id`, `resource_group`, and `cluster_name`. Hush resolves the host/port from ARM, so the connection fields (`host`, `port`, `username`, `password`, `database`, `tls`, `tls_ca`), the AWS/ElastiCache fields, and the Aiven fields must not be set. `client_id` with `client_secret` (or the write-only `client_secret_wo`/`client_secret_wo_version`) selects the Azure application Hush authenticates as; omit both to fall back to the access-manager's default Azure credentials (managed identity / workload identity). Re-pointing `client_id` or `tenant_id` requires a fresh secret, which is checked at plan time.
+
+```hcl
+resource "hush_redis_access_credential" "azure_managed_redis_example" {
+  name                     = "prod-azure-managed-redis"
+  deployment_ids           = ["dep-xxxxxxxxxxxxxxxx"]
+  engine                   = "azure_managed_redis"
+  tenant_id                = "00000000-0000-0000-0000-000000000000"
+  subscription_id          = "11111111-1111-1111-1111-111111111111"
+  resource_group           = "my-resource-group"
+  cluster_name             = "my-redis-cluster"
+  client_id                = "22222222-2222-2222-2222-222222222222"
+  client_secret_wo         = var.azure_client_secret
+  client_secret_wo_version = "1"
+}
+```
+
+The engine requires an access-manager at v0.18.0 or later on the target deployment, and Azure-side setup on the identity it authenticates as: the `Application.ReadWrite.OwnedBy` Microsoft Graph permission, five `Microsoft.Cache/redisEnterprise` ARM actions on the cluster, egress to the Entra/Graph/ARM endpoints, and a subscription that can serve the `2026-05-01-preview` API version. An unsatisfied requirement fails permanently and the credential must be recreated after fixing it. See the [resource documentation](docs/resources/redis_access_credential.md#azure-managed-redis-requirements) for the full list.
+
 ### Fixed
 
 * **Redis access credentials**: `secret_access_key_wo` is now usable with the `elasticache` engine. Pairing it with `access_key_id` was rejected with ``"access_key_id": all of `access_key_id,secret_access_key` must be specified``, leaving the plain `secret_access_key` (which is stored in state) as the only option. Supplying it without `access_key_id` was not caught until the API rejected the apply. The pair is now validated at plan time and either the plain or the write-only secret satisfies it.
