@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -20,7 +21,12 @@ const (
 	statusDesc        = "The aggregate status of the secret store across its deployments (pending, ready, warning, error)"
 	statusDetailDesc  = "Detail of the worst deployment status"
 
-	prefixDesc    = "Namespace prefix for secrets in the backend store (1-10 chars, lowercase, starting with a letter)"
+	prefixBaseDesc   = "Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. At most 80 characters, enforced by the API."
+	awsSMPrefixDesc  = prefixBaseDesc + " AWS Secrets Manager also allows _ . + = @ and \"/\" between segments."
+	awsSSMPrefixDesc = prefixBaseDesc + " AWS SSM Parameter Store also allows _ . and \"/\" between segments, may not start with \"aws\" or \"ssm\", and is limited to 9 \"/\"-separated segments."
+	gcpSMPrefixDesc  = prefixBaseDesc + " GCP Secret Manager also allows _."
+	k8sPrefixDesc    = prefixBaseDesc + " A Kubernetes Secret name also allows ., and no other punctuation."
+
 	regionDesc    = "The cloud region of the backend store"
 	kmsKeyIDDesc  = "The KMS key used to encrypt secrets (optional)"
 	projectIDDesc = "The GCP project that hosts the backend store"
@@ -32,12 +38,89 @@ const (
 	k8sDesc    = "Configuration for a Kubernetes Secrets backend. Immutable: changing it forces a new secret store."
 )
 
+// 15 Parameter Store hierarchy levels less the six a remote key appends.
+const awsSSMMaxSegments = 9
+
 var configBlockNames = []string{"aws_sm", "aws_ssm", "gcp_sm", "k8s_secrets"}
 
-var prefixValidation = validation.StringMatch(
-	regexp.MustCompile(`^[a-z][a-z0-9]{0,9}$`),
-	"prefix must be 1-10 characters, lowercase, and start with a letter",
+// Charset and shape only. The length maximum is one figure for every kind and
+// the API enforces it, so it is described in the attribute rather than checked
+// here. Each pattern allows runs of lowercase alphanumerics separated by single
+// punctuation, so a prefix never starts or ends with punctuation and never
+// repeats it.
+var (
+	awsSMPrefixValidation = prefixCharsetValidation("-_.+=@", "/", true,
+		"lowercase alphanumerics separated by - _ . + = @ or /")
+	awsSSMPrefixValidation = validation.All(
+		prefixCharsetValidation("-_.", "/", true,
+			"lowercase alphanumerics separated by - _ . or /"),
+		reservedPrefixValidation("aws", "ssm"),
+		segmentCountValidation("/", awsSSMMaxSegments),
+	)
+	gcpSMPrefixValidation = prefixCharsetValidation("_", "-", true,
+		"lowercase alphanumerics separated by - or _")
+	k8sPrefixValidation = prefixCharsetValidation(".", "-", false,
+		"lowercase alphanumerics separated by single - or .")
 )
+
+// The separator is kept single whatever mayRepeat says: it delimits the
+// segments the API counts, and a doubled one would leave an empty segment --
+// Parameter Store rejects that outright. Other punctuation may be adjacent
+// where the backend attaches no meaning to it. k8s_secrets is the
+// exception, and keeps everything single: a Secret name is a DNS subdomain,
+// where "." delimits labels and a label may not start or end with "-".
+func prefixCharsetValidation(
+	punctuation, separator string, mayRepeat bool, describe string,
+) func(any, string) ([]string, []error) {
+	group := regexp.QuoteMeta(punctuation + separator)
+	if mayRepeat {
+		group = "[" + regexp.QuoteMeta(punctuation) + "]+|" +
+			regexp.QuoteMeta(separator)
+	} else {
+		group = "[" + group + "]"
+	}
+	pattern := regexp.MustCompile(`^[a-z0-9]+((` + group + `)[a-z0-9]+)*$`)
+	return validation.StringMatch(pattern, "prefix must be "+describe)
+}
+
+// AWS SSM will not accept a name beginning with "aws" or "ssm", and the prefix
+// is a remote key's first path element, so such a store fails every write.
+func reservedPrefixValidation(
+	reserved ...string,
+) func(any, string) ([]string, []error) {
+	return func(i any, k string) ([]string, []error) {
+		v, ok := i.(string)
+		if !ok {
+			return nil, []error{fmt.Errorf("%s: expected a string", k)}
+		}
+		for _, r := range reserved {
+			if strings.HasPrefix(strings.ToLower(v), r) {
+				return nil, []error{fmt.Errorf(
+					"%s: prefix must not start with %q, which the backend reserves",
+					k, r)}
+			}
+		}
+		return nil, nil
+	}
+}
+
+// Unlike length, this is a restriction, so it belongs at plan time.
+func segmentCountValidation(
+	separator string, max int,
+) func(any, string) ([]string, []error) {
+	return func(i any, k string) ([]string, []error) {
+		v, ok := i.(string)
+		if !ok {
+			return nil, []error{fmt.Errorf("%s: expected a string", k)}
+		}
+		if n := len(strings.Split(v, separator)); n > max {
+			return nil, []error{fmt.Errorf(
+				"%s: prefix must have at most %d %q-separated segments, got %d",
+				k, max, separator, n)}
+		}
+		return nil, nil
+	}
+}
 
 func SecretStoreResourceSchema() map[string]*schema.Schema {
 	s := SecretStoreDataSourceSchema()
@@ -69,8 +152,10 @@ func SecretStoreResourceSchema() map[string]*schema.Schema {
 		},
 	}
 
-	s["aws_sm"] = resourceConfigBlock(awsSMDesc, awsConfigResource())
-	s["aws_ssm"] = resourceConfigBlock(awsSSMDesc, awsConfigResource())
+	s["aws_sm"] = resourceConfigBlock(awsSMDesc,
+		awsConfigResource(awsSMPrefixDesc, awsSMPrefixValidation))
+	s["aws_ssm"] = resourceConfigBlock(awsSSMDesc,
+		awsConfigResource(awsSSMPrefixDesc, awsSSMPrefixValidation))
 	s["gcp_sm"] = resourceConfigBlock(gcpSMDesc, gcpConfigResource())
 	s["k8s_secrets"] = resourceConfigBlock(k8sDesc, k8sConfigResource())
 
@@ -142,11 +227,14 @@ func dataSourceConfigBlock(description string, elem *schema.Resource) *schema.Sc
 	}
 }
 
-func awsConfigResource() *schema.Resource {
+func awsConfigResource(
+	prefixDescription string,
+	prefixValidation func(any, string) ([]string, []error),
+) *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"prefix": {
-				Description:  prefixDesc,
+				Description:  prefixDescription,
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
@@ -173,11 +261,11 @@ func gcpConfigResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"prefix": {
-				Description:  prefixDesc,
+				Description:  gcpSMPrefixDesc,
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: prefixValidation,
+				ValidateFunc: gcpSMPrefixValidation,
 			},
 			"project_id": {
 				Description:  projectIDDesc,
@@ -194,11 +282,11 @@ func k8sConfigResource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"prefix": {
-				Description:  prefixDesc,
+				Description:  k8sPrefixDesc,
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: prefixValidation,
+				ValidateFunc: k8sPrefixValidation,
 			},
 			"namespace": {
 				Description: namespaceDesc,
@@ -213,7 +301,7 @@ func k8sConfigResource() *schema.Resource {
 func awsConfigDataSource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"prefix":     {Description: prefixDesc, Type: schema.TypeString, Computed: true},
+			"prefix":     {Description: prefixBaseDesc, Type: schema.TypeString, Computed: true},
 			"region":     {Description: regionDesc, Type: schema.TypeString, Computed: true},
 			"kms_key_id": {Description: kmsKeyIDDesc, Type: schema.TypeString, Computed: true},
 		},
@@ -223,7 +311,7 @@ func awsConfigDataSource() *schema.Resource {
 func gcpConfigDataSource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"prefix":     {Description: prefixDesc, Type: schema.TypeString, Computed: true},
+			"prefix":     {Description: prefixBaseDesc, Type: schema.TypeString, Computed: true},
 			"project_id": {Description: projectIDDesc, Type: schema.TypeString, Computed: true},
 		},
 	}
@@ -232,7 +320,7 @@ func gcpConfigDataSource() *schema.Resource {
 func k8sConfigDataSource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
-			"prefix":    {Description: prefixDesc, Type: schema.TypeString, Computed: true},
+			"prefix":    {Description: prefixBaseDesc, Type: schema.TypeString, Computed: true},
 			"namespace": {Description: namespaceDesc, Type: schema.TypeString, Computed: true},
 		},
 	}

@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.23.0] - 2026-09-09
+
+### Changed
+
+* **Per-kind secret store prefixes**: `prefix` was validated as 1-10 lowercase alphanumerics starting with a letter, the same rule whichever backend the store used. It is now validated against the rules of the backend its block names, so a prefix can be much longer and can carry the punctuation that backend accepts.
+
+  | block | punctuation allowed besides `-` |
+  | ----- | ------------------------------- |
+  | `aws_sm` | `_` `.` `+` `=` `@` `/` |
+  | `aws_ssm` | `_` `.` `/` |
+  | `gcp_sm` | `_` |
+  | `k8s_secrets` | `.` |
+
+  Punctuation separates segments and may not lead or trail, so `acme/prod/secrets` is accepted while `/acme` and `acme/` are not, and the separator may not repeat, so `acme//prod` is refused. Other punctuation may sit next to itself -- `acme__prod` is accepted for every kind but `k8s_secrets`, whose name is a DNS subdomain and keeps punctuation single. A leading digit is now allowed -- the old rule required a letter, which no backend here imposes, `k8s_secrets` included: a Secret name is an RFC 1123 DNS subdomain, and those permit a leading digit, while the letter-first rule is the older RFC 1035 label syntax that Kubernetes applies to Service names. The maximum is 80 characters for every kind, and the provider does not check it: the API enforces it, and a copy here would refuse prefixes the API accepts were that figure ever raised.
+
+  **One previously valid value is now refused.** For `aws_ssm`, a prefix beginning `aws` or `ssm` (case-insensitively) fails at plan time, because Parameter Store reserves those and the prefix is the first path element of every parameter name. Such a store never worked -- every write to it failed -- so this turns a runtime failure into a plan error. `aws_ssm` prefixes are also capped at nine `/`-separated segments, which no existing configuration can hit, since `/` was not previously allowed at all.
+
+```hcl
+resource "hush_secret_store" "example" {
+  name = "acme-prod"
+
+  aws_ssm {
+    region = "eu-west-1"
+    prefix = "acme/prod/secrets"
+  }
+}
+```
+
 ## [1.22.2] - 2026-09-08
 
 ### Fixed
