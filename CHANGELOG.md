@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+* **Per-kind secret store prefixes**: `prefix` was validated as 1-10 lowercase alphanumerics starting with a letter, the same rule whichever backend the store used. It is now validated against the rules of the backend its block names, so a prefix can be much longer and can carry the punctuation that backend accepts.
+
+  | block | punctuation allowed besides `-` |
+  | ----- | ------------------------------- |
+  | `aws_sm` | `_` `.` `+` `=` `@` `/` |
+  | `aws_ssm` | `_` `.` `/` |
+  | `gcp_sm` | `_` |
+  | `k8s_secrets` | `.` |
+
+  Punctuation separates segments and may not lead or trail, so `acme/prod/secrets` is accepted while `/acme` and `acme/` are not, and the separator may not repeat, so `acme//prod` is refused. Other punctuation may sit next to itself -- `acme__prod` is accepted wherever the block's charset allows `_` -- except `.`, which may not repeat for any kind: `acme..prod` is an empty label in a DNS subdomain, and no backend here has a use for it. A leading digit is now allowed -- the old rule required a letter, which no backend here imposes, `k8s_secrets` included: a Secret name is an RFC 1123 DNS subdomain, and those permit a leading digit, while the letter-first rule is the older RFC 1035 label syntax that Kubernetes applies to Service names. The maximum is 80 characters for every kind, and the provider does not check it: the API enforces it, and a copy here would refuse prefixes the API accepts were that figure ever raised.
+
+  **An extended prefix needs hush-am 0.27.0 or newer.** Anything outside the old `^[a-z][a-z0-9]{0,9}$` rule -- a delimiter, an underscore, a dot, a leading digit, more than ten characters -- is refused by the API while any deployment attached to the store reports an older access manager: `Deployments report no access-manager version or one below the extended-prefix minimum 0.27.0`. The provider cannot check this, having no view of a deployment's version, so the refusal arrives at apply time after a clean plan. A store with no deployments attached is unaffected, and so is a prefix that still fits the old rule.
+
+  **One previously valid value is now refused.** For `aws_ssm`, a prefix beginning `aws` or `ssm` (case-insensitively) fails at plan time, because Parameter Store reserves those and the prefix is the first path element of every parameter name. Such a store never worked -- every write to it failed -- so this turns a runtime failure into a plan error. A store like that already in state can no longer be planned against: remove the resource block, or `terraform state rm` it -- editing the prefix is not a way out, since the edit has to pass the same validation. `aws_ssm` prefixes are also capped at nine `/`-separated segments, which no existing configuration can hit, since `/` was not previously allowed at all.
+
+```hcl
+resource "hush_secret_store" "example" {
+  name = "acme-prod"
+
+  aws_ssm {
+    region = "eu-west-1"
+    prefix = "acme/prod/secrets"
+  }
+}
+```
+
+---
+
 ## [1.24.0] - 2026-09-15
 
 ### Added
@@ -49,7 +81,6 @@ output "hosted_gateway_url" {
 ### Fixed
 
 * **Deployment kind**: editing `kind` on an existing `hush_deployment` is refused when you plan it, instead of failing the apply. The kind is fixed at creation and cannot be changed, so the edit could never be applied -- the apply failed, nothing in state moved, and the same failing plan came back on every run until the configuration was put back by hand. The field is not marked for replacement: destroying a deployment reissues its credentials and detaches any application bound to its gateway. Moving a deployment to another kind means removing the resource from the configuration, applying, and declaring it again -- note that `terraform apply -replace` does not work here, since a replacement keeps the prior state and the plan-time rule refuses it. A deployment that records no kind at all, created before the field was mandatory, is refused for the same reason: one cannot be set after the fact.
-
 ## [1.23.0] - 2026-09-11
 
 ### Added
@@ -528,6 +559,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.24.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.23.0...v1.24.0
 [1.22.2]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.1...v1.22.2
 [1.22.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.0...v1.22.1
 [1.22.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.21.0...v1.22.0
