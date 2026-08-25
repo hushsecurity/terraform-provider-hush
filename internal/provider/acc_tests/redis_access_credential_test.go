@@ -697,18 +697,29 @@ func TestAccResourceRedisAccessCredentialEngineChangeToAzureWithAppCredentials(t
 }
 
 // A credential on the default Azure credentials has no secret to rotate, so the
-// rebind rule must point at adopting the pair rather than at a fresh secret.
+// rebind rule must not apply: the tenant moves with tenant_id alone, and the
+// credential must stay on the default credentials rather than adopt a pair.
 func TestAccResourceRedisAccessCredentialAzureDefaultCredsRebind(t *testing.T) {
+	var redisID string
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: providerFactories,
 		CheckDestroy:      validateResourceDestroyed("redis_access_credential", "v1/access_credentials"),
 		Steps: []resource.TestStep{
 			{
 				Config: redisAccessCredentialAzureDefaultCredentials(),
+				Check:  recordID("hush_redis_access_credential.azure_fed", &redisID),
 			},
 			{
-				Config:      redisAccessCredentialAzureDefaultCredentialsOtherTenant(),
-				ExpectError: regexp.MustCompile(`uses the access-manager's default Azure credentials; changing tenant_id`),
+				Config: redisAccessCredentialAzureDefaultCredentialsOtherTenant(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure_fed", "tenant_id", redisAzureOtherTenantID,
+					),
+					resource.TestCheckResourceAttr(
+						"hush_redis_access_credential.azure_fed", "client_id", "",
+					),
+					checkIDUnchanged("hush_redis_access_credential.azure_fed", &redisID),
+				),
 			},
 		},
 	})

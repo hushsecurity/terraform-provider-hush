@@ -117,7 +117,8 @@ func validateElastiCacheAPICredentials(d *schema.ResourceDiff) error {
 // azure_managed_redis app credentials: client_id and client_secret come as a
 // pair (omit both to fall back to the access-manager's default Azure
 // credentials), and a stored secret is issued for one app in one tenant, so
-// re-pointing either half requires a fresh secret.
+// re-pointing either half requires a fresh secret. The second rule applies only
+// when a pair is stored: with none there is no secret to keep fresh.
 func validateAzureAppCredentials(d *schema.ResourceDiff) error {
 	hasID := attrSet(d, "client_id")
 	hasSecret := attrSet(d, "client_secret")
@@ -127,6 +128,10 @@ func validateAzureAppCredentials(d *schema.ResourceDiff) error {
 	}
 
 	if d.Id() == "" || d.HasChange("engine") {
+		return nil
+	}
+	// The pair check above still demands both halves when one is being adopted.
+	if stored, _ := d.GetChange("client_id"); stored.(string) == "" {
 		return nil
 	}
 	var rebound []string
@@ -139,13 +144,6 @@ func validateAzureAppCredentials(d *schema.ResourceDiff) error {
 	// secret's version being bumped; the write-only value itself is not in state.
 	secretResent := d.HasChange("client_secret") || d.HasChange("client_secret_wo_version")
 	if len(rebound) > 0 && !secretResent {
-		// With no stored client_id there is no secret to rotate: the API rejects
-		// the move either way, but adopting the pair is what unblocks it.
-		if stored, _ := d.GetChange("client_id"); stored.(string) == "" {
-			return fmt.Errorf("this credential uses the access-manager's default Azure credentials; changing %s "+
-				"requires setting client_id and client_secret together in the same change, or recreating the credential",
-				strings.Join(rebound, ", "))
-		}
 		return fmt.Errorf("changing %s requires a new client_secret (or client_secret_wo with a bumped client_secret_wo_version)",
 			strings.Join(rebound, ", "))
 	}
