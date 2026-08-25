@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.22.1] - 2026-08-30
+
+### Fixed
+
+* **Redis access credentials, `azure_managed_redis` on the default Azure credentials**: changing `tenant_id` no longer fails at plan time. The rebind rule -- a stored secret is issued for one app in one tenant, so re-pointing either half needs a fresh one -- was applied even to a credential that stores no `client_id`/`client_secret` pair and therefore has no secret to keep fresh. The plan error told you to adopt a pair or recreate the credential; the API accepts the move with `tenant_id` alone. Credentials that do store a pair are unchanged: re-pointing `client_id` or `tenant_id` still requires a new `client_secret` (or a bumped `client_secret_wo_version`).
+
 ## [1.22.0] - 2026-08-07
 
 ### Added
@@ -442,6 +448,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.22.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.0...v1.22.1
 [1.22.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.1...v1.21.0
 [1.20.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.0...v1.20.1
