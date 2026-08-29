@@ -793,6 +793,12 @@ func TestAccResourceRedisAccessCredentialEngineFieldValidation(t *testing.T) {
 				ExpectError: regexp.MustCompile(`requires client_id and client_secret to both be set`),
 			},
 			{
+				// Same half, supplied write-only: attrSet counts client_secret_wo,
+				// so the pair rule must fire on it too.
+				Config:      redisAccessCredentialAzureWOClientSecretOnly(),
+				ExpectError: regexp.MustCompile(`requires client_id and client_secret to both be set`),
+			},
+			{
 				// redis engine with an azure-only field set.
 				Config:      redisAccessCredentialRedisWithAzureField(),
 				ExpectError: regexp.MustCompile(`engine "redis" does not allow:.*tenant_id`),
@@ -1328,6 +1334,22 @@ resource "hush_redis_access_credential" "bad" {
   resource_group  = "my-redis-rg"
   cluster_name    = "my-redis-cluster"
   client_secret   = "test-client-secret-v1"
+}
+`
+}
+
+func redisAccessCredentialAzureWOClientSecretOnly() string {
+	return `
+resource "hush_redis_access_credential" "bad" {
+  name                     = "test-redis-bad"
+  deployment_ids           = ["` + mockDeploymentID + `"]
+  engine                   = "azure_managed_redis"
+  tenant_id                = "` + redisAzureTenantID + `"
+  subscription_id          = "` + redisAzureSubscriptionID + `"
+  resource_group           = "my-redis-rg"
+  cluster_name             = "my-redis-cluster"
+  client_secret_wo         = "test-client-secret-v1"
+  client_secret_wo_version = "1"
 }
 `
 }
