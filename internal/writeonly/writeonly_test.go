@@ -104,3 +104,40 @@ func TestGetString_NeitherSet_ReturnsEmpty(t *testing.T) {
 		t.Fatalf("got %q, want empty", got)
 	}
 }
+
+func TestGetNestedString_ReadsAWriteOnlyAttributeInsideBlocks(t *testing.T) {
+	raw := cty.ObjectVal(map[string]cty.Value{
+		"webhook_config": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+			"auth": cty.ListVal([]cty.Value{cty.ObjectVal(map[string]cty.Value{
+				"credential_wo": cty.StringVal("tok-123"),
+			})}),
+		})}),
+	})
+
+	got := GetNestedString(rawConfig{raw}, "webhook_config", 0, "auth", 0, "credential_wo")
+
+	if got != "tok-123" {
+		t.Errorf("got %q, want tok-123", got)
+	}
+}
+
+func TestGetNestedString_MissingStepsReturnEmpty(t *testing.T) {
+	raw := cty.ObjectVal(map[string]cty.Value{
+		"webhook_config": cty.ListValEmpty(cty.Object(map[string]cty.Type{"auth": cty.String})),
+	})
+
+	for _, path := range [][]any{
+		{"webhook_config", 0, "auth", 0, "credential_wo"}, // index past the end
+		{"missing_block", 0, "credential_wo"},             // attribute not in the type
+		{"webhook_config"},                                // not a string
+	} {
+		if got := GetNestedString(rawConfig{raw}, path...); got != "" {
+			t.Errorf("%v: got %q, want empty", path, got)
+		}
+	}
+}
+
+// rawConfig adapts a bare cty value to what GetNestedString reads.
+type rawConfig struct{ v cty.Value }
+
+func (r rawConfig) GetRawConfig() cty.Value { return r.v }

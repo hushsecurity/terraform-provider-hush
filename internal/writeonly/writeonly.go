@@ -59,3 +59,67 @@ func readRawString(g rawConfigGetter, attr string) string {
 	}
 	return v.AsString()
 }
+
+// IsSetNested reports whether a nested attribute is configured, treating a
+// present-but-unknown value -- a reference Terraform resolves at apply -- as
+// set. GetNestedString cannot answer this: it returns "" for unknown, which a
+// caller would otherwise read as absent and reject.
+func IsSetNested(g rawConfigGetter, path ...any) bool {
+	v, ok := walk(g.GetRawConfig(), path)
+	if !ok {
+		return false
+	}
+	if !v.IsKnown() {
+		return true
+	}
+	if v.IsNull() || v.Type() != cty.String {
+		return false
+	}
+	return v.AsString() != ""
+}
+
+// GetNestedString returns the value of a write-only attribute inside nested
+// list blocks. The path alternates block names and list indices, ending in the
+// attribute name -- GetNestedString(d, "webhook_config", 0, "auth", 0, "credential_wo")
+// reads the credential of the first webhook endpoint's auth block. Returns ""
+// if any step is missing, null or not yet known.
+func GetNestedString(g rawConfigGetter, path ...any) string {
+	v, ok := walk(g.GetRawConfig(), path)
+	if !ok || v.IsNull() || !v.IsKnown() || v.Type() != cty.String {
+		return ""
+	}
+	return v.AsString()
+}
+
+// walk follows a path of block names and list indices. It reports false when a
+// step cannot be taken; an unknown value ends the walk successfully, so the
+// caller can decide what unknown means.
+func walk(v cty.Value, path []any) (cty.Value, bool) {
+	for _, step := range path {
+		if v.IsNull() {
+			return cty.NilVal, false
+		}
+		if !v.IsKnown() {
+			return v, true
+		}
+		switch s := step.(type) {
+		case string:
+			t := v.Type()
+			if !t.IsObjectType() || !t.HasAttribute(s) {
+				return cty.NilVal, false
+			}
+			v = v.GetAttr(s)
+		case int:
+			if !v.Type().IsListType() && !v.Type().IsTupleType() {
+				return cty.NilVal, false
+			}
+			if v.LengthInt() <= s {
+				return cty.NilVal, false
+			}
+			v = v.Index(cty.NumberIntVal(int64(s)))
+		default:
+			return cty.NilVal, false
+		}
+	}
+	return v, true
+}

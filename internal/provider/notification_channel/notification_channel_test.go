@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -144,7 +143,7 @@ func TestAccResourceNotificationChannelWebhook_basic(t *testing.T) {
 		Steps: []resource.TestStep{
 			// Create step
 			{
-				Config: testAccNotificationChannelConfig_webhook("webhook-channel", "webhook channel description", "https://example.com/webhook", "POST", map[string]string{"Content-Type": "application/json"}),
+				Config: testAccNotificationChannelConfig_webhook("webhook-channel", "webhook channel description", "https://example.com/webhook", "POST"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNotificationChannelExists("hush_notification_channel.webhook"),
 					resource.TestMatchResourceAttr(
@@ -162,14 +161,11 @@ func TestAccResourceNotificationChannelWebhook_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_notification_channel.webhook", "webhook_config.0.method", "POST",
 					),
-					resource.TestCheckResourceAttr(
-						"hush_notification_channel.webhook", "webhook_config.0.headers.Content-Type", "application/json",
-					),
 				),
 			},
 			// Update step
 			{
-				Config: testAccNotificationChannelConfig_webhook("webhook-channel-updated", "updated webhook channel description", "https://api.example.com/notifications", "POST", map[string]string{"Content-Type": "application/json", "Authorization": "Bearer token"}),
+				Config: testAccNotificationChannelConfig_webhook("webhook-channel-updated", "updated webhook channel description", "https://api.example.com/notifications", "POST"),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckNotificationChannelExists("hush_notification_channel.webhook"),
 					resource.TestMatchResourceAttr(
@@ -183,9 +179,6 @@ func TestAccResourceNotificationChannelWebhook_basic(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"hush_notification_channel.webhook", "webhook_config.0.url", "https://api.example.com/notifications",
-					),
-					resource.TestCheckResourceAttr(
-						"hush_notification_channel.webhook", "webhook_config.0.headers.Authorization", "Bearer token",
 					),
 				),
 			},
@@ -344,13 +337,7 @@ resource "hush_notification_channel" "email" {
 }
 
 // testAccNotificationChannelConfig_webhook returns a webhook notification channel configuration
-func testAccNotificationChannelConfig_webhook(name, description, url, method string, headers map[string]string) string {
-	var headersLines []string
-	for key, value := range headers {
-		headersLines = append(headersLines, fmt.Sprintf("    %q = %q", key, value))
-	}
-	headersStr := strings.Join(headersLines, "\n")
-
+func testAccNotificationChannelConfig_webhook(name, description, url, method string) string {
 	return fmt.Sprintf(`
 resource "hush_notification_channel" "webhook" {
   name        = %[1]q
@@ -358,12 +345,9 @@ resource "hush_notification_channel" "webhook" {
   webhook_config {
     url    = %[3]q
     method = %[4]q
-    headers = {
-%[5]s
-    }
   }
 }
-`, name, description, url, method, headersStr)
+`, name, description, url, method)
 }
 
 // testAccNotificationChannelConfig_slack returns a slack notification channel configuration
