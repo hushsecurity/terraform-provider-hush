@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.22.2] - 2026-09-08
+
+### Fixed
+
+* **GCP integrations**: destroying a `hush_gcp_integration` works again. The provider deleted through a GCP-specific `DELETE /integrations/{id}/gcp` route that the API no longer serves, so `terraform destroy` (and any replacement of the resource) failed against a current backend. It now calls the common `DELETE /integrations/{id}` endpoint that every other integration resource already used.
+
 ## [1.22.1] - 2026-08-30
 
 ### Fixed
@@ -448,6 +454,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.22.2]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.1...v1.22.2
 [1.22.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.0...v1.22.1
 [1.22.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.21.0...v1.22.0
 [1.21.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.20.1...v1.21.0
