@@ -122,8 +122,7 @@ func UpdateGCPIntegration(ctx context.Context, c *Client, id string, input *Upda
 }
 
 func DeleteGCPIntegration(ctx context.Context, c *Client, id string) error {
-	// GCP uses type-specific delete endpoint
-	path := fmt.Sprintf("%s/%s/gcp", integrationsEndpoint, id)
+	path := fmt.Sprintf("%s/%s", integrationsEndpoint, id)
 	return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
 }
 
