@@ -73,6 +73,19 @@ Read-Only:
 
 Read-Only:
 
+- `auth` (List of Object) (see [below for nested schema](#nestedobjatt--webhook_config--auth))
 - `method` (String)
+- `onprem_deployment_id` (String)
+- `payload_format` (String)
+- `tls_verify` (Boolean)
 - `url` (String)
 - `verified` (Boolean)
+
+<a id="nestedobjatt--webhook_config--auth"></a>
+### Nested Schema for `webhook_config.auth`
+
+Read-Only:
+
+- `name` (String)
+- `type` (String)
+- `username` (String)

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
 const (
@@ -89,6 +90,75 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 						string(client.WebhookMethodPOST),
 						string(client.WebhookMethodGET),
 					}, false),
+				},
+				"onprem_deployment_id": {
+					Description: "Deliver through this on-prem deployment's access bridge instead of directly over the internet. Bridge-bound urls may use http or https on any port and may name an internal host; direct ones must be https on 443 with a public TLD.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+				"payload_format": {
+					Description: "text is the human-readable blob; json is a structured envelope for SIEM/SOAR consumers.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     string(client.WebhookPayloadFormatText),
+					ValidateFunc: validation.StringInSlice([]string{
+						string(client.WebhookPayloadFormatText),
+						string(client.WebhookPayloadFormatJSON),
+					}, false),
+				},
+				"tls_verify": {
+					Description: "Whether to validate the endpoint's TLS certificate. Only bridge-bound endpoints may turn this off, for an internal endpoint served from a private CA.",
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Default:     true,
+				},
+				"auth": {
+					Description: "Credential the endpoint requires. The API never returns it, so it is only ever sent.",
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    1,
+					Elem: &schema.Resource{
+						Schema: map[string]*schema.Schema{
+							"type": {
+								Description: "bearer sends `Authorization: Bearer <credential>`, basic sends `Authorization: Basic <base64(username:credential)>`, header sends `<name>: <credential>`.",
+								Type:        schema.TypeString,
+								Required:    true,
+								ValidateFunc: validation.StringInSlice([]string{
+									string(client.WebhookAuthTypeBearer),
+									string(client.WebhookAuthTypeBasic),
+									string(client.WebhookAuthTypeHeader),
+								}, false),
+							},
+							"username": {
+								Description: "Username, for type basic.",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+							"name": {
+								Description: "Header name, for type header. Framing and hop-by-hop headers are rejected.",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+							"credential": {
+								Description: "The secret itself -- the bearer token, the basic password, or the header value. Stored in Terraform state; prefer credential_wo.",
+								Type:        schema.TypeString,
+								Optional:    true,
+								Sensitive:   true,
+							},
+							"credential_wo": {
+								Description: "The secret itself, kept out of Terraform state. Changing it takes effect when credential_wo_version changes.",
+								Type:        schema.TypeString,
+								Optional:    true,
+								Sensitive:   true,
+								WriteOnly:   true,
+							},
+							"credential_wo_version": {
+								Description: "Bump to re-send credential_wo. Required with it: a write-only value is not in state, so without a version a rotated credential would never be sent.",
+								Type:        schema.TypeString,
+								Optional:    true,
+							},
+						},
+					},
 				},
 				"verified": {
 					Description: "Whether the webhook URL is verified",
@@ -194,6 +264,33 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 						Description: "HTTP method for webhook requests",
 						Type:        schema.TypeString,
 						Computed:    true,
+					},
+					"onprem_deployment_id": {
+						Description: "Deployment whose access bridge delivers this webhook",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"payload_format": {
+						Description: "text or json",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"tls_verify": {
+						Description: "Whether the endpoint's TLS certificate is validated",
+						Type:        schema.TypeBool,
+						Computed:    true,
+					},
+					"auth": {
+						Description: "Credential shape the endpoint is configured with. The credential itself is never returned.",
+						Type:        schema.TypeList,
+						Computed:    true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"type":     {Type: schema.TypeString, Computed: true},
+								"username": {Type: schema.TypeString, Computed: true},
+								"name":     {Type: schema.TypeString, Computed: true},
+							},
+						},
 					},
 					"verified": {
 						Description: "Whether the webhook URL is verified",
@@ -312,7 +409,65 @@ func setNotificationChannelFields(d *schema.ResourceData, channel *client.Notifi
 	return nil
 }
 
+type webhookCredential struct{ credential, version string }
+
+// nilIfEmpty distinguishes "not configured" from "not asked about": the api
+// reads an absent key as the latter.
+func nilIfEmpty(value any) any {
+	if s, ok := value.(string); ok && s == "" {
+		return nil
+	}
+	return value
+}
+
+func urlOf(config map[string]any) string {
+	url, _ := config["url"].(string)
+	return url
+}
+
+// valueOr keeps a field the api omitted at its schema default, rather than
+// letting d.Set store a zero that plans as drift.
+func valueOr[T any](value any, fallback T) any {
+	if value == nil {
+		return fallback
+	}
+	if s, ok := value.(string); ok && s == "" {
+		return fallback
+	}
+	return value
+}
+
+// The api never returns a credential, so a refresh keeps whatever the
+// configuration holds rather than blanking it and provoking a diff. Keyed by
+// url so a reordered response does not move one endpoint's credential onto
+// another.
+func existingWebhookCredentials(d *schema.ResourceData) map[string]webhookCredential {
+	out := map[string]webhookCredential{}
+	configs, ok := d.Get("webhook_config").([]any)
+	if !ok {
+		return out
+	}
+	for _, configInterface := range configs {
+		configMap, ok := configInterface.(map[string]any)
+		if !ok {
+			continue
+		}
+		blocks, _ := configMap["auth"].([]any)
+		if len(blocks) == 0 || blocks[0] == nil {
+			continue
+		}
+		authMap, _ := blocks[0].(map[string]any)
+		credential, _ := authMap["credential"].(string)
+		version, _ := authMap["credential_wo_version"].(string)
+		out[urlOf(configMap)] = webhookCredential{credential, version}
+	}
+	return out
+}
+
 func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.NotificationChannel) error {
+	// Captured before the clear below, since that is what holds them.
+	configuredCredentials := existingWebhookCredentials(d)
+
 	if err := d.Set("email_config", nil); err != nil {
 		return fmt.Errorf("failed to clear email_config: %w", err)
 	}
@@ -342,9 +497,35 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 			webhookConfigs := make([]map[string]any, len(channel.Config))
 			for i, config := range channel.Config {
 				webhookConfigs[i] = map[string]any{
-					"url":      config["url"],
-					"method":   config["method"],
-					"verified": config["verified"],
+					"url":                  config["url"],
+					"method":               config["method"],
+					"onprem_deployment_id": config["onprem_deployment_id"],
+					// Defaulted, or a channel stored before these existed plans
+					// a change on every run and never converges.
+					"payload_format": valueOr(config["payload_format"], string(client.WebhookPayloadFormatText)),
+					"tls_verify":     valueOr(config["tls_verify"], true),
+					"verified":       config["verified"],
+				}
+				if auth, ok := config["auth"].(map[string]any); ok {
+					authConfig := map[string]any{
+						"type":     auth["type"],
+						"username": auth["username"],
+						"name":     auth["name"],
+					}
+					// The credential is never returned, so the configured one
+					// is carried across rather than refreshed away. Keyed by
+					// url, since the api need not answer in the order it was
+					// sent. Absent keys are left out: the data source schema
+					// has no credential to set them on.
+					if credential, ok := configuredCredentials[urlOf(config)]; ok {
+						if credential.credential != "" {
+							authConfig["credential"] = credential.credential
+						}
+						if credential.version != "" {
+							authConfig["credential_wo_version"] = credential.version
+						}
+					}
+					webhookConfigs[i]["auth"] = []map[string]any{authConfig}
 				}
 			}
 			if err := d.Set("webhook_config", webhookConfigs); err != nil {
@@ -370,6 +551,100 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	return nil
 }
 
+// ValidateWebhookAuth rejects auth blocks the schema cannot check itself:
+// ConflictsWith and RequiredWith address top-level attributes only, and auth
+// lives inside a list block. Everything here reads raw config rather than
+// diff.Get, so a value Terraform resolves at apply counts as configured
+// instead of aborting the plan.
+func ValidateWebhookAuth(_ context.Context, diff *schema.ResourceDiff, _ any) error {
+	configs, ok := diff.Get("webhook_config").([]any)
+	if !ok {
+		return nil
+	}
+	for i, configInterface := range configs {
+		configMap, ok := configInterface.(map[string]any)
+		if !ok {
+			continue
+		}
+		blocks, _ := configMap["auth"].([]any)
+		if len(blocks) == 0 || blocks[0] == nil {
+			continue
+		}
+		authMap, _ := blocks[0].(map[string]any)
+		authPath := []any{"webhook_config", i, "auth", 0}
+		set := func(attr string) bool {
+			return writeonly.IsSetNested(diff, append(authPath, attr)...)
+		}
+
+		switch {
+		case set("credential") && set("credential_wo"):
+			return fmt.Errorf("webhook_config[%d].auth: credential and credential_wo are mutually exclusive", i)
+		case !set("credential") && !set("credential_wo"):
+			return fmt.Errorf("webhook_config[%d].auth: one of credential or credential_wo is required", i)
+		// Without a version there is nothing in state to change, so a rotated
+		// write-only credential would never be sent and never be noticed.
+		case set("credential_wo") && !set("credential_wo_version"):
+			return fmt.Errorf("webhook_config[%d].auth: credential_wo requires credential_wo_version", i)
+		}
+
+		// Checked here rather than only on send, so the plan fails instead of
+		// the apply.
+		authType, _ := authMap["type"].(string)
+		username, _ := authMap["username"].(string)
+		name, _ := authMap["name"].(string)
+		if client.WebhookAuthType(authType) == client.WebhookAuthTypeBasic && username == "" {
+			return fmt.Errorf("webhook_config[%d].auth: username is required for type basic", i)
+		}
+		if client.WebhookAuthType(authType) == client.WebhookAuthTypeHeader && name == "" {
+			return fmt.Errorf("webhook_config[%d].auth: name is required for type header", i)
+		}
+	}
+	return nil
+}
+
+// webhookAuth builds the auth object for one endpoint. The credential is read
+// from raw config when it is write-only, since those never reach state.
+func webhookAuth(d *schema.ResourceData, i int, configMap map[string]any) (map[string]any, error) {
+	blocks, _ := configMap["auth"].([]any)
+	if len(blocks) == 0 || blocks[0] == nil {
+		return nil, nil
+	}
+	authMap, _ := blocks[0].(map[string]any)
+	authType, _ := authMap["type"].(string)
+
+	credential, _ := authMap["credential"].(string)
+	if credential == "" {
+		credential = writeonly.GetNestedString(d, "webhook_config", i, "auth", 0, "credential_wo")
+	}
+	if credential == "" {
+		return nil, fmt.Errorf("webhook_config[%d].auth: one of credential or credential_wo is required", i)
+	}
+
+	auth := map[string]any{"type": authType}
+	switch client.WebhookAuthType(authType) {
+	case client.WebhookAuthTypeBearer:
+		auth["token"] = credential
+	case client.WebhookAuthTypeBasic:
+		username, _ := authMap["username"].(string)
+		if username == "" {
+			return nil, fmt.Errorf("webhook_config[%d].auth: username is required for type basic", i)
+		}
+		auth["username"] = username
+		auth["password"] = credential
+	case client.WebhookAuthTypeHeader:
+		name, _ := authMap["name"].(string)
+		if name == "" {
+			return nil, fmt.Errorf("webhook_config[%d].auth: name is required for type header", i)
+		}
+		auth["name"] = name
+		auth["value"] = credential
+	default:
+		// Or a new type would send a request that authenticates with nothing.
+		return nil, fmt.Errorf("webhook_config[%d].auth: unsupported type %q", i, authType)
+	}
+	return auth, nil
+}
+
 func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.NotificationChannelType, []map[string]any, error) {
 	if emailConfigs, ok := d.GetOk("email_config"); ok {
 		configList := emailConfigs.([]any)
@@ -392,10 +667,31 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 			for i, configInterface := range configList {
 				configMap := configInterface.(map[string]any)
 				result[i] = map[string]any{
-					"url": configMap["url"],
+					"url":        configMap["url"],
+					"tls_verify": configMap["tls_verify"],
 				}
 				if method, ok := configMap["method"]; ok && method != "" {
 					result[i]["method"] = method
+				}
+				if format, ok := configMap["payload_format"]; ok && format != "" {
+					result[i]["payload_format"] = format
+				}
+				// Always sent, null included: an absent key means "inherit
+				// what is stored" to the api, so omitting it would both lose
+				// the binding on a url change and make removal impossible.
+				result[i]["onprem_deployment_id"] = nilIfEmpty(configMap["onprem_deployment_id"])
+
+				auth, err := webhookAuth(d, i, configMap)
+				if err != nil {
+					return "", nil, err
+				}
+				// Same: an explicit null is what clears a stored credential.
+				// Assigned through a nil check, or a typed nil map would
+				// marshal as {} and be rejected for having no type.
+				if auth == nil {
+					result[i]["auth"] = nil
+				} else {
+					result[i]["auth"] = auth
 				}
 			}
 			return client.NotificationChannelTypeWebhook, result, nil

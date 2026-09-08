@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Webhook notification channels: the options herald already accepted.** `webhook_config` could only set `url` and `method`, so four API fields were unreachable from Terraform.
+  * `onprem_deployment_id` delivers the webhook through that deployment's access bridge instead of over the internet, which also relaxes the url rules -- http or https, any port, an internal hostname. The provider repeats the binding on every write, because the API inherits it by matching on the url and a changed url has nothing to inherit.
+  * `payload_format` chooses between the human-readable `text` blob and the `json` envelope a SIEM or SOAR can field-extract. Defaults to `text`, matching the API and the stored value, so existing configurations are unaffected.
+  * `tls_verify` opts out of certificate validation for an internal endpoint served from a private CA. The API only accepts it on a bridge-bound endpoint.
+  * Removing `onprem_deployment_id` or the whole `auth` block clears them, rather than leaving what is stored in place: an omitted field means "not asked about" to the API, so both are now sent explicitly.
+  * An `auth` block carries the credential the endpoint requires -- `bearer`, `basic` or a named `header`. Splunk HEC answers 401 without one. Use `credential_wo` with `credential_wo_version` to keep the secret out of Terraform state; `credential` is the in-state alternative. The API never returns a credential, so a refresh keeps what the configuration holds instead of showing a spurious diff.
+
 ## [1.22.2] - 2026-09-08
 
 ### Fixed

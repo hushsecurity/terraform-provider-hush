@@ -38,10 +38,37 @@ const (
 	WebhookMethodGET  WebhookMethod = "GET"
 )
 
+type WebhookPayloadFormat string
+
+const (
+	WebhookPayloadFormatText WebhookPayloadFormat = "text"
+	WebhookPayloadFormatJSON WebhookPayloadFormat = "json"
+)
+
+type WebhookAuthType string
+
+const (
+	WebhookAuthTypeBearer WebhookAuthType = "bearer"
+	WebhookAuthTypeBasic  WebhookAuthType = "basic"
+	WebhookAuthTypeHeader WebhookAuthType = "header"
+)
+
+// WebhookAuth is what the API returns: the credential itself is never echoed,
+// only the fields that say which shape it takes.
+type WebhookAuth struct {
+	Type     WebhookAuthType `json:"type"`
+	Username string          `json:"username,omitempty"` // basic only
+	Name     string          `json:"name,omitempty"`     // header only
+}
+
 type WebhookConfig struct {
-	URL      string        `json:"url"`
-	Method   WebhookMethod `json:"method"`
-	Verified bool          `json:"verified,omitempty"`
+	URL                string               `json:"url"`
+	Method             WebhookMethod        `json:"method"`
+	OnpremDeploymentID string               `json:"onprem_deployment_id,omitempty"`
+	PayloadFormat      WebhookPayloadFormat `json:"payload_format,omitempty"`
+	TLSVerify          bool                 `json:"tls_verify"`
+	Auth               *WebhookAuth         `json:"auth,omitempty"`
+	Verified           bool                 `json:"verified,omitempty"`
 }
 
 func (w WebhookConfig) GetType() NotificationChannelType {
