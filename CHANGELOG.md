@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Auth0 dynamic access credentials**: `hush_auth0_access_credential` and `hush_auth0_access_privilege`, with matching data sources. Hush rotates a Private Key JWT keypair in place on an Auth0 application you already own, delivering `domain`, that application's `client_id` and a fresh `private_key` to the workload. The client ID never changes, so relying parties, SAML service providers and enterprise connections that reference it keep working across a rotation.
+
+  The privilege names the application by its client ID and nothing else. Hush does not create the application and does not touch its client grants: its authorization stays yours to manage in Auth0.
+
+  Preconditions on the named application, each refused at apply time rather than silently: it must already be configured for Private Key JWT authentication, it must not be granted the Auth0 Management API, both of its two credential slots must be available to Hush, and it may back only one access policy. Auth0's two-credential limit counts the application's whole credential collection rather than a bucket per usage, and a rotating policy needs both slots -- one draining, one new -- so an application whose credentials are also used for JWT-Secured Authorization Requests or mTLS, one already holding two keys of your own, or one backing a second policy, cannot rotate.
+
+  Switching the application to Private Key JWT is your step, not Hush's, because it stops every consumer still authenticating with the client secret. It needs no keypair of your own: Auth0 accepts Private Key JWT with an empty credential list and Hush installs the first key. If the application does already carry one key of yours, the first apply takes that slot over and **deletes** it.
+
+  The root credential is an Auth0 M2M application authorized for the Management API with `read:clients`, `read:client_grants`, `create:client_credentials`, `read:client_credentials`, `update:client_credentials` and `delete:client_credentials`.
+
+  `domain` must be the tenant's canonical domain, ending in `.auth0.com`, and this is checked at plan time. The Management API audience is the identifier of a registered resource server, fixed at tenant creation as `https://{canonical}/api/v2/`, and it does not move when a custom domain is added; deriving it from a custom domain fails every apply. Set the optional `custom_domain` to route the Management API and token requests through a custom host, and to deliver that host to the workload, while the audience is still derived from `domain`.
+
+  The workload signs a client assertion rather than posting a secret, so it needs an Auth0 SDK or an OAuth client that supports `private_key_jwt`. A generic OAuth2 client or plain `curl` does not.
+
+  Rotation reaches the two-credential cap by design: the draining version and the new one hold both slots until the old version's workloads have restarted. If they never do, the old version never drains and the rotation window is skipped rather than failed. Skipping for long enough makes the `hush_access_policy` report `status = "warning"`, with a `status_detail` naming the cause and the number of windows. The credential keeps working throughout -- it is simply not rotating -- so this is a prompt to restart or redeploy the workload, not a failure to act on urgently.
+
 ## [1.22.1] - 2026-08-30
 
 ### Fixed

@@ -1,18 +1,32 @@
-# Grant a workload access to one or more of your Auth0-protected APIs.
+# Point Hush at the Auth0 application whose keypair it should rotate.
 #
-# `audience` is the API identifier as registered in Auth0, matched by exact
-# string equality. `scope` is optional: an API that does not use RBAC still
-# needs the grant to exist before its client can obtain a token.
+# `application_id` is that application's client ID. Hush rotates a Private Key
+# JWT credential on it in place, so the client ID your workloads, relying
+# parties and enterprise connections already reference never changes.
 #
-# The audience is not delivered to the workload, because a privilege may name
-# several APIs while a token request takes exactly one. The application passes
-# the audience it wants on each call.
+# Before the first apply, switch the application to Private Key JWT
+# authentication. That is your step, not Hush's: it stops every consumer still
+# authenticating with the client secret. You do not need to generate a key for
+# it -- Auth0 accepts Private Key JWT with an empty credential list, and Hush
+# installs the first one. The dashboard's Credentials tab performs the switch;
+# over the Management API it needs `token_endpoint_auth_method` set to null in
+# the same PATCH that sets `client_authentication_methods`.
+#
+# If the application already carries one key of your own, Hush takes that slot
+# over on the first apply and deletes the key.
+#
+# Three preconditions, each refused at apply time rather than silently: the
+# application must be on Private Key JWT, must not be granted the Auth0
+# Management API, and must have both of its two credential slots free for Hush.
+# That last one rules out an application whose credentials are also used for
+# JWT-Secured Authorization Requests (JAR) or mTLS, and an application already
+# holding two keys of your own. It may also back only one access policy, since
+# a rotating policy needs both slots.
+#
+# Hush does not create or modify the application's client grants. Its
+# authorization stays yours to manage in Auth0.
 resource "hush_auth0_access_privilege" "example" {
-  name        = "orders-read-write"
-  description = "Read and write orders"
-
-  grants {
-    audience = "https://api.acme.com"
-    scope    = ["read:orders", "write:orders"]
-  }
+  name           = "orders-service"
+  description    = "The orders service application"
+  application_id = "abc123XYZclientIdentifier"
 }

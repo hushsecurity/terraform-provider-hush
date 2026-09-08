@@ -15,7 +15,7 @@ Use this data source to retrieve information about an Auth0 access privilege in 
 ```terraform
 # Look up an existing Auth0 access privilege by ID
 data "hush_auth0_access_privilege" "example" {
-  id = "apl-1234567890"
+  id = "apr-1234567890"
 }
 ```
 
@@ -28,15 +28,7 @@ data "hush_auth0_access_privilege" "example" {
 
 ### Read-Only
 
+- `application_id` (String) The client ID of the Auth0 application whose keypair Hush rotates. The application must already be configured for Private Key JWT authentication, must not be granted the Auth0 Management API, and may back only one access policy
 - `description` (String) The description of the Auth0 access privilege
-- `grants` (List of Object) The APIs this credential may request tokens for, and the scopes it may request (see [below for nested schema](#nestedatt--grants))
 - `name` (String) The name of the Auth0 access privilege
 - `type` (String) The type of access privilege
-
-<a id="nestedatt--grants"></a>
-### Nested Schema for `grants`
-
-Read-Only:
-
-- `audience` (String)
-- `scope` (List of String)
