@@ -260,6 +260,10 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetKafkaAccessCredential(context.Background(), c, resourceId)
 			case "kafka_access_privilege":
 				_, err = client.GetKafkaAccessPrivilege(context.Background(), c, resourceId)
+			case "auth0_access_credential":
+				_, err = client.GetAuth0AccessCredential(context.Background(), c, resourceId)
+			case "auth0_access_privilege":
+				_, err = client.GetAuth0AccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}

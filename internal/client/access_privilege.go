@@ -1187,3 +1187,52 @@ func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
 	}
 	return nil
 }
+
+// Auth0
+
+type Auth0AccessPrivilege struct {
+	ID            string `json:"id,omitempty"`
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	Type          string `json:"type,omitempty"`
+	ApplicationID string `json:"application_id"`
+}
+
+type CreateAuth0AccessPrivilegeInput struct {
+	Name          string `json:"name"`
+	Description   string `json:"description,omitempty"`
+	ApplicationID string `json:"application_id"`
+}
+
+type UpdateAuth0AccessPrivilegeInput struct {
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	ApplicationID *string `json:"application_id,omitempty"`
+}
+
+func CreateAuth0AccessPrivilege(ctx context.Context, c *Client, input *CreateAuth0AccessPrivilegeInput) (*Auth0AccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/auth0"
+	var resp Auth0AccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAuth0AccessPrivilege(ctx context.Context, c *Client, id string) (*Auth0AccessPrivilege, error) {
+	path := fmt.Sprintf("%s/auth0/%s", accessPrivilegesEndpoint, id)
+	var resp Auth0AccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAuth0AccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateAuth0AccessPrivilegeInput) (*Auth0AccessPrivilege, error) {
+	path := fmt.Sprintf("%s/auth0/%s", accessPrivilegesEndpoint, id)
+	var resp Auth0AccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}

@@ -32,6 +32,7 @@ const (
 	AccessCredentialTypeDatadog       AccessCredentialType = "datadog"
 	AccessCredentialTypeSalesforce    AccessCredentialType = "salesforce"
 	AccessCredentialTypeTemporalCloud AccessCredentialType = "temporal_cloud"
+	AccessCredentialTypeAuth0         AccessCredentialType = "auth0"
 	AccessCredentialTypeKafka         AccessCredentialType = "kafka"
 )
 
@@ -2145,4 +2146,81 @@ func UpdateKafkaAccessCredential(ctx context.Context, c *Client, id string, inpu
 
 func (k KafkaAccessCredential) statusFields() (string, string) {
 	return k.Status, k.StatusDetail
+}
+
+// Auth0
+
+type Auth0AccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+	Domain        string               `json:"domain"`
+	CustomDomain  string               `json:"custom_domain,omitempty"`
+	ClientID      string               `json:"client_id"`
+}
+
+type CreateAuth0AccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
+	Domain        string   `json:"domain"`
+	CustomDomain  string   `json:"custom_domain,omitempty"`
+	ClientID      string   `json:"client_id"`
+	ClientSecret  string   `json:"client_secret"`
+}
+
+type UpdateAuth0AccessCredentialInput struct {
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	// nullableString, not *string: omitempty omits only nil, so clearing would
+	// send "" and midgard answers 422.
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Domain        *string              `json:"domain,omitempty"`
+	CustomDomain  *nullableString      `json:"custom_domain,omitempty"`
+	ClientID      *string              `json:"client_id,omitempty"`
+	ClientSecret  *string              `json:"client_secret,omitempty"`
+}
+
+func CreateAuth0AccessCredential(ctx context.Context, c *Client, input *CreateAuth0AccessCredentialInput) (*Auth0AccessCredential, error) {
+	path := accessCredentialsEndpoint + "/auth0"
+	var resp Auth0AccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetAuth0AccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetAuth0AccessCredential(ctx context.Context, c *Client, id string) (*Auth0AccessCredential, error) {
+	path := fmt.Sprintf("%s/auth0/%s", accessCredentialsEndpoint, id)
+	var resp Auth0AccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateAuth0AccessCredential(ctx context.Context, c *Client, id string, input *UpdateAuth0AccessCredentialInput) (*Auth0AccessCredential, error) {
+	path := fmt.Sprintf("%s/auth0/%s", accessCredentialsEndpoint, id)
+	var resp Auth0AccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetAuth0AccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (a Auth0AccessCredential) statusFields() (string, string) {
+	return a.Status, a.StatusDetail
 }

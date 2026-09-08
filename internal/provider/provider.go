@@ -14,6 +14,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/artifactory_integration"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/auth0_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/auth0_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_access_key_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_access_key_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/aws_integration"
@@ -131,6 +133,8 @@ func New(version string) func() *schema.Provider {
 				"hush_redis_access_privilege":           redis_access_privilege.Resource(),
 				"hush_snowflake_access_credential":      snowflake_access_credential.Resource(),
 				"hush_snowflake_access_privilege":       snowflake_access_privilege.Resource(),
+				"hush_auth0_access_credential":          auth0_access_credential.Resource(),
+				"hush_auth0_access_privilege":           auth0_access_privilege.Resource(),
 				"hush_temporal_cloud_access_credential": temporal_cloud_access_credential.Resource(),
 				"hush_temporal_cloud_access_privilege":  temporal_cloud_access_privilege.Resource(),
 				"hush_bedrock_access_credential":        bedrock_access_credential.Resource(),
@@ -197,6 +201,8 @@ func New(version string) func() *schema.Provider {
 				"hush_redis_access_privilege":           redis_access_privilege.DataSource(),
 				"hush_snowflake_access_credential":      snowflake_access_credential.DataSource(),
 				"hush_snowflake_access_privilege":       snowflake_access_privilege.DataSource(),
+				"hush_auth0_access_credential":          auth0_access_credential.DataSource(),
+				"hush_auth0_access_privilege":           auth0_access_privilege.DataSource(),
 				"hush_temporal_cloud_access_credential": temporal_cloud_access_credential.DataSource(),
 				"hush_temporal_cloud_access_privilege":  temporal_cloud_access_privilege.DataSource(),
 				"hush_bedrock_access_credential":        bedrock_access_credential.DataSource(),
