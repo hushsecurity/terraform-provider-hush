@@ -92,7 +92,7 @@ resource "hush_secret_store" "k8s" {
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store (1-10 chars, lowercase, starting with a letter)
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. At most 80 characters, enforced by the API. AWS Secrets Manager also allows _ . + = @ and "/" between segments.
 - `region` (String) The cloud region of the backend store
 
 Optional:
@@ -105,7 +105,7 @@ Optional:
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store (1-10 chars, lowercase, starting with a letter)
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. At most 80 characters, enforced by the API. AWS SSM Parameter Store also allows _ . and "/" between segments, may not start with "aws" or "ssm", and is limited to 9 "/"-separated segments.
 - `region` (String) The cloud region of the backend store
 
 Optional:
@@ -118,7 +118,7 @@ Optional:
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store (1-10 chars, lowercase, starting with a letter)
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. At most 80 characters, enforced by the API. GCP Secret Manager also allows _.
 - `project_id` (String) The GCP project that hosts the backend store
 
 
@@ -127,7 +127,7 @@ Required:
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store (1-10 chars, lowercase, starting with a letter)
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. At most 80 characters, enforced by the API. A Kubernetes Secret name also allows ., and no other punctuation.
 
 Optional:
 
