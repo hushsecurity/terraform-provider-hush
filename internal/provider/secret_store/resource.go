@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -141,7 +142,26 @@ func expandConfig(d *schema.ResourceData) (*client.SecretStoreConfig, error) {
 			Namespace: block["namespace"].(string),
 		}, nil
 	}
-	return nil, fmt.Errorf("one of the config blocks (aws_sm, aws_ssm, gcp_sm, k8s_secrets) must be set")
+	if v, ok := d.GetOk("hc_vault"); ok {
+		block := v.([]any)[0].(map[string]any)
+		// the auth block is Required with MaxItems 1, so exactly one is here
+		auth := block["auth"].([]any)[0].(map[string]any)
+		return &client.SecretStoreConfig{
+			Kind:           client.SecretStoreKindHCVault,
+			Prefix:         block["prefix"].(string),
+			Address:        block["address"].(string),
+			Mount:          block["mount"].(string),
+			VaultNamespace: block["vault_namespace"].(string),
+			CaCert:         block["ca_cert"].(string),
+			Auth: &client.SecretStoreVaultAuth{
+				Method: auth["method"].(string),
+				Mount:  auth["mount"].(string),
+				Role:   auth["role"].(string),
+			},
+		}, nil
+	}
+	return nil, fmt.Errorf("one of the config blocks (%s) must be set",
+		strings.Join(configBlockNames, ", "))
 }
 
 func expandStringList(items []any) []string {

@@ -8,6 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+// what a vault block needs beyond the prefix
+const vaultBody = `address = "https://vault.acme.internal:8200"
+    auth { role = "hush-am" }`
+
 // Each config block wires its own validator, so every block needs its own
 // case: a charset legal for one backend is illegal for another.
 func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
@@ -76,6 +80,69 @@ func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
 			body:      `namespace = "hush-am"`,
 			prefix:    "acme_prod",
 			expectErr: regexp.MustCompile(`prefix must be`),
+		},
+		{
+			name:   "hc_vault.slash.delimits",
+			block:  "hc_vault",
+			body:   vaultBody,
+			prefix: "acme/prod/secrets",
+		},
+		{
+			name:   "hc_vault.underscore.and.dot.allowed",
+			block:  "hc_vault",
+			body:   vaultBody,
+			prefix: "acme_prod.v1",
+		},
+		{
+			name:      "hc_vault.rejects.plus",
+			block:     "hc_vault",
+			body:      vaultBody,
+			prefix:    "acme+corp",
+			expectErr: regexp.MustCompile(`prefix must be`),
+		},
+		// nothing is reserved: the silo writes under <mount>/data/<prefix>/...
+		{
+			name:   "hc_vault.reserves.nothing",
+			block:  "hc_vault",
+			body:   vaultBody,
+			prefix: "metadata",
+		},
+		// the address rule the API applies, applied here so a customer hears
+		// it at plan time rather than on apply
+		{
+			name:      "hc_vault.rejects.plaintext.address",
+			block:     "hc_vault",
+			body:      "address = \"http://vault.acme.internal:8200\"\n    auth { role = \"hush-am\" }",
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`address must be an https URL`),
+		},
+		{
+			name:      "hc_vault.rejects.address.without.a.scheme",
+			block:     "hc_vault",
+			body:      "address = \"vault.acme.internal:8200\"\n    auth { role = \"hush-am\" }",
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`address must be an https URL`),
+		},
+		{
+			name:      "hc_vault.rejects.unknown.auth.method",
+			block:     "hc_vault",
+			body:      "address = \"https://vault.acme.internal:8200\"\n    auth {\n      method = \"token\"\n      role = \"hush-am\"\n    }",
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`expected hc_vault\.0\.auth\.0\.method to be one of`),
+		},
+		{
+			name:      "hc_vault.requires.a.role",
+			block:     "hc_vault",
+			body:      "address = \"https://vault.acme.internal:8200\"\n    auth {}",
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`The argument "role" is required`),
+		},
+		{
+			name:      "hc_vault.requires.the.auth.block",
+			block:     "hc_vault",
+			body:      `address = "https://vault.acme.internal:8200"`,
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`Insufficient auth blocks|"hc_vault\.0\.auth" is required`),
 		},
 		{
 			name:      "uppercase.rejected",
