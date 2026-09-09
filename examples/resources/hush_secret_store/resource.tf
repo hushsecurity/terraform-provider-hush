@@ -48,3 +48,30 @@ resource "hush_secret_store" "k8s" {
     namespace = "hush-secrets" # optional; defaults to the access-manager namespace
   }
 }
+
+# HashiCorp Vault, on its KV v2 secrets engine
+resource "hush_secret_store" "hc_vault" {
+  name           = "prod-vault"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+    mount   = "secret" # optional; the KV v2 mount, "secret" when omitted
+
+    # optional; only when the server's certificate does not chain to a
+    # publicly trusted root
+    # ca_cert = file("vault-ca.pem")
+
+    # optional; a Vault Enterprise namespace
+    # vault_namespace = "admin/acme"
+
+    auth {
+      # the access manager presents its pod's service-account token to this
+      # role, and the cluster's TokenReview api vouches for it
+      role = "hush-am"
+      # method = "kubernetes" # optional; the only method supported
+      # mount  = "kubernetes" # optional; where the auth method is mounted
+    }
+  }
+}

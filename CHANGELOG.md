@@ -8,6 +8,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+* **HashiCorp Vault secret stores**: `hush_secret_store` takes an `hc_vault` block, storing each credential as one secret on a Vault KV v2 mount, with the credential's fields as the secret's own fields.
+
+  The block needs the Vault `address` and an `auth` block naming the role. `mount` defaults to `secret`, `ca_cert` is needed only when the server's certificate does not chain to a publicly trusted root, and `vault_namespace` addresses a Vault Enterprise namespace. Prefix punctuation follows a KV v2 path: `_` `.` and `/` besides `-`, with `/` separating segments; nothing is reserved, since the access manager writes under `<mount>/data/<prefix>/`.
+
+  `address` must be `https`, refused at plan time. Every request to Vault carries the token in a header and a login posts the access manager's service-account token in a body, so plaintext would put a live credential on the wire.
+
+  `auth.method` accepts only `kubernetes`: the access manager presents its pod's service-account token to the role and the cluster's TokenReview api vouches for it, so no secret has to be delivered to the deployment. The Vault side needs the role bound to the access manager's service account, and a policy granting `create`, `update`, `read` on `<mount>/data/<prefix>/*` and `read`, `delete` on `<mount>/metadata/<prefix>/*` -- a policy missing the metadata grants leaves a store that reads and writes but can never delete.
+
+  **The deployments need an access manager that carries the driver.** The API refuses an `hc_vault` store aimed at a deployment below the minimum version, naming it, rather than letting the store sit in error with a config that cannot be edited.
+
+```hcl
+resource "hush_secret_store" "vault" {
+  name           = "prod-vault"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+    mount   = "secret"
+
+    auth {
+      role = "hush-am"
+    }
+  }
+}
+```
+
 ### Changed
 
 * **Per-kind secret store prefixes**: `prefix` was validated as 1-10 lowercase alphanumerics starting with a letter, the same rule whichever backend the store used. It is now validated against the rules of the backend its block names, so a prefix can be much longer and can carry the punctuation that backend accepts.
