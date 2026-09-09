@@ -15,7 +15,21 @@ const (
 	SecretStoreKindAWSSSM     = "aws_ssm"
 	SecretStoreKindGCPSM      = "gcp_sm"
 	SecretStoreKindK8sSecrets = "k8s_secrets"
+	SecretStoreKindHCVault    = "hc_vault"
 )
+
+// The only auth method the API offers. The access manager also accepts a token
+// from its own environment, but a config document has no way to deliver one.
+const SecretStoreVaultAuthKubernetes = "kubernetes"
+
+// SecretStoreVaultAuth is how the access manager authenticates to Vault: it
+// presents its pod's service-account token to Role, which the cluster's
+// TokenReview api vouches for.
+type SecretStoreVaultAuth struct {
+	Method string `json:"method"`
+	Mount  string `json:"mount,omitempty"`
+	Role   string `json:"role"`
+}
 
 // SecretStoreConfig is the backend's discriminated config union flattened into a
 // single struct. Only the fields relevant to Kind are populated; the omitempty
@@ -28,6 +42,13 @@ type SecretStoreConfig struct {
 	KmsKeyID  string `json:"kms_key_id,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
+	// hc_vault. Auth is a pointer so it stays out of another kind's request,
+	// which the backend's strict model would refuse.
+	Address        string                `json:"address,omitempty"`
+	Mount          string                `json:"mount,omitempty"`
+	VaultNamespace string                `json:"vault_namespace,omitempty"`
+	CaCert         string                `json:"ca_cert,omitempty"`
+	Auth           *SecretStoreVaultAuth `json:"auth,omitempty"`
 }
 
 type SecretStore struct {
