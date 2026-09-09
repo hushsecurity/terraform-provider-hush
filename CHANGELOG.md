@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
-## [Unreleased]
+## [1.22.3] - 2026-09-09
 
 ### Added
 
@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   * `tls_verify` opts out of certificate validation for an internal endpoint served from a private CA. The API only accepts it on a bridge-bound endpoint.
   * Removing `onprem_deployment_id` or the whole `auth` block clears them, rather than leaving what is stored in place: an omitted field means "not asked about" to the API, so both are now sent explicitly.
   * An `auth` block carries the credential the endpoint requires -- `bearer`, `basic` or a named `header`. Splunk HEC answers 401 without one. Use `credential_wo` with `credential_wo_version` to keep the secret out of Terraform state; `credential` is the in-state alternative. The API never returns a credential, so a refresh keeps what the configuration holds instead of showing a spurious diff.
+  * The `hush_notification_channel` data source exposes all four, with `auth` reduced to the shape of the credential -- `type`, and `username` or `name` -- since the credential itself is never returned.
 
 ## [1.22.2] - 2026-09-08
 
