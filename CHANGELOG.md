@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.23.0] - 2026-09-11
+
+### Added
+
+* **Splunk notification channels.** A `splunk_config` block sends notifications to a Splunk HTTP Event Collector as a first-class channel type, instead of hand-assembling a `webhook_config` whose obvious url HEC rejects.
+  * `url` is the HEC host. The API appends `/services/collector` and stores the bare collector; any spelling of the path (`/event`, `/raw`, a trailing slash) is accepted and never plans as a change.
+  * `token_wo` with `token_wo_version` keeps the HEC token out of Terraform state; `token` is the in-state alternative. The API never returns it, so a refresh keeps what the configuration holds.
+  * `index` chooses the index; unset means the token's default. `sourcetype` defaults to `hush:notification`. Both are sent explicitly, null included, so removing one clears it.
+  * `onprem_deployment_id` and `tls_verify` work as they do for a webhook: the bridge for a collector on a private network, and certificate validation that only a bridge-bound destination may turn off.
+  * The destination is proven against HEC when the token is saved, and refused with HEC's own reason. `verified` is always true; there is no verification to wait for.
+  * The `hush_notification_channel` data source exposes `splunk_config` without the token.
+
 ## [1.22.3] - 2026-09-09
 
 ### Added
