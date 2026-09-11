@@ -35,13 +35,13 @@ output "notification_channel" {
 # access bridge, carrying the credential the endpoint requires. credential_wo
 # is write-only: it never reaches Terraform state, and re-sending it is driven
 # by credential_wo_version.
-resource "hush_notification_channel" "splunk_hec" {
-  name        = "splunk-hec"
-  description = "Structured events into Splunk HEC"
+resource "hush_notification_channel" "soar" {
+  name        = "soar-intake"
+  description = "Structured events into the SOAR"
   enabled     = true
 
   webhook_config {
-    url                  = "https://splunk.internal:8088/services/collector"
+    url                  = "https://soar.internal:8443/api/events"
     onprem_deployment_id = "dep-abcdefghijk"
     payload_format       = "json"
     tls_verify           = false # internal endpoint on a private CA
@@ -49,9 +49,29 @@ resource "hush_notification_channel" "splunk_hec" {
     auth {
       type                  = "header"
       name                  = "Authorization"
-      credential_wo         = var.splunk_hec_token
+      credential_wo         = var.soar_token
       credential_wo_version = "1"
     }
+  }
+}
+
+# Splunk HTTP Event Collector. The host and a token are the whole destination:
+# the collector path, the Authorization scheme and the event envelope are the
+# API's. The token is proven against HEC when it is saved, so the channel needs
+# no verification. Most Splunk Enterprise collectors sit on a private network
+# on port 8088 and need the access bridge; Splunk Cloud is reached directly.
+resource "hush_notification_channel" "splunk" {
+  name        = "splunk-hec"
+  description = "Notifications into the security index"
+  enabled     = true
+
+  splunk_config {
+    url                  = "https://splunk.internal:8088"
+    onprem_deployment_id = "dep-abcdefghijk"
+    tls_verify           = false # HEC's self-signed certificate
+    index                = "security"
+    token_wo             = var.splunk_hec_token
+    token_wo_version     = "1"
   }
 }
 ```
@@ -71,6 +91,7 @@ resource "hush_notification_channel" "splunk_hec" {
 - `email_config` (Block List, Max: 100) Email notification configuration (see [below for nested schema](#nestedblock--email_config))
 - `enabled` (Boolean) Whether the notification channel is enabled
 - `slack_config` (Block List, Max: 100) Slack notification configuration. Multiple slack_config blocks can be specified to send notifications to multiple Slack channels. (see [below for nested schema](#nestedblock--slack_config))
+- `splunk_config` (Block List, Max: 100) Splunk HTTP Event Collector destination. The collector path, the Authorization scheme and the event envelope are fixed by the API; give it the HEC host and a token. The destination is proven against HEC when the token is saved, so it needs no verification. (see [below for nested schema](#nestedblock--splunk_config))
 - `webhook_config` (Block List, Max: 100) Webhook notification configuration. Multiple webhook_config blocks can be specified to send notifications to multiple webhook URLs. (see [below for nested schema](#nestedblock--webhook_config))
 
 ### Read-Only
@@ -101,6 +122,30 @@ Required:
 Read-Only:
 
 - `channel_id` (String) Slack channel ID
+
+
+<a id="nestedblock--splunk_config"></a>
+### Nested Schema for `splunk_config`
+
+Required:
+
+- `url` (String) The HEC host, e.g. `https://http-inputs-acme.splunkcloud.com` or `https://splunk.internal:8088`. The API appends `/services/collector`; any spelling of the collector path is accepted and read back as one. Direct urls must be https on 443; bridge-bound ones may use any port.
+
+Optional:
+
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
+- `index` (String) Splunk index to write to. Unset uses the token's default index.
+- `onprem_deployment_id` (String) Deliver through this on-prem deployment's access bridge instead of directly over the internet. Most Splunk Enterprise collectors need it.
+- `sourcetype` (String) Splunk sourcetype of the events.
+- `tls_verify` (Boolean) Whether to validate HEC's TLS certificate. Only bridge-bound destinations may turn this off, for the self-signed certificate HEC ships with.
+- `token` (String, Sensitive) The HEC token. Stored in Terraform state; prefer token_wo. The API never returns it.
+- `token_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The HEC token, kept out of Terraform state. Changing it takes effect when token_wo_version changes.
+- `token_wo_version` (String) Bump to re-send token_wo. Required with it: a write-only value is not in state, so without a version a rotated token would never be sent.
+
+Read-Only:
+
+- `verified` (Boolean) Always true: the token was accepted by HEC when it was saved.
 
 
 <a id="nestedblock--webhook_config"></a>
