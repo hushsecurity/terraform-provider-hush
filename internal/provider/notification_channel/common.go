@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -50,7 +52,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"webhook_config", "slack_config"},
+		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"address": {
@@ -73,7 +75,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "slack_config"},
+		ConflictsWith: []string{"email_config", "slack_config", "splunk_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -175,7 +177,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "webhook_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"integration_id": {
@@ -197,7 +199,97 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		},
 	}
 
+	s["splunk_config"] = &schema.Schema{
+		Description:   "Splunk HTTP Event Collector destination. The collector path, the Authorization scheme and the event envelope are fixed by the API; give it the HEC host and a token. The destination is proven against HEC when the token is saved, so it needs no verification.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		MinItems:      1,
+		MaxItems:      100,
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config"},
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"url": {
+					Description:      "The HEC host, e.g. `https://http-inputs-acme.splunkcloud.com` or `https://splunk.internal:8088`. The API appends `/services/collector`; any spelling of the collector path is accepted and read back as one. Direct urls must be https on 443; bridge-bound ones may use any port.",
+					Type:             schema.TypeString,
+					Required:         true,
+					DiffSuppressFunc: suppressCollectorPath,
+				},
+				"token": {
+					Description: "The HEC token. Stored in Terraform state; prefer token_wo. The API never returns it.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+				},
+				"token_wo": {
+					Description: "The HEC token, kept out of Terraform state. Changing it takes effect when token_wo_version changes.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					WriteOnly:   true,
+				},
+				"token_wo_version": {
+					Description: "Bump to re-send token_wo. Required with it: a write-only value is not in state, so without a version a rotated token would never be sent.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+				"index": {
+					Description: "Splunk index to write to. Unset uses the token's default index.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+				"sourcetype": {
+					Description: "Splunk sourcetype of the events.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     splunkDefaultSourcetype,
+				},
+				"onprem_deployment_id": {
+					Description: "Deliver through this on-prem deployment's access bridge instead of directly over the internet. Most Splunk Enterprise collectors need it.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+				"tls_verify": {
+					Description: "Whether to validate HEC's TLS certificate. Only bridge-bound destinations may turn this off, for the self-signed certificate HEC ships with.",
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Default:     true,
+				},
+				"verified": {
+					Description: "Always true: the token was accepted by HEC when it was saved.",
+					Type:        schema.TypeBool,
+					Computed:    true,
+				},
+			},
+		},
+	}
+
 	return s
+}
+
+const (
+	splunkCollectorPath     = "/services/collector"
+	splunkDefaultSourcetype = "hush:notification"
+)
+
+// splunkCollectorURL is the url the API stores for a given HEC host: the bare
+// collector, whatever spelling of it the configuration carried.
+func splunkCollectorURL(raw string) string {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	path := strings.TrimRight(parsed.Path, "/")
+	if i := strings.Index(path, splunkCollectorPath); i >= 0 {
+		path = path[:i]
+	}
+	parsed.Path = path + splunkCollectorPath
+	return parsed.String()
+}
+
+// The API answers with the collector path appended, so a configuration that
+// names the host alone would otherwise plan a change on every run.
+func suppressCollectorPath(_, old, new string, _ *schema.ResourceData) bool {
+	return splunkCollectorURL(old) == splunkCollectorURL(new)
 }
 
 func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
@@ -319,6 +411,45 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 					"channel_id": {
 						Description: "Slack channel ID",
 						Type:        schema.TypeString,
+						Computed:    true,
+					},
+				},
+			},
+		},
+		"splunk_config": {
+			Description: "Splunk HTTP Event Collector destination. The token is never returned.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"url": {
+						Description: "The collector url",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"index": {
+						Description: "Splunk index, empty for the token's default",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"sourcetype": {
+						Description: "Splunk sourcetype of the events",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"onprem_deployment_id": {
+						Description: "Deployment whose access bridge delivers to the collector",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"tls_verify": {
+						Description: "Whether HEC's TLS certificate is validated",
+						Type:        schema.TypeBool,
+						Computed:    true,
+					},
+					"verified": {
+						Description: "Always true: the token was accepted by HEC when it was saved",
+						Type:        schema.TypeBool,
 						Computed:    true,
 					},
 				},
@@ -464,9 +595,31 @@ func existingWebhookCredentials(d *schema.ResourceData) map[string]webhookCreden
 	return out
 }
 
+// existingSplunkTokens is the Splunk counterpart: keyed by the normalized
+// collector url, since the configuration may name the host alone while the
+// api answers with the path appended.
+func existingSplunkTokens(d *schema.ResourceData) map[string]webhookCredential {
+	out := map[string]webhookCredential{}
+	configs, ok := d.Get("splunk_config").([]any)
+	if !ok {
+		return out
+	}
+	for _, configInterface := range configs {
+		configMap, ok := configInterface.(map[string]any)
+		if !ok {
+			continue
+		}
+		token, _ := configMap["token"].(string)
+		version, _ := configMap["token_wo_version"].(string)
+		out[splunkCollectorURL(urlOf(configMap))] = webhookCredential{token, version}
+	}
+	return out
+}
+
 func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.NotificationChannel) error {
 	// Captured before the clear below, since that is what holds them.
 	configuredCredentials := existingWebhookCredentials(d)
+	configuredTokens := existingSplunkTokens(d)
 
 	if err := d.Set("email_config", nil); err != nil {
 		return fmt.Errorf("failed to clear email_config: %w", err)
@@ -476,6 +629,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	}
 	if err := d.Set("slack_config", nil); err != nil {
 		return fmt.Errorf("failed to clear slack_config: %w", err)
+	}
+	if err := d.Set("splunk_config", nil); err != nil {
+		return fmt.Errorf("failed to clear splunk_config: %w", err)
 	}
 
 	switch channel.Type {
@@ -546,8 +702,58 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 				return fmt.Errorf("failed to set slack_config: %w", err)
 			}
 		}
+	case client.NotificationChannelTypeSplunk:
+		if len(channel.Config) > 0 {
+			splunkConfigs := make([]map[string]any, len(channel.Config))
+			for i, config := range channel.Config {
+				splunkConfigs[i] = map[string]any{
+					"url":                  config["url"],
+					"index":                config["index"],
+					"sourcetype":           valueOr(config["sourcetype"], splunkDefaultSourcetype),
+					"onprem_deployment_id": config["onprem_deployment_id"],
+					"tls_verify":           valueOr(config["tls_verify"], true),
+					"verified":             config["verified"],
+				}
+				// Never returned, so carried across like a webhook credential.
+				// Absent keys are left out: the data source has none to set.
+				if token, ok := configuredTokens[splunkCollectorURL(urlOf(config))]; ok {
+					if token.credential != "" {
+						splunkConfigs[i]["token"] = token.credential
+					}
+					if token.version != "" {
+						splunkConfigs[i]["token_wo_version"] = token.version
+					}
+				}
+			}
+			if err := d.Set("splunk_config", splunkConfigs); err != nil {
+				return fmt.Errorf("failed to set splunk_config: %w", err)
+			}
+		}
 	}
 
+	return nil
+}
+
+// ValidateSplunkToken is the token's counterpart of ValidateWebhookAuth: the
+// pairing rules live inside a list block, out of the schema's reach.
+func ValidateSplunkToken(_ context.Context, diff *schema.ResourceDiff, _ any) error {
+	configs, ok := diff.Get("splunk_config").([]any)
+	if !ok {
+		return nil
+	}
+	for i := range configs {
+		set := func(attr string) bool {
+			return writeonly.IsSetNested(diff, "splunk_config", i, attr)
+		}
+		switch {
+		case set("token") && set("token_wo"):
+			return fmt.Errorf("splunk_config[%d]: token and token_wo are mutually exclusive", i)
+		case !set("token") && !set("token_wo"):
+			return fmt.Errorf("splunk_config[%d]: one of token or token_wo is required", i)
+		case set("token_wo") && !set("token_wo_version"):
+			return fmt.Errorf("splunk_config[%d]: token_wo requires token_wo_version", i)
+		}
+	}
 	return nil
 }
 
@@ -713,5 +919,36 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 		}
 	}
 
-	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, or slack_config must be specified")
+	if splunkConfigs, ok := d.GetOk("splunk_config"); ok {
+		configList := splunkConfigs.([]any)
+		if len(configList) > 0 {
+			result := make([]map[string]any, len(configList))
+			for i, configInterface := range configList {
+				configMap := configInterface.(map[string]any)
+				token, _ := configMap["token"].(string)
+				if token == "" {
+					token = writeonly.GetNestedString(d, "splunk_config", i, "token_wo")
+				}
+				if token == "" {
+					return "", nil, fmt.Errorf("splunk_config[%d]: one of token or token_wo is required", i)
+				}
+				result[i] = map[string]any{
+					// Named: a Splunk item that carries only fields a webhook
+					// also has would otherwise be read as one.
+					"type":       string(client.NotificationChannelTypeSplunk),
+					"url":        configMap["url"],
+					"token":      token,
+					"sourcetype": configMap["sourcetype"],
+					"tls_verify": configMap["tls_verify"],
+					// Always sent, null included: an absent key means "leave
+					// what is stored" to the api, so neither could be removed.
+					"index":                nilIfEmpty(configMap["index"]),
+					"onprem_deployment_id": nilIfEmpty(configMap["onprem_deployment_id"]),
+				}
+			}
+			return client.NotificationChannelTypeSplunk, result, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, or splunk_config must be specified")
 }

@@ -46,6 +46,7 @@ output "channel_by_name" {
 - `email_config` (List of Object) Email notification configuration (see [below for nested schema](#nestedatt--email_config))
 - `enabled` (Boolean) Whether the notification channel is enabled
 - `slack_config` (List of Object) Slack notification configuration (see [below for nested schema](#nestedatt--slack_config))
+- `splunk_config` (List of Object) Splunk HTTP Event Collector destination. The token is never returned. (see [below for nested schema](#nestedatt--splunk_config))
 - `type` (String) The type of notification channel
 - `webhook_config` (List of Object) Webhook notification configuration (see [below for nested schema](#nestedatt--webhook_config))
 
@@ -66,6 +67,19 @@ Read-Only:
 - `channel` (String)
 - `channel_id` (String)
 - `integration_id` (String)
+
+
+<a id="nestedatt--splunk_config"></a>
+### Nested Schema for `splunk_config`
+
+Read-Only:
+
+- `index` (String)
+- `onprem_deployment_id` (String)
+- `sourcetype` (String)
+- `tls_verify` (Boolean)
+- `url` (String)
+- `verified` (Boolean)
 
 
 <a id="nestedatt--webhook_config"></a>

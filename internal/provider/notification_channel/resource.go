@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 )
@@ -23,7 +24,7 @@ func Resource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema:        NotificationChannelResourceSchema(),
-		CustomizeDiff: ValidateWebhookAuth,
+		CustomizeDiff: customdiff.All(ValidateWebhookAuth, ValidateSplunkToken),
 	}
 }
 
@@ -76,7 +77,7 @@ func notificationChannelUpdate(ctx context.Context, d *schema.ResourceData, m an
 		input.Enabled = &enabled
 		hasChanges = true
 	}
-	if d.HasChanges("email_config", "webhook_config", "slack_config") {
+	if d.HasChanges("email_config", "webhook_config", "slack_config", "splunk_config") {
 		_, config, err := getNotificationChannelTypeAndConfig(d)
 		if err != nil {
 			return diag.FromErr(err)

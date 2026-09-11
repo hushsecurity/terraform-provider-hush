@@ -15,6 +15,7 @@ const (
 	NotificationChannelTypeEmail   NotificationChannelType = "email"
 	NotificationChannelTypeWebhook NotificationChannelType = "webhook"
 	NotificationChannelTypeSlack   NotificationChannelType = "slack"
+	NotificationChannelTypeSplunk  NotificationChannelType = "splunk"
 )
 
 type ConfigBase interface {
@@ -83,6 +84,21 @@ type SlackConfig struct {
 
 func (s SlackConfig) GetType() NotificationChannelType {
 	return NotificationChannelTypeSlack
+}
+
+// SplunkConfig is what the API returns for a Splunk HEC destination. The token
+// is never echoed; the url carries the collector path the API appended.
+type SplunkConfig struct {
+	URL                string `json:"url"`
+	Index              string `json:"index,omitempty"`
+	Sourcetype         string `json:"sourcetype"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	TLSVerify          bool   `json:"tls_verify"`
+	Verified           bool   `json:"verified,omitempty"`
+}
+
+func (s SplunkConfig) GetType() NotificationChannelType {
+	return NotificationChannelTypeSplunk
 }
 
 type NotificationChannel struct {

@@ -16,7 +16,10 @@ func init() {
 		ms.OnOperation("notification_channels", testutil.OpCreate, func(op testutil.Operation, obj map[string]any) *testutil.HookError {
 			if configs, ok := obj["config"].([]any); ok && len(configs) > 0 {
 				if first, ok := configs[0].(map[string]any); ok {
-					if _, has := first["address"]; has {
+					if named, has := first["type"]; has {
+						// A config item may name its type, as splunk does.
+						obj["type"] = named
+					} else if _, has := first["address"]; has {
 						obj["type"] = "email"
 					} else if _, has := first["url"]; has {
 						obj["type"] = "webhook"
