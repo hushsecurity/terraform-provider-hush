@@ -52,7 +52,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config"},
+		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config", "elastic_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"address": {
@@ -75,7 +75,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "slack_config", "splunk_config"},
+		ConflictsWith: []string{"email_config", "slack_config", "splunk_config", "elastic_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -177,7 +177,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config", "elastic_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"integration_id": {
@@ -205,7 +205,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"email_config", "webhook_config", "slack_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "elastic_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -263,13 +263,97 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		},
 	}
 
+	s["elastic_config"] = &schema.Schema{
+		Description:   "Elasticsearch destination. The API posts each notification to `<cluster>/<index>/_bulk` with an `ApiKey` authorization and a document carrying `@timestamp`; give it the cluster, an index and an api key. The destination is proven against the cluster when the key is saved, so it needs no verification.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		MinItems:      1,
+		MaxItems:      100,
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config"},
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"url": {
+					Description:      "The cluster, e.g. `https://my-deployment.es.eu-west-1.aws.found.io` or `https://elastic.internal:9200`. The API builds the bulk path from it and the index; a pasted `/<index>/_bulk` url is accepted and read back as the cluster. Direct urls must be https on 443; bridge-bound ones may use any port.",
+					Type:             schema.TypeString,
+					Required:         true,
+					DiffSuppressFunc: suppressClusterPath,
+				},
+				"api_key": {
+					Description: "The Elasticsearch api key. Stored in Terraform state; prefer api_key_wo. The API never returns it.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+				},
+				"api_key_wo": {
+					Description: "The Elasticsearch api key, kept out of Terraform state. Changing it takes effect when api_key_wo_version changes.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					WriteOnly:   true,
+				},
+				"api_key_wo_version": {
+					Description: "Bump to re-send api_key_wo. Required with it: a write-only value is not in state, so without a version a rotated key would never be sent.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+				"index": {
+					Description: "Index or data stream the events are written to. An api key is usually scoped to one; changing the index is checked against the cluster with the stored key.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     elasticDefaultIndex,
+				},
+				"onprem_deployment_id": {
+					Description: "Deliver through this on-prem deployment's access bridge instead of directly over the internet, for a self-hosted cluster on a private network.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+				"tls_verify": {
+					Description: "Whether to validate the cluster's TLS certificate. Only bridge-bound destinations may turn this off.",
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Default:     true,
+				},
+				"verified": {
+					Description: "Always true: the cluster accepted the api key when it was saved.",
+					Type:        schema.TypeBool,
+					Computed:    true,
+				},
+			},
+		},
+	}
+
 	return s
 }
 
 const (
 	splunkCollectorPath     = "/services/collector"
 	splunkDefaultSourcetype = "hush:notification"
+	elasticBulkPath         = "/_bulk"
+	elasticDefaultIndex     = "hush-notifications"
 )
+
+// elasticClusterURL is the url the API stores for a cluster: the bare cluster,
+// even when the configuration pasted an ingest url from Elastic's own docs.
+func elasticClusterURL(raw string) string {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return raw
+	}
+	path := strings.TrimRight(parsed.Path, "/")
+	if strings.HasSuffix(path, elasticBulkPath) {
+		// <cluster>/<index>/_bulk: drop the index and the op, keep any prefix
+		path = strings.TrimRight(strings.TrimSuffix(path, elasticBulkPath), "/")
+		if i := strings.LastIndex(path, "/"); i >= 0 {
+			path = path[:i]
+		}
+	}
+	parsed.Path = path
+	return parsed.String()
+}
+
+func suppressClusterPath(_, old, new string, _ *schema.ResourceData) bool {
+	return elasticClusterURL(old) == elasticClusterURL(new)
+}
 
 // splunkCollectorURL is the url the API stores for a given HEC host: the bare
 // collector, whatever spelling of it the configuration carried.
@@ -455,6 +539,40 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"elastic_config": {
+			Description: "Elasticsearch destination. The api key is never returned.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"url": {
+						Description: "The cluster",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"index": {
+						Description: "Index or data stream the events are written to",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"onprem_deployment_id": {
+						Description: "Deployment whose access bridge delivers to the cluster",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"tls_verify": {
+						Description: "Whether the cluster's TLS certificate is validated",
+						Type:        schema.TypeBool,
+						Computed:    true,
+					},
+					"verified": {
+						Description: "Always true: the cluster accepted the api key when it was saved",
+						Type:        schema.TypeBool,
+						Computed:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -595,12 +713,12 @@ func existingWebhookCredentials(d *schema.ResourceData) map[string]webhookCreden
 	return out
 }
 
-// existingSplunkTokens is the Splunk counterpart: keyed by the normalized
-// collector url, since the configuration may name the host alone while the
-// api answers with the path appended.
-func existingSplunkTokens(d *schema.ResourceData) map[string]webhookCredential {
+// existingSiemCredentials is the SIEM counterpart, for a block whose secret is
+// a top-level attribute: keyed by the normalized url, since the configuration
+// may spell the endpoint differently from how the api answers.
+func existingSiemCredentials(d *schema.ResourceData, block, attr string, normalize func(string) string) map[string]webhookCredential {
 	out := map[string]webhookCredential{}
-	configs, ok := d.Get("splunk_config").([]any)
+	configs, ok := d.Get(block).([]any)
 	if !ok {
 		return out
 	}
@@ -609,9 +727,9 @@ func existingSplunkTokens(d *schema.ResourceData) map[string]webhookCredential {
 		if !ok {
 			continue
 		}
-		token, _ := configMap["token"].(string)
-		version, _ := configMap["token_wo_version"].(string)
-		out[splunkCollectorURL(urlOf(configMap))] = webhookCredential{token, version}
+		secret, _ := configMap[attr].(string)
+		version, _ := configMap[attr+"_wo_version"].(string)
+		out[normalize(urlOf(configMap))] = webhookCredential{secret, version}
 	}
 	return out
 }
@@ -619,7 +737,8 @@ func existingSplunkTokens(d *schema.ResourceData) map[string]webhookCredential {
 func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.NotificationChannel) error {
 	// Captured before the clear below, since that is what holds them.
 	configuredCredentials := existingWebhookCredentials(d)
-	configuredTokens := existingSplunkTokens(d)
+	configuredTokens := existingSiemCredentials(d, "splunk_config", "token", splunkCollectorURL)
+	configuredKeys := existingSiemCredentials(d, "elastic_config", "api_key", elasticClusterURL)
 
 	if err := d.Set("email_config", nil); err != nil {
 		return fmt.Errorf("failed to clear email_config: %w", err)
@@ -632,6 +751,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	}
 	if err := d.Set("splunk_config", nil); err != nil {
 		return fmt.Errorf("failed to clear splunk_config: %w", err)
+	}
+	if err := d.Set("elastic_config", nil); err != nil {
+		return fmt.Errorf("failed to clear elastic_config: %w", err)
 	}
 
 	switch channel.Type {
@@ -729,29 +851,63 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 				return fmt.Errorf("failed to set splunk_config: %w", err)
 			}
 		}
+	case client.NotificationChannelTypeElastic:
+		if len(channel.Config) > 0 {
+			elasticConfigs := make([]map[string]any, len(channel.Config))
+			for i, config := range channel.Config {
+				elasticConfigs[i] = map[string]any{
+					"url":                  config["url"],
+					"index":                valueOr(config["index"], elasticDefaultIndex),
+					"onprem_deployment_id": config["onprem_deployment_id"],
+					"tls_verify":           valueOr(config["tls_verify"], true),
+					"verified":             config["verified"],
+				}
+				if key, ok := configuredKeys[elasticClusterURL(urlOf(config))]; ok {
+					if key.credential != "" {
+						elasticConfigs[i]["api_key"] = key.credential
+					}
+					if key.version != "" {
+						elasticConfigs[i]["api_key_wo_version"] = key.version
+					}
+				}
+			}
+			if err := d.Set("elastic_config", elasticConfigs); err != nil {
+				return fmt.Errorf("failed to set elastic_config: %w", err)
+			}
+		}
 	}
 
 	return nil
 }
 
-// ValidateSplunkToken is the token's counterpart of ValidateWebhookAuth: the
-// pairing rules live inside a list block, out of the schema's reach.
+// ValidateSplunkToken and ValidateElasticApiKey are the SIEM counterparts of
+// ValidateWebhookAuth: the pairing rules live inside a list block, out of the
+// schema's reach.
 func ValidateSplunkToken(_ context.Context, diff *schema.ResourceDiff, _ any) error {
-	configs, ok := diff.Get("splunk_config").([]any)
+	return validateSiemCredential(diff, "splunk_config", "token")
+}
+
+func ValidateElasticApiKey(_ context.Context, diff *schema.ResourceDiff, _ any) error {
+	return validateSiemCredential(diff, "elastic_config", "api_key")
+}
+
+func validateSiemCredential(diff *schema.ResourceDiff, block, attr string) error {
+	configs, ok := diff.Get(block).([]any)
 	if !ok {
 		return nil
 	}
+	wo := attr + "_wo"
 	for i := range configs {
-		set := func(attr string) bool {
-			return writeonly.IsSetNested(diff, "splunk_config", i, attr)
+		set := func(name string) bool {
+			return writeonly.IsSetNested(diff, block, i, name)
 		}
 		switch {
-		case set("token") && set("token_wo"):
-			return fmt.Errorf("splunk_config[%d]: token and token_wo are mutually exclusive", i)
-		case !set("token") && !set("token_wo"):
-			return fmt.Errorf("splunk_config[%d]: one of token or token_wo is required", i)
-		case set("token_wo") && !set("token_wo_version"):
-			return fmt.Errorf("splunk_config[%d]: token_wo requires token_wo_version", i)
+		case set(attr) && set(wo):
+			return fmt.Errorf("%s[%d]: %s and %s are mutually exclusive", block, i, attr, wo)
+		case !set(attr) && !set(wo):
+			return fmt.Errorf("%s[%d]: one of %s or %s is required", block, i, attr, wo)
+		case set(wo) && !set(wo+"_version"):
+			return fmt.Errorf("%s[%d]: %s requires %s_version", block, i, wo, wo)
 		}
 	}
 	return nil
@@ -950,5 +1106,33 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 		}
 	}
 
-	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, or splunk_config must be specified")
+	if elasticConfigs, ok := d.GetOk("elastic_config"); ok {
+		configList := elasticConfigs.([]any)
+		if len(configList) > 0 {
+			result := make([]map[string]any, len(configList))
+			for i, configInterface := range configList {
+				configMap := configInterface.(map[string]any)
+				key, _ := configMap["api_key"].(string)
+				if key == "" {
+					key = writeonly.GetNestedString(d, "elastic_config", i, "api_key_wo")
+				}
+				if key == "" {
+					return "", nil, fmt.Errorf("elastic_config[%d]: one of api_key or api_key_wo is required", i)
+				}
+				result[i] = map[string]any{
+					"type":       string(client.NotificationChannelTypeElastic),
+					"url":        configMap["url"],
+					"api_key":    key,
+					"index":      configMap["index"],
+					"tls_verify": configMap["tls_verify"],
+					// Always sent, null included: an absent key means "leave
+					// what is stored" to the api, so it could not be removed.
+					"onprem_deployment_id": nilIfEmpty(configMap["onprem_deployment_id"]),
+				}
+			}
+			return client.NotificationChannelTypeElastic, result, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, splunk_config, or elastic_config must be specified")
 }

@@ -17,6 +17,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   * `onprem_deployment_id` and `tls_verify` work as they do for a webhook: the bridge for a collector on a private network, and certificate validation that only a bridge-bound destination may turn off.
   * The destination is proven against HEC when the token is saved, and refused with HEC's own reason. `verified` is always true; there is no verification to wait for.
   * The `hush_notification_channel` data source exposes `splunk_config` without the token.
+* **Elasticsearch notification channels.** An `elastic_config` block sends notifications to an Elasticsearch index or data stream as a first-class channel type.
+  * `url` is the cluster. The API builds `<cluster>/<index>/_bulk` from it and the index; a pasted bulk url is accepted and never plans as a change.
+  * `api_key_wo` with `api_key_wo_version` keeps the api key out of Terraform state; `api_key` is the in-state alternative. The API never returns it.
+  * `index` defaults to `hush-notifications`. An api key is usually scoped to one index, so the API checks a changed index against the cluster with the stored key and refuses one the key cannot write.
+  * `onprem_deployment_id` and `tls_verify` work as they do for a webhook.
+  * The `hush_notification_channel` data source exposes `elastic_config` without the key.
 
 ## [1.22.3] - 2026-09-09
 
