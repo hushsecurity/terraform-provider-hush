@@ -18,7 +18,7 @@ const (
 	nameDesc            = "The name of the deployment"
 	descriptionDesc     = "The description of the deployment"
 	envTypeDesc         = "The environment type for the deployment (dev, prod)"
-	kindDesc            = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway."
+	kindDesc            = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway. The API fixes the kind at creation and offers no way to change it, so Terraform refuses a change rather than acting on one; moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway."
 	statusDesc          = "The current status of the deployment"
 	tokenDesc           = "The deployment token for authentication"
 	passwordDesc        = "The deployment password for authentication"

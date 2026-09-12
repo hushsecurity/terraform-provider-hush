@@ -77,10 +77,10 @@ type CreateDeploymentInput struct {
 // fields need three states -- omitted (unchanged), set, and explicit null
 // (removed) -- which omitempty alone cannot express, so each uses a wrapper.
 type UpdateDeploymentInput struct {
-	Name          *string              `json:"name,omitempty"`
-	Description   *string              `json:"description,omitempty"`
-	EnvType       *string              `json:"env_type,omitempty"`
-	Kind          *string              `json:"kind,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	EnvType     *string `json:"env_type,omitempty"`
+	// No kind: the API refuses to change it, so there is nothing to send.
 	OidcProvider  *oidcProviderUpdate  `json:"oidc_provider,omitempty"`
 	OidcProviders *oidcProvidersUpdate `json:"oidc_providers,omitempty"`
 	Agw           *agwUpdate           `json:"agw,omitempty"`

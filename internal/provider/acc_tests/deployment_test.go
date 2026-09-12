@@ -179,3 +179,53 @@ func TestAccDataSourceDeploymentOIDC(t *testing.T) {
 		},
 	})
 }
+
+// TestAccResourceDeploymentKindIsImmutable covers the kind change the API has
+// always refused. Before this it planned an in-place update, answered 422 on
+// apply, and left the same failing plan in place until the configuration was
+// put back by hand.
+func TestAccResourceDeploymentKindIsImmutable(t *testing.T) {
+	var deploymentID string
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("deployment", "v1/deployments"),
+		Steps: []resource.TestStep{
+			{
+				Config: deploymentKindConfig("k8s"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_deployment.kind", "kind", "k8s"),
+					recordID("hush_deployment.kind", &deploymentID),
+				),
+			},
+			{
+				Config: deploymentKindConfig("ecs"),
+				ExpectError: regexp.MustCompile(
+					`kind: cannot be changed from "k8s" to "ecs"`),
+			},
+			{
+				// Restoring it settles the plan, so the refusal costs an edit
+				// rather than leaving the deployment unmanageable. The id has
+				// to be the one from step 1: refusing rather than replacing is
+				// the whole point, and an attribute check alone would pass just
+				// as well against a deployment built from scratch.
+				Config: deploymentKindConfig("k8s"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_deployment.kind", "kind", "k8s"),
+					checkIDUnchanged("hush_deployment.kind", &deploymentID),
+				),
+			},
+		},
+	})
+}
+
+func deploymentKindConfig(kind string) string {
+	return fmt.Sprintf(`
+resource "hush_deployment" "kind" {
+  name = "tf-acc-kind"
+  kind = %q
+}
+`, kind)
+}
