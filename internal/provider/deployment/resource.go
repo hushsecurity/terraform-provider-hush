@@ -35,9 +35,9 @@ func Resource() *schema.Resource {
 // first entry: a second entry for one issuer is unreachable and the audience or
 // subjects it carried would be dropped without a word.
 //
-// The rest is the agw block: against the deployment kind, in
-// validateAgwForKind, and against what an existing gateway will accept, in
-// validateRegionImmutable.
+// A kind change on a deployment that exists, in validateKindImmutable, and the
+// agw block: against the deployment kind, in validateAgwForKind, and against
+// what an existing gateway will accept, in validateRegionImmutable.
 //
 // A value taken from another resource is unknown at plan time and ResourceDiff
 // yields the zero value for it, so nothing here may judge a value it cannot
@@ -48,6 +48,13 @@ func Resource() *schema.Resource {
 func deploymentCustomizeDiff(
 	ctx context.Context, d *schema.ResourceDiff, m any,
 ) error {
+	// First, because a kind change on an existing deployment is fatal whatever
+	// else the configuration says: an agw or OIDC complaint would send the
+	// caller off to fix a block, re-plan, and only then hear that the edit was
+	// never possible.
+	if err := validateKindImmutable(d); err != nil {
+		return err
+	}
 	if err := validateAgwForKind(d); err != nil {
 		return err
 	}
@@ -165,6 +172,52 @@ func agwMemberSet(d *schema.ResourceDiff, name string) bool {
 	return value != ""
 }
 
+// validateKindImmutable refuses a kind change on a deployment that already
+// exists. The API fixes the kind at creation and rejects any change to it, so
+// the provider had been offering an update it could never complete: the plan
+// proposed one, the apply answered 422, and nothing in state moved, so the same
+// plan came back until the configuration was put back by hand.
+//
+// Refused rather than ForceNew for the reason given on validateRegionImmutable:
+// a replacement carries a new deployment id, which detaches the applications
+// bound to the deployment's gateway, and it reissues the credentials the
+// workload authenticates with.
+func validateKindImmutable(d *schema.ResourceDiff) error {
+	if d.Id() == "" || !d.NewValueKnown("kind") {
+		return nil
+	}
+	before, after := d.GetChange("kind")
+	was, _ := before.(string)
+	now, _ := after.(string)
+	if was == now {
+		return nil
+	}
+	// A deployment created before the kind was mandatory carries none, and the
+	// API refuses to set one now just as it refuses to change one. Saying so is
+	// the point: skipping it would leave the field unwritable and unmentioned,
+	// so every plan would offer the same change and every apply would report
+	// success without sending a request.
+	if was == "" {
+		return fmt.Errorf(
+			"kind: this deployment records none, and the API will not set one "+
+				"on a deployment that exists, so %q cannot be applied. %s",
+			now, deploymentReplaceAdvice)
+	}
+	return fmt.Errorf(
+		"kind: cannot be changed from %q to %q on an existing deployment, "+
+			"where the API fixes it at creation. Restore %q, or %s",
+		was, now, was, deploymentReplaceAdvice)
+}
+
+// deploymentReplaceAdvice names the steps that actually rebuild a deployment.
+// "terraform apply -replace" is the obvious reach and this rule refuses it: a
+// replacement keeps the prior state, so the rule still sees the edit and fires.
+// Removing the resource and declaring it again is the path that works.
+const deploymentReplaceAdvice = "replace the deployment deliberately -- remove " +
+	"this resource from the configuration, apply, then declare it again -- " +
+	"which reissues its credentials and detaches any application bound to its " +
+	"gateway"
+
 // validateRegionImmutable refuses a region change on a deployment that already
 // exists. The API has no field for it on an update, so there is nothing to
 // send: placement is decided when the gateway is built.
@@ -255,11 +308,6 @@ func deploymentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 	if d.HasChange("name") {
 		name := d.Get("name").(string)
 		input.Name = &name
-		hasChanges = true
-	}
-	if d.HasChange("kind") {
-		kind := d.Get("kind").(string)
-		input.Kind = &kind
 		hasChanges = true
 	}
 	// Write the list and clear the singular field in the same request. The API
