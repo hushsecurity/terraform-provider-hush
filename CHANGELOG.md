@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.23.0] - 2026-09-12
+
+### Added
+
+* **MCP gateway on a deployment**: a new `agw` block on `hush_deployment` configures the deployment's agent gateway, in either of the two forms Hush offers. What the block describes follows `kind`, and the pairing is checked at plan time. `agw.gateway_url` is computed in both forms and is the address agents connect to. The `hush_deployment` data source exposes the block too.
+
+  **A gateway Hush runs** (`kind = "hosted"`, new to the provider). The block is required and takes `region`, which places the gateway; `hostname` is not valid, since the address is derived. The accepted values are `iad` (US East, N. Virginia) and `fra` (Europe, Frankfurt). Placement is fixed when the gateway is built, and the API has no field to change it, so `region` is immutable: Terraform refuses the edit at plan time instead of answering it with a replacement. Replacing the deployment would detach every application bound to the gateway, since applications follow the deployment id. Moving a gateway is a deliberate delete and create, and re-attaching the applications afterwards is manual. Hush also sets the deployment's OIDC issuer to the cluster the gateway runs in and refuses to be sent one, so `oidc_provider` is not valid on this kind and is not read back into state.
+
+  **A gateway you run yourself** (`kind = "k8s"`). The block is optional and takes `hostname`; `region` is not valid. The hostname must be exactly the `agw.hostname` the `hush-agw` chart is installed with -- nothing reconciles the two, and connecting an application fails while they disagree. A bare lowercase domain name, without a scheme, port or path, is checked at plan time; Hush's own domains are reserved and refused by the API. Add the block when the gateway is installed and remove it when it is decommissioned; a deployment whose sensor stays is otherwise unaffected. The hostname can be changed in place, so a gateway can follow a DNS move without replacing the deployment and the token it authenticates with.
+
+  **Upgrading needs one edit per gateway.** A deployment that already carries a gateway -- set in the console, because Terraform could not set it before this release -- refreshes into state with the block filled in. Add the matching `agw` block to its configuration before the next apply, or the plan proposes to remove the block. For a gateway you run that apply takes it off the deployment; for a hosted one the API refuses the removal and the apply fails.
+
+```hcl
+resource "hush_deployment" "gateway" {
+  name     = "gateway-deployment"
+  env_type = "prod"
+  kind     = "k8s"
+
+  agw {
+    hostname = "gw.example.com"
+  }
+}
+
+resource "hush_deployment" "hosted_gateway" {
+  name     = "hosted-gateway-deployment"
+  env_type = "prod"
+  kind     = "hosted"
+
+  agw {
+    region = "fra"
+  }
+}
+
+output "hosted_gateway_url" {
+  value = hush_deployment.hosted_gateway.agw[0].gateway_url
+}
+```
+
 ## [1.22.3] - 2026-09-09
 
 ### Added
