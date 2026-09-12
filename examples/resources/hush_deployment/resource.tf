@@ -40,6 +40,37 @@ resource "hush_deployment" "multi_oidc" {
   }
 }
 
+# A deployment covering a cluster where you also run the MCP gateway yourself.
+# The hostname must be exactly the agw.hostname the hush-agw chart is installed
+# with -- nothing reconciles the two.
+resource "hush_deployment" "gateway" {
+  name     = "gateway-deployment"
+  env_type = "prod"
+  kind     = "k8s"
+
+  agw {
+    hostname = "gw.example.com"
+  }
+}
+
+# A gateway Hush runs. The region places it; the address is derived, so read it
+# back from gateway_url rather than stating it. The region cannot be changed
+# once the gateway is built -- moving one means deleting this deployment and
+# creating another.
+resource "hush_deployment" "hosted_gateway" {
+  name     = "hosted-gateway-deployment"
+  env_type = "prod"
+  kind     = "hosted"
+
+  agw {
+    region = "fra"
+  }
+}
+
+output "hosted_gateway_url" {
+  value = hush_deployment.hosted_gateway.agw[0].gateway_url
+}
+
 output "deployment" {
   value = hush_deployment.example
 }

@@ -55,6 +55,37 @@ resource "hush_deployment" "multi_oidc" {
   }
 }
 
+# A deployment covering a cluster where you also run the MCP gateway yourself.
+# The hostname must be exactly the agw.hostname the hush-agw chart is installed
+# with -- nothing reconciles the two.
+resource "hush_deployment" "gateway" {
+  name     = "gateway-deployment"
+  env_type = "prod"
+  kind     = "k8s"
+
+  agw {
+    hostname = "gw.example.com"
+  }
+}
+
+# A gateway Hush runs. The region places it; the address is derived, so read it
+# back from gateway_url rather than stating it. The region cannot be changed
+# once the gateway is built -- moving one means deleting this deployment and
+# creating another.
+resource "hush_deployment" "hosted_gateway" {
+  name     = "hosted-gateway-deployment"
+  env_type = "prod"
+  kind     = "hosted"
+
+  agw {
+    region = "fra"
+  }
+}
+
+output "hosted_gateway_url" {
+  value = hush_deployment.hosted_gateway.agw[0].gateway_url
+}
+
 output "deployment" {
   value = hush_deployment.example
 }
@@ -65,11 +96,12 @@ output "deployment" {
 
 ### Required
 
-- `kind` (String) The deployment kind (k8s, ecs, serverless)
+- `kind` (String) The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway.
 - `name` (String) The name of the deployment
 
 ### Optional
 
+- `agw` (Block List, Max: 1) Agent gateway configuration. What it describes follows 'kind': on a 'hosted' deployment the block is required and places a gateway Hush runs, so it takes 'region' and no 'hostname'; on a 'k8s' deployment it is optional and records a gateway you run yourself, so it takes 'hostname' and no 'region'. No other kind accepts the block. (see [below for nested schema](#nestedblock--agw))
 - `description` (String) The description of the deployment
 - `env_type` (String) The environment type for the deployment (dev, prod)
 - `oidc_provider` (Block List, Max: 8) Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password. Repeat the block to trust more than one issuer. Every block is stored in the API's 'oidc_providers' field, and each issuer may appear once. (see [below for nested schema](#nestedblock--oidc_provider))
@@ -81,6 +113,19 @@ output "deployment" {
 - `password` (String, Sensitive) The deployment password for authentication
 - `status` (String) The current status of the deployment
 - `token` (String, Sensitive) The deployment token for authentication
+
+<a id="nestedblock--agw"></a>
+### Nested Schema for `agw`
+
+Optional:
+
+- `hostname` (String) The external hostname (FQDN) clients and the OAuth browser flow reach the gateway on, as a bare lowercase domain name without a scheme, port or path. Required on a 'k8s' deployment and not valid on a 'hosted' one, which derives its own address. It must be exactly the 'agw.hostname' the hush-agw chart was installed with: nothing reconciles the two, and connecting an application fails while they disagree. Hush's own domains are reserved.
+- `region` (String) The region a Hush-hosted gateway is placed in. Required on a 'hosted' deployment and not valid on a 'k8s' one. The accepted values are 'iad' (US East, N. Virginia) and 'fra' (Europe, Frankfurt). Placement is fixed when the gateway is built and the API offers no way to change it, so Terraform refuses a change rather than acting on one. Moving a gateway means deleting the deployment and creating another, which detaches every application bound to the gateway, since applications follow the deployment id.
+
+Read-Only:
+
+- `gateway_url` (String) The URL agents connect to the gateway on, derived by Hush. For a hosted gateway this is the only way to learn the address, since the name is generated from the deployment id and the region.
+
 
 <a id="nestedblock--oidc_provider"></a>
 ### Nested Schema for `oidc_provider`

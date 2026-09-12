@@ -46,11 +46,22 @@ output "status" {
 
 ### Read-Only
 
+- `agw` (List of Object) The deployment's agent gateway, or nothing when it has none. A gateway Hush runs reports the 'region' it is placed in, one you run yourself reports the 'hostname' it answers on, and both report the derived 'gateway_url'. (see [below for nested schema](#nestedatt--agw))
 - `description` (String) The description of the deployment
 - `env_type` (String) The environment type for the deployment (dev, prod)
-- `kind` (String) The deployment kind (k8s, ecs, serverless)
+- `kind` (String) The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway.
 - `oidc_provider` (List of Object) Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password. Repeat the block to trust more than one issuer. Every block is stored in the API's 'oidc_providers' field, and each issuer may appear once. (see [below for nested schema](#nestedatt--oidc_provider))
 - `status` (String) The current status of the deployment
+
+<a id="nestedatt--agw"></a>
+### Nested Schema for `agw`
+
+Read-Only:
+
+- `gateway_url` (String)
+- `hostname` (String)
+- `region` (String)
+
 
 <a id="nestedatt--oidc_provider"></a>
 ### Nested Schema for `oidc_provider`
