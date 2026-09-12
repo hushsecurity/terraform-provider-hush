@@ -16,6 +16,7 @@ const (
 	NotificationChannelTypeWebhook NotificationChannelType = "webhook"
 	NotificationChannelTypeSlack   NotificationChannelType = "slack"
 	NotificationChannelTypeSplunk  NotificationChannelType = "splunk"
+	NotificationChannelTypeElastic NotificationChannelType = "elastic"
 )
 
 type ConfigBase interface {
@@ -99,6 +100,20 @@ type SplunkConfig struct {
 
 func (s SplunkConfig) GetType() NotificationChannelType {
 	return NotificationChannelTypeSplunk
+}
+
+// ElasticConfig is what the API returns for an Elasticsearch destination. The
+// api key is never echoed; the url is the bare cluster.
+type ElasticConfig struct {
+	URL                string `json:"url"`
+	Index              string `json:"index"`
+	OnpremDeploymentID string `json:"onprem_deployment_id,omitempty"`
+	TLSVerify          bool   `json:"tls_verify"`
+	Verified           bool   `json:"verified,omitempty"`
+}
+
+func (e ElasticConfig) GetType() NotificationChannelType {
+	return NotificationChannelTypeElastic
 }
 
 type NotificationChannel struct {
