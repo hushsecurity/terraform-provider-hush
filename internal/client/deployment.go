@@ -17,6 +17,33 @@ type OidcConfig struct {
 	AllowedSubjects []string `json:"allowed_subjects,omitempty"`
 }
 
+// Agw carries the agent gateway settings of a deployment. Exactly one of
+// Hostname and Region applies, decided by the deployment kind: a gateway the
+// customer runs is found by name, a Hush-hosted one is placed in a region.
+//
+// Both are omitted when empty, because the request model forbids unknown keys
+// and refuses the field that does not belong to the kind -- on a hosted
+// deployment even a null hostname. The pair is checked at plan time, so an
+// object with neither never reaches the wire.
+type Agw struct {
+	Hostname string `json:"hostname,omitempty"`
+	Region   string `json:"region,omitempty"`
+	// Read only, and dropped by MarshalJSON rather than by omitempty, which
+	// would keep it whenever it is set.
+	GatewayURL string `json:"gateway_url,omitempty"`
+}
+
+// MarshalJSON writes the two members the API accepts and nothing else. The
+// request model has no gateway_url and forbids unknown keys, so a value read
+// back into the struct must not be able to travel out again -- the one struct
+// serves both directions, and dropping the field here is what makes that safe.
+func (a Agw) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Hostname string `json:"hostname,omitempty"`
+		Region   string `json:"region,omitempty"`
+	}{Hostname: a.Hostname, Region: a.Region})
+}
+
 type Deployment struct {
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name"`
@@ -30,6 +57,7 @@ type Deployment struct {
 	// through the singular field.
 	OidcProvider  *OidcConfig  `json:"oidc_provider,omitempty"`
 	OidcProviders []OidcConfig `json:"oidc_providers,omitempty"`
+	Agw           *Agw         `json:"agw,omitempty"`
 }
 
 // CreateDeploymentInput represents the input for creating a deployment
@@ -41,6 +69,7 @@ type CreateDeploymentInput struct {
 	// Only the list is ever written. The singular field is left out, which a
 	// create reads as absent, so the two are never sent together.
 	OidcProviders []OidcConfig `json:"oidc_providers,omitempty"`
+	Agw           *Agw         `json:"agw,omitempty"`
 }
 
 // UpdateDeploymentInput represents the input for updating a deployment. Each
@@ -54,6 +83,7 @@ type UpdateDeploymentInput struct {
 	Kind          *string              `json:"kind,omitempty"`
 	OidcProvider  *oidcProviderUpdate  `json:"oidc_provider,omitempty"`
 	OidcProviders *oidcProvidersUpdate `json:"oidc_providers,omitempty"`
+	Agw           *agwUpdate           `json:"agw,omitempty"`
 }
 
 // oidcProviderUpdate marshals to null when Config is nil (removal) and to the
@@ -88,6 +118,25 @@ func (o oidcProvidersUpdate) MarshalJSON() ([]byte, error) {
 // an update request, forcing the oidc_providers field to be sent.
 func NewOidcProvidersUpdate(configs []OidcConfig) *oidcProvidersUpdate {
 	return &oidcProvidersUpdate{Configs: configs}
+}
+
+// agwUpdate is the agw counterpart of oidcProviderUpdate. A nil Agw marshals to
+// null, which removes the whole agw object: the API needs the three states here
+// too, because omitting the field means "unchanged" and an on-prem gateway is
+// decommissioned by removing the object rather than by emptying the hostname.
+type agwUpdate struct{ Agw *Agw }
+
+func (a agwUpdate) MarshalJSON() ([]byte, error) {
+	if a.Agw == nil {
+		return []byte("null"), nil
+	}
+	return json.Marshal(a.Agw)
+}
+
+// NewAgwUpdate wraps an agw object (nil for removal) for an update request,
+// forcing the agw field to be sent.
+func NewAgwUpdate(agw *Agw) *agwUpdate {
+	return &agwUpdate{Agw: agw}
 }
 
 // DeploymentCredentialsResponse embeds Deployment and adds credentials

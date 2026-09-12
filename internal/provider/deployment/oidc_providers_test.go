@@ -65,7 +65,7 @@ func TestFlattenOidcProvidersFromList(t *testing.T) {
 			{Issuer: "https://blue.example.com", Audience: "hush"},
 			{Issuer: "https://green.example.com", Audience: "hush"},
 		},
-	})
+	}, true)
 	if len(got) != 2 {
 		t.Fatalf("expected 2 entries, got %d", len(got))
 	}
@@ -84,7 +84,7 @@ func TestFlattenOidcProvidersFallsBackToSingular(t *testing.T) {
 			Audience:        "hush",
 			AllowedSubjects: []string{"system:serviceaccount:hush-security:*"},
 		},
-	})
+	}, true)
 	if len(got) != 1 {
 		t.Fatalf("expected 1 entry, got %d", len(got))
 	}
@@ -96,7 +96,7 @@ func TestFlattenOidcProvidersFallsBackToSingular(t *testing.T) {
 // Neither field set must flatten to an empty list rather than to null, or a
 // deployment with no OIDC would show a permanent diff.
 func TestFlattenOidcProvidersEmpty(t *testing.T) {
-	got := flattenOidcProviders(&client.Deployment{})
+	got := flattenOidcProviders(&client.Deployment{}, true)
 	if got == nil {
 		t.Fatal("expected an empty list, got nil")
 	}
