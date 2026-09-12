@@ -59,3 +59,20 @@ resource "hush_notification_channel" "splunk" {
     token_wo_version     = "1"
   }
 }
+
+# Elasticsearch. The cluster, an index and an api key are the whole destination:
+# the bulk path, the ApiKey authorization and the @timestamp are the API's. The
+# key is proven against the cluster when it is saved. An api key is usually
+# scoped to one index, so changing the index is checked the same way.
+resource "hush_notification_channel" "elastic" {
+  name        = "elasticsearch"
+  description = "Notifications into the hush-notifications data stream"
+  enabled     = true
+
+  elastic_config {
+    url                = "https://my-deployment.es.eu-west-1.aws.found.io"
+    index              = "hush-notifications"
+    api_key_wo         = var.elastic_api_key
+    api_key_wo_version = "1"
+  }
+}
