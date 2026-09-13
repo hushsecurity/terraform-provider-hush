@@ -28,6 +28,13 @@ const (
 	oidcAllowedSubjectsDesc = "Optional list of allowed subject claims. A trailing '*' acts as a prefix wildcard (for example 'system:serviceaccount:hush-security:*'). When omitted, any subject is accepted."
 )
 
+// The deployment kinds the schema accepts.
+const (
+	deploymentKindK8s        = "k8s"
+	deploymentKindECS        = "ecs"
+	deploymentKindServerless = "serverless"
+)
+
 // maxOidcProviders mirrors the API cap on the field these blocks are stored
 // in. Every entry is another key set able to mint tokens for the deployment,
 // so the ceiling is worth stating here rather than discovering on a round trip.
@@ -66,9 +73,9 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 		Type:        schema.TypeString,
 		Required:    true,
 		ValidateFunc: validation.StringInSlice([]string{
-			"k8s",
-			"ecs",
-			"serverless",
+			deploymentKindK8s,
+			deploymentKindECS,
+			deploymentKindServerless,
 		}, false),
 	}
 
