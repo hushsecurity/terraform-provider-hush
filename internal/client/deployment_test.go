@@ -2,6 +2,7 @@ package client
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -294,3 +295,20 @@ func TestAgwMarshalsOnlyTheMembersInUse(t *testing.T) {
 }
 
 func strPtr(s string) *string { return &s }
+
+// The API refuses a kind change whatever the value, so an update request must
+// have no way to carry the field at all. Asserting on a marshalled value would
+// not hold the line: a nil pointer with omitempty emits nothing, so the field
+// could be put back and this would still pass.
+func TestUpdateDeploymentInputHasNoKindField(t *testing.T) {
+	typ := reflect.TypeOf(UpdateDeploymentInput{})
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		tag := field.Tag.Get("json")
+		if strings.EqualFold(field.Name, "kind") ||
+			tag == "kind" || strings.HasPrefix(tag, "kind,") {
+			t.Fatalf("UpdateDeploymentInput must not carry kind, found %q (json:%q)",
+				field.Name, tag)
+		}
+	}
+}

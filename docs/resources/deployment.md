@@ -101,7 +101,7 @@ output "deployment" {
 
 ### Required
 
-- `kind` (String) The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway.
+- `kind` (String) The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway.
 - `name` (String) The name of the deployment
 
 ### Optional
