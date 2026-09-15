@@ -10,7 +10,7 @@ func DataSource() *schema.Resource {
 	return &schema.Resource{
 		Description: dataSourceDescription,
 
-		ReadContext: deploymentRead,
+		ReadContext: deploymentDataSourceRead,
 		Schema:      DeploymentDataSourceSchema(),
 	}
 }

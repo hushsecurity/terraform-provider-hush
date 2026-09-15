@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -48,16 +49,20 @@ type MockServer struct {
 	hooks    map[string]map[Operation][]HookFunc
 	fixtures *Fixtures
 	pageSize int // when > 0, list responses are paginated with this page size
-	mu       sync.RWMutex
+	// resourceKey -> top-level field whose object a PATCH merges rather than
+	// replaces. Empty by default: see MergeNested.
+	mergeNested map[string]map[string]bool
+	mu          sync.RWMutex
 }
 
 // NewMockServer creates a mock server from fixtures.
 func NewMockServer(f *Fixtures) *MockServer {
 	ms := &MockServer{
-		store:    make(map[string]map[string]any),
-		routes:   parseRoutes(f.Endpoints),
-		hooks:    make(map[string]map[Operation][]HookFunc),
-		fixtures: f,
+		store:       make(map[string]map[string]any),
+		routes:      parseRoutes(f.Endpoints),
+		hooks:       make(map[string]map[Operation][]HookFunc),
+		mergeNested: make(map[string]map[string]bool),
+		fixtures:    f,
 	}
 	ms.Server = httptest.NewServer(http.HandlerFunc(ms.handler))
 	return ms
@@ -76,6 +81,27 @@ func (ms *MockServer) SetPageSize(n int) {
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 	ms.pageSize = n
+}
+
+// MergeNested makes a PATCH apply the named top-level field member by member
+// when both the stored value and the sent one are objects, instead of replacing
+// the stored object outright.
+//
+// Off by default, and opt in per resource, because the APIs differ. A
+// deployment's agw block is merged -- shepherd resolves it with
+// model_copy(update=changes), so a patch naming one member leaves the rest
+// standing -- while other nested objects are replaced wholesale by the API that
+// owns them, and merging those here would keep fields a real request drops.
+//
+// An explicit null still clears: it arrives as a nil rather than as an object,
+// so it takes the replacing path.
+func (ms *MockServer) MergeNested(resourceType, field string) {
+	ms.mu.Lock()
+	defer ms.mu.Unlock()
+	if ms.mergeNested[resourceType] == nil {
+		ms.mergeNested[resourceType] = make(map[string]bool)
+	}
+	ms.mergeNested[resourceType][field] = true
 }
 
 // SeedObject inserts a pre-existing object into the mock store.
@@ -286,6 +312,14 @@ func (ms *MockServer) handleUpdate(w http.ResponseWriter, r *http.Request, resou
 
 	objMap := obj.(map[string]any)
 	for k, v := range updates {
+		if ms.mergesNested(resourceKey, k) {
+			sent, isObject := v.(map[string]any)
+			stored, wasObject := objMap[k].(map[string]any)
+			if isObject && wasObject {
+				mergeInto(stored, sent)
+				continue
+			}
+		}
 		objMap[k] = v
 	}
 
@@ -297,6 +331,13 @@ func (ms *MockServer) handleUpdate(w http.ResponseWriter, r *http.Request, resou
 	ms.store[storeKey][id] = objMap
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(objMap)
+}
+
+// mergeInto applies one object's members onto another, one level deep, which is
+// what model_copy(update=...) does: a member is replaced whole, however nested
+// it is. Reached only for a field a resource opted into through MergeNested.
+func mergeInto(dst, updates map[string]any) {
+	maps.Copy(dst, updates)
 }
 
 func (ms *MockServer) handleDelete(w http.ResponseWriter, storeKey, id string) {
@@ -327,6 +368,18 @@ func (ms *MockServer) handlePut(w http.ResponseWriter, r *http.Request, storeKey
 	}
 	w.WriteHeader(200)
 	_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok"})
+}
+
+// mergesNested resolves the resource the same way runHooks does, since callers
+// name it the same way for both: the route yields a plural key and the base
+// resource type is the singular one.
+func (ms *MockServer) mergesNested(resourceKey, field string) bool {
+	for _, key := range []string{resourceKey, ms.getComputedFieldsKey(resourceKey)} {
+		if ms.mergeNested[key][field] {
+			return true
+		}
+	}
+	return false
 }
 
 func (ms *MockServer) runHooks(resourceKey string, op Operation, obj map[string]any) *HookError {
