@@ -46,6 +46,10 @@ output "hosted_gateway_url" {
 }
 ```
 
+### Fixed
+
+* **Deployment kind**: editing `kind` on an existing `hush_deployment` is refused when you plan it, instead of failing the apply. The kind is fixed at creation and cannot be changed, so the edit could never be applied -- the apply failed, nothing in state moved, and the same failing plan came back on every run until the configuration was put back by hand. The field is not marked for replacement: destroying a deployment reissues its credentials and detaches any application bound to its gateway. Moving a deployment to another kind means removing the resource from the configuration, applying, and declaring it again -- note that `terraform apply -replace` does not work here, since a replacement keeps the prior state and the plan-time rule refuses it. A deployment that records no kind at all, created before the field was mandatory, is refused for the same reason: one cannot be set after the fact.
+
 ## [1.23.0] - 2026-09-11
 
 ### Added
