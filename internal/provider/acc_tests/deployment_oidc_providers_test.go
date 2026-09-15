@@ -49,6 +49,15 @@ func init() {
 				// writes the list and never the singular field. The API would
 				// accept a lone singular value, so nothing else would notice a
 				// regression to writing it.
+				//
+				// Read off the merged object, so it cannot tell a field the
+				// provider wrote from one the API set itself. That is only a
+				// problem on a hosted deployment, where the API fills the
+				// singular field in at create and refuses to be sent either --
+				// a rule the hosted hooks already cover.
+				if obj["kind"] == deploymentKindHosted {
+					return nil
+				}
 				if obj["oidc_provider"] != nil {
 					return &testutil.HookError{
 						Status: 422,
