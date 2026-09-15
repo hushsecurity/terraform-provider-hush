@@ -85,8 +85,43 @@ resource "hush_secret_store" "hc_vault" {
       # the access manager presents its pod's service-account token to this
       # role, and the cluster's TokenReview api vouches for it
       role = "hush-am"
-      # method = "kubernetes" # optional; the only method supported
+      # method = "kubernetes" # optional; the default
       # mount  = "kubernetes" # optional; where the auth method is mounted
+    }
+  }
+}
+
+# The same, for a Vault that cannot reach the cluster's api server: the
+# service-account token is validated against the cluster's JWKS instead.
+resource "hush_secret_store" "hc_vault_jwt" {
+  name           = "prod-vault-jwt"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+
+    auth {
+      method = "jwt"
+      role   = "hush-am"
+    }
+  }
+}
+
+# A token the deployment already holds. Only the variable's name is stored
+# here; the access manager reads the token from its own environment, so the
+# deployment must carry that variable.
+resource "hush_secret_store" "hc_vault_token" {
+  name           = "prod-vault-token"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+
+    auth {
+      method         = "token"
+      token_env_name = "SILO_VAULT_TOKEN_PROD"
     }
   }
 }
@@ -168,14 +203,12 @@ Optional:
 <a id="nestedblock--hc_vault--auth"></a>
 ### Nested Schema for `hc_vault.auth`
 
-Required:
-
-- `role` (String) The Vault role the access manager's service account is bound to
-
 Optional:
 
-- `method` (String) The Vault auth method. Only "kubernetes" is supported: the access manager presents its pod's service-account token, which the cluster's TokenReview api vouches for, so no secret has to be delivered to the deployment.
-- `mount` (String) The path the auth method is mounted at (defaults to the method's own name when omitted)
+- `method` (String) The Vault auth method: "kubernetes" (the access manager presents its pod's service-account token and the cluster's TokenReview api vouches for it), "jwt" (the same token, validated against the cluster's JWKS, for a Vault that cannot reach the api server), or "token" (a token the deployment already holds). Defaults to "kubernetes".
+- `mount` (String) The path the auth method is mounted at (defaults to the method's own name when omitted). Not used by the "token" method, which does not log in.
+- `role` (String) The Vault role the access manager's service account is bound to. Required by the "kubernetes" and "jwt" methods, and not used by "token".
+- `token_env_name` (String) The environment variable the access manager reads this store's token from. Required by the "token" method, and not used by the others. Only the name is stored here; the deployment holds the token itself, so its environment must carry that variable.
 
 
 

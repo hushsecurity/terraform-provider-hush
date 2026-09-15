@@ -1,6 +1,7 @@
 package secret_store
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -210,5 +211,84 @@ func TestHcVaultConfigRoundTrip(t *testing.T) {
 		if v := fresh.Get(name).([]any); len(v) != 0 {
 			t.Errorf("%s = %v, want empty", name, v)
 		}
+	}
+}
+
+// The acceptance tests drive these through a plan, which is what a customer
+// meets; these pin the messages and cover every branch in one fast table.
+func TestValidateVaultAuth(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		auth    map[string]any
+		errPart string
+	}{
+		{
+			name: "kubernetes with a role",
+			auth: map[string]any{"method": "kubernetes", "role": "hush-am"},
+		},
+		{
+			name: "kubernetes with a mount",
+			auth: map[string]any{
+				"method": "kubernetes", "role": "hush-am", "mount": "k8s-eu",
+			},
+		},
+		{
+			name: "jwt with a role",
+			auth: map[string]any{"method": "jwt", "role": "hush-am"},
+		},
+		{
+			name: "token with an env name",
+			auth: map[string]any{"method": "token", "token_env_name": "E"},
+		},
+		{
+			name:    "kubernetes without a role",
+			auth:    map[string]any{"method": "kubernetes"},
+			errPart: `auth method "kubernetes" needs a role`,
+		},
+		{
+			name:    "jwt without a role",
+			auth:    map[string]any{"method": "jwt"},
+			errPart: `auth method "jwt" needs a role`,
+		},
+		{
+			name:    "token without an env name",
+			auth:    map[string]any{"method": "token"},
+			errPart: `auth method "token" needs token_env_name`,
+		},
+		// a field of another method is refused rather than ignored: the config
+		// is immutable, so it cannot be corrected after the fact
+		{
+			name: "token with a role",
+			auth: map[string]any{
+				"method": "token", "token_env_name": "E", "role": "hush-am",
+			},
+			errPart: `auth method "token" does not use role`,
+		},
+		{
+			name: "token with a mount",
+			auth: map[string]any{
+				"method": "token", "token_env_name": "E", "mount": "kubernetes",
+			},
+			errPart: `auth method "token" does not use mount`,
+		},
+		{
+			name: "kubernetes with an env name",
+			auth: map[string]any{
+				"method": "kubernetes", "role": "hush-am", "token_env_name": "E",
+			},
+			errPart: `auth method "kubernetes" does not use token_env_name`,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateVaultAuth(tc.auth)
+			switch {
+			case tc.errPart == "" && err != nil:
+				t.Errorf("unexpected error: %v", err)
+			case tc.errPart != "" && err == nil:
+				t.Errorf("expected an error containing %q", tc.errPart)
+			case tc.errPart != "" && !strings.Contains(err.Error(), tc.errPart):
+				t.Errorf("error = %v, want it to contain %q", err, tc.errPart)
+			}
+		})
 	}
 }

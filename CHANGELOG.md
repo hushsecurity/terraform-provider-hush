@@ -16,7 +16,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
   `address` must be `https`, refused at plan time. Every request to Vault carries the token in a header and a login posts the access manager's service-account token in a body, so plaintext would put a live credential on the wire.
 
-  `auth.method` accepts only `kubernetes`: the access manager presents its pod's service-account token to the role and the cluster's TokenReview api vouches for it, so no secret has to be delivered to the deployment. The Vault side needs the role bound to the access manager's service account, and a policy granting `create`, `update`, `read` on `<mount>/data/<prefix>/*` and `read`, `delete` on `<mount>/metadata/<prefix>/*` -- a policy missing the metadata grants leaves a store that reads and writes but can never delete.
+  `auth.method` is one of three, matching what the Hush sensor's Vault crawler supports:
+
+  | method | what it presents | what the block needs |
+  | ------ | ---------------- | -------------------- |
+  | `kubernetes` (default) | the access manager's own service-account token, which the cluster's TokenReview api vouches for | `role` |
+  | `jwt` | the same token, validated against the cluster's JWKS -- for a Vault that cannot reach the api server | `role` |
+  | `token` | a token the deployment already holds | `token_env_name` |
+
+  A field belonging to another method is refused at plan time rather than ignored, because a store's config is immutable and cannot be corrected afterwards: `token` takes no `role` or `mount`, and the other two take no `token_env_name`.
+
+  With `token`, only the *name* of the environment variable is stored. The access manager reads the token from its own environment, so **the deployment must carry that variable** -- a store whose variable is missing never becomes ready. Naming it per store is what lets two token-authenticated stores in one deployment hold different tokens.
+
+  The Vault side needs, for `kubernetes` and `jwt`, the role bound to the access manager's service account; and for every method a policy granting `create`, `update`, `read` on `<mount>/data/<prefix>/*` and `read`, `delete` on `<mount>/metadata/<prefix>/*` -- a policy missing the metadata grants leaves a store that reads and writes but can never delete.
 
   **The deployments need an access manager that carries the driver.** The API refuses an `hc_vault` store aimed at a deployment below the minimum version, naming it, rather than letting the store sit in error with a config that cannot be edited.
 

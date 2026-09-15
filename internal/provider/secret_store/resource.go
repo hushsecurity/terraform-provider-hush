@@ -24,8 +24,61 @@ func Resource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Schema: SecretStoreResourceSchema(),
+		Schema:        SecretStoreResourceSchema(),
+		CustomizeDiff: customizeDiff,
 	}
+}
+
+// customizeDiff applies the rules the schema cannot: which fields a vault auth
+// method requires. Doing it here rather than at apply is the point -- the API
+// refuses these too, and a customer should hear it from the plan.
+func customizeDiff(
+	_ context.Context, d *schema.ResourceDiff, _ any,
+) error {
+	v, ok := d.GetOk("hc_vault")
+	if !ok {
+		return nil
+	}
+	block := v.([]any)[0].(map[string]any)
+	auth, ok := block["auth"].([]any)
+	if !ok || len(auth) == 0 || auth[0] == nil {
+		return nil
+	}
+	return validateVaultAuth(auth[0].(map[string]any))
+}
+
+// validateVaultAuth requires the field the named method uses and refuses the
+// fields belonging to the others. A field of another method is refused rather
+// than ignored: a store's config is immutable, so one created with a role it
+// never uses cannot be corrected, and the mistake it usually represents is
+// naming the wrong method.
+func validateVaultAuth(auth map[string]any) error {
+	method, _ := auth["method"].(string)
+	role, _ := auth["role"].(string)
+	tokenEnvName, _ := auth["token_env_name"].(string)
+	mount, _ := auth["mount"].(string)
+
+	if method == client.SecretStoreVaultAuthToken {
+		if tokenEnvName == "" {
+			return fmt.Errorf(
+				"auth method %q needs token_env_name, the environment variable the access manager reads the token from",
+				method)
+		}
+		if role != "" {
+			return fmt.Errorf("auth method %q does not use role", method)
+		}
+		if mount != "" {
+			return fmt.Errorf("auth method %q does not use mount", method)
+		}
+		return nil
+	}
+	if role == "" {
+		return fmt.Errorf("auth method %q needs a role", method)
+	}
+	if tokenEnvName != "" {
+		return fmt.Errorf("auth method %q does not use token_env_name", method)
+	}
+	return nil
 }
 
 func resourceCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -154,9 +207,10 @@ func expandConfig(d *schema.ResourceData) (*client.SecretStoreConfig, error) {
 			VaultNamespace: block["vault_namespace"].(string),
 			CaCert:         block["ca_cert"].(string),
 			Auth: &client.SecretStoreVaultAuth{
-				Method: auth["method"].(string),
-				Mount:  auth["mount"].(string),
-				Role:   auth["role"].(string),
+				Method:       auth["method"].(string),
+				Mount:        auth["mount"].(string),
+				Role:         auth["role"].(string),
+				TokenEnvName: auth["token_env_name"].(string),
 			},
 		}, nil
 	}

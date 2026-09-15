@@ -18,17 +18,32 @@ const (
 	SecretStoreKindHCVault    = "hc_vault"
 )
 
-// The only auth method the API offers. The access manager also accepts a token
-// from its own environment, but a config document has no way to deliver one.
-const SecretStoreVaultAuthKubernetes = "kubernetes"
+// The auth methods the API offers. kubernetes and jwt present the access
+// manager's own service-account token to a role, validated by the cluster's
+// TokenReview api or its JWKS; token presents one the deployment holds in an
+// environment variable the config names.
+const (
+	SecretStoreVaultAuthKubernetes = "kubernetes"
+	SecretStoreVaultAuthJWT        = "jwt"
+	SecretStoreVaultAuthToken      = "token"
+)
 
-// SecretStoreVaultAuth is how the access manager authenticates to Vault: it
-// presents its pod's service-account token to Role, which the cluster's
-// TokenReview api vouches for.
+// SecretStoreVaultAuthMethods is every method the API accepts, in the order
+// the documentation lists them.
+var SecretStoreVaultAuthMethods = []string{
+	SecretStoreVaultAuthKubernetes,
+	SecretStoreVaultAuthJWT,
+	SecretStoreVaultAuthToken,
+}
+
+// SecretStoreVaultAuth is how the access manager authenticates to Vault.
+// Role belongs to the kubernetes and jwt methods, TokenEnvName to token; the
+// API refuses a field belonging to another method, so both are omitempty.
 type SecretStoreVaultAuth struct {
-	Method string `json:"method"`
-	Mount  string `json:"mount,omitempty"`
-	Role   string `json:"role"`
+	Method       string `json:"method"`
+	Mount        string `json:"mount,omitempty"`
+	Role         string `json:"role,omitempty"`
+	TokenEnvName string `json:"token_env_name,omitempty"`
 }
 
 // SecretStoreConfig is the backend's discriminated config union flattened into a

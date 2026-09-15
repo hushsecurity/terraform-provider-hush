@@ -12,6 +12,15 @@ import (
 const vaultBody = `address = "https://vault.acme.internal:8200"
     auth { role = "hush-am" }`
 
+// vaultAuth builds a vault block body whose auth block carries exactly what
+// the case is about.
+func vaultAuth(auth string) string {
+	return fmt.Sprintf(`address = "https://vault.acme.internal:8200"
+    auth {
+      %s
+    }`, auth)
+}
+
 // Each config block wires its own validator, so every block needs its own
 // case: a charset legal for one backend is illegal for another.
 func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
@@ -126,16 +135,65 @@ func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
 		{
 			name:      "hc_vault.rejects.unknown.auth.method",
 			block:     "hc_vault",
-			body:      "address = \"https://vault.acme.internal:8200\"\n    auth {\n      method = \"token\"\n      role = \"hush-am\"\n    }",
+			body:      vaultAuth(`method = "approle"` + "\n      " + `role = "hush-am"`),
 			prefix:    "acme",
 			expectErr: regexp.MustCompile(`expected hc_vault\.0\.auth\.0\.method to be one of`),
 		},
+		// every branch of the diff that requires a field, or refuses one
+		// belonging to another method
 		{
-			name:      "hc_vault.requires.a.role",
+			name:      "hc_vault.kubernetes.requires.a.role",
 			block:     "hc_vault",
-			body:      "address = \"https://vault.acme.internal:8200\"\n    auth {}",
+			body:      vaultAuth(""),
 			prefix:    "acme",
-			expectErr: regexp.MustCompile(`The argument "role" is required`),
+			expectErr: regexp.MustCompile(`auth method "kubernetes" needs a role`),
+		},
+		{
+			name:   "hc_vault.jwt.accepts.a.role",
+			block:  "hc_vault",
+			body:   vaultAuth(`method = "jwt"` + "\n      " + `role = "hush-am"`),
+			prefix: "acme",
+		},
+		{
+			name:      "hc_vault.jwt.requires.a.role",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "jwt"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "jwt" needs a role`),
+		},
+		{
+			name:   "hc_vault.token.accepts.an.env.name",
+			block:  "hc_vault",
+			body:   vaultAuth(`method = "token"` + "\n      " + `token_env_name = "SILO_VAULT_TOKEN_ACME"`),
+			prefix: "acme",
+		},
+		{
+			name:      "hc_vault.token.requires.an.env.name",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "token"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "token" needs token_env_name`),
+		},
+		{
+			name:      "hc_vault.token.refuses.a.role",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "token"` + "\n      " + `token_env_name = "E"` + "\n      " + `role = "hush-am"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "token" does not use role`),
+		},
+		{
+			name:      "hc_vault.token.refuses.a.mount",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "token"` + "\n      " + `token_env_name = "E"` + "\n      " + `mount = "kubernetes"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "token" does not use mount`),
+		},
+		{
+			name:      "hc_vault.kubernetes.refuses.an.env.name",
+			block:     "hc_vault",
+			body:      vaultAuth(`role = "hush-am"` + "\n      " + `token_env_name = "E"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "kubernetes" does not use token_env_name`),
 		},
 		{
 			name:      "hc_vault.requires.the.auth.block",
