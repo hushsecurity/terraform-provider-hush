@@ -32,11 +32,11 @@ resource "hush_access_policy" "postgres_example" {
     value = "app-service-account"
   }
 
-  # Template: postgresql://${username}:${password}@${host}:${port}/${db}
+  # Template: postgresql://${username}:${password}@${host}:${port}/${db_name}
   env_delivery_config {
     name = "DATABASE_URL"
     type = "template"
-    key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db}"
+    key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db_name}"
   }
 }
 
@@ -192,7 +192,7 @@ resource "hush_access_policy" "volume_template_example" {
     item {
       path = "db_url"
       type = "template"
-      key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db}"
+      key  = "postgresql://$${username}:$${password}@$${host}:$${port}/$${db_name}"
     }
   }
 }
@@ -255,9 +255,9 @@ resource "hush_access_policy" "gcp_wif_example" {
   }
 
   gcp_wif_delivery_config {
-    subject_kind                  = "hush_subject"
-    subject                       = "my-workload-identity"
-    service_account               = "my-sa@my-project.iam.gserviceaccount.com"
+    subject_kind                   = "hush_subject"
+    subject                        = "my-workload-identity"
+    service_account                = "my-sa@my-project.iam.gserviceaccount.com"
     service_account_token_lifetime = 7200
   }
 }

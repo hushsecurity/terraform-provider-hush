@@ -19,8 +19,8 @@ resource "hush_mongodb_access_privilege" "example" {
   description = "Read/write access to application collections"
 
   grants {
-    privileges    = ["find", "insert", "update"]
-    resource_type = "collection"
+    privileges     = ["find", "insert", "update"]
+    resource_type  = "collection"
     resource_names = ["users", "orders"]
   }
 }

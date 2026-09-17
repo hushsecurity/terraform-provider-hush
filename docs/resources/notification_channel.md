@@ -21,7 +21,7 @@ resource "hush_notification_channel" "team_emails" {
   email_config {
     address = "security-lead@example.com"
   }
-  
+
   email_config {
     address = "security-engineer@example.com"
   }

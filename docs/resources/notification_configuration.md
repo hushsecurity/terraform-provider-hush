@@ -31,8 +31,8 @@ resource "hush_notification_channel" "email_alerts" {
 
 # Configure predefined notification settings
 resource "hush_notification_configuration" "alerts" {
-  id      = data.hush_notification_configuration.secret_alerts.id
-  enabled = true
+  config_id = data.hush_notification_configuration.secret_alerts.id
+  enabled   = true
 
   channel_ids = [
     hush_notification_channel.email_alerts.id
