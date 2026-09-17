@@ -8,6 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Fixed
+
+* **The published examples are type-checked now, and the ones that were wrong are corrected.** `tfplugindocs` embeds every `examples/resources/<name>/resource.tf` verbatim into `docs/resources/*.md`, which is what the Terraform registry serves, so a broken example is a broken snippet handed to whoever copies it. Twenty-one of them did not type-check.
+
+  Most were the same omission: a write-only argument set without its version companion. `<field>_wo` and `<field>_wo_version` are `RequiredWith` each other -- the version is how a rotated value is re-sent -- and sixteen examples set the first without the second, so the resource refused to plan. Those now pair them, as the examples that were already right did. Every example's version is now the string `"1"`; the argument is a string in the schema, and a bare `1` next to a schema table that says String misleads the reader.
+
+  Five were wrong in their own way. `hush_azure_app_access_privilege` and `hush_gcp_sa_access_privilege` both passed a top-level `roles` argument that has never existed: roles live inside the `app_config` / `sa_config` block that describes the app registration or service account to provision, and `hush_gcp_sa_access_privilege` was additionally missing the required `project_id`. Both examples are rewritten against the real schema, and each now also shows the other form of the block's `ExactlyOneOf` pair -- binding the privilege to an app or service account managed outside Hush, by `app_id` or `sa_email`. `hush_notification_configuration` set `id` where `config_id` is the required argument naming the predefined configuration to manage. `hush_apigee_access_credential` read its key with `file("service-account.json")`, a file that is not in the repository, so it now reads a variable like every other credential example. `hush_openai_access_credential` had `project_id = "proj-abc123"` against a validator that requires the `proj_` prefix.
+
+  `hush_postgres_access_privilege` was wrong three times over in one block: `object_type = "table"` against a case-sensitive enum, `all_in_schema = "public"` against a boolean, and no `object_names`, which the API requires although the provider marks it optional. The first two failed at plan, the third at apply. It now reads `object_type = "TABLE"`, `object_names = ["public"]`, `all_in_schema = true`.
+
+  The `hush_access_policy` examples templated a PostgreSQL connection string with `$${db}`; the credential's field is `db_name`, so the API rejected the template at apply while the plan looked clean. The MySQL, MariaDB and MongoDB templates in the same file were already right.
+
+* **`make lint-examples` was checking nothing.** It runs `terraform fmt -check` over `examples/`, and `terraform fmt` does not recurse unless asked; since every example sits at `examples/resources/<name>/resource.tf` and nothing sits directly in `examples/`, the check inspected zero files and passed. It is recursive now, which brought twelve unformatted files with it.
+
+  Formatting was only ever half of it, though, so there is also a `make validate-examples`, wired into `make lint` and therefore into CI. It builds the provider, points a `dev_overrides` configuration at the binary, and runs `terraform validate` over the examples. They reference each other -- most credentials point at `hush_deployment.example.id` -- so they are assembled into one module rather than validated a directory at a time. `examples/provider/provider.tf` is covered too, since `docs/index.md` embeds it the same way.
+
+  It runs offline. `terraform init` is never called, so `make lint` costs nothing beyond a build and cannot be broken by a third-party release. The price is that the two examples reaching outside the hush provider -- the AWS and GCP integrations, which call an external onboard module -- are not validated at all. The run prints them every time rather than hiding the gap, and their module sources, version constraints and output names remain checked by nothing. Initialising instead would fetch some 700 MB of third-party providers on every lint and break the target behind a firewall. `make lint` also stays read-only: `validate-examples` depends on a build target that skips `go mod tidy`, so linting no longer rewrites `go.mod`.
+
+  Two further things it cannot see, both inherent to `terraform validate`. It checks schemas only, so cross-field rules the API enforces still surface at apply and need acceptance tests -- as does an argument the provider marks optional and the API requires, which is why the `object_names` case above escaped it. And a value taken from a variable is unknown at validate time, which makes the SDK skip that argument's format check: `project_id = "proj_abc"` is verified, `project_id = var.foo` is not. Examples should prefer literals for anything that is not a secret.
+
 ### Changed
 
 * **Per-kind secret store prefixes**: `prefix` was validated as 1-10 lowercase alphanumerics starting with a letter, the same rule whichever backend the store used. It is now validated against the rules of the backend its block names, so a prefix can be much longer and can carry the punctuation that backend accepts.

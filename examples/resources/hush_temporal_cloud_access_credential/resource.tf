@@ -4,5 +4,5 @@ resource "hush_temporal_cloud_access_credential" "example" {
   description        = "Production Temporal Cloud API credential"
   deployment_ids     = [hush_deployment.example.id]
   api_key_wo         = var.temporal_cloud_api_key
-  api_key_wo_version = 1
+  api_key_wo_version = "1"
 }

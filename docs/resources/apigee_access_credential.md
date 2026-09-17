@@ -19,8 +19,8 @@ resource "hush_apigee_access_credential" "example" {
   description    = "Production Apigee credential"
   deployment_ids = [hush_deployment.example.id]
 
-  service_account_key_wo         = file("service-account.json")
-  service_account_key_wo_version = 1
+  service_account_key_wo         = var.apigee_service_account_key
+  service_account_key_wo_version = "1"
 }
 ```
 

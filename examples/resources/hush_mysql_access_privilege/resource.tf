@@ -4,8 +4,8 @@ resource "hush_mysql_access_privilege" "example" {
   description = "Read/write access to application tables"
 
   grants {
-    privileges    = ["SELECT", "INSERT", "UPDATE"]
-    resource_type = "table"
+    privileges     = ["SELECT", "INSERT", "UPDATE"]
+    resource_type  = "table"
     resource_names = ["users", "orders"]
   }
 }

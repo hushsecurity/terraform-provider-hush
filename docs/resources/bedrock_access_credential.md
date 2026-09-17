@@ -22,7 +22,7 @@ resource "hush_bedrock_access_credential" "example" {
   access_key_id  = var.aws_access_key_id
 
   secret_access_key_wo         = var.aws_secret_access_key
-  secret_access_key_wo_version = 1
+  secret_access_key_wo_version = "1"
 }
 ```
 

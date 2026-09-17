@@ -22,7 +22,7 @@ resource "hush_gitlab_access_credential" "example" {
   resource_id    = "12345"
 
   token_wo         = var.gitlab_token
-  token_wo_version = 1
+  token_wo_version = "1"
 }
 ```
 

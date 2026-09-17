@@ -22,7 +22,7 @@ resource "hush_twilio_access_credential" "example" {
   api_key_sid    = var.twilio_api_key_sid
 
   api_key_secret_wo         = var.twilio_api_key_secret
-  api_key_secret_wo_version = 1
+  api_key_secret_wo_version = "1"
 }
 ```
 

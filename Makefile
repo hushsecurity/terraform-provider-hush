@@ -8,7 +8,12 @@ all: build
 
 .PHONY: build
 build:
-	@go mod tidy
+	@$(MAKE) mod-tidy
+	@$(MAKE) build-bin
+
+# No `go mod tidy`, so lint can depend on the binary without mutating go.mod.
+.PHONY: build-bin
+build-bin:
 	@mkdir -p $(OUT_DIR)
 	@CGO_ENABLED=0 go build -o $(OUT_DIR)/$(PLUGIN_NAME)
 
@@ -25,6 +30,7 @@ lint:
 	@golangci-lint fmt -d
 	@golangci-lint run
 	@make lint-examples
+	@make validate-examples
 
 .PHONY: format
 format:
@@ -32,7 +38,11 @@ format:
 
 .PHONY: lint-examples
 lint-examples:
-	@terraform fmt -check=true -diff=true examples/
+	@terraform fmt -check=true -diff=true -recursive examples/
+
+.PHONY: validate-examples
+validate-examples: build-bin
+	@./scripts/validate-examples.sh
 
 .PHONY: generate
 generate:
