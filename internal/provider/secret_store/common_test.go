@@ -43,6 +43,19 @@ func TestPrefixValidation(t *testing.T) {
 		{"hc_vault", hcVaultPrefixValidation, "acme/prod/secrets", true},
 		{"hc_vault", hcVaultPrefixValidation, "acme+prod", false},
 		{"hc_vault", hcVaultPrefixValidation, "acme@prod", false},
+		// azure_kv allows no punctuation but the separator
+		{"azure_kv", azureKvPrefixValidation, "acme", true},
+		{"azure_kv", azureKvPrefixValidation, "acme-prod-eu", true},
+		{"azure_kv", azureKvPrefixValidation, "acme_prod", false},
+		{"azure_kv", azureKvPrefixValidation, "acme.prod", false},
+		{"azure_kv", azureKvPrefixValidation, "acme/prod", false},
+		{"azure_kv", azureKvPrefixValidation, "ac--me", false},
+
+		// length, which is the one rule that differs per kind. Checked here
+		// rather than left to the API: a tightening is otherwise missed until
+		// apply, which is the failure this provider exists to prevent.
+		{"azure_kv", azureKvPrefixValidation, strings.Repeat("a", 32), true},
+		{"azure_kv", azureKvPrefixValidation, strings.Repeat("a", 33), false},
 
 		// adjacency: allowed wherever the charset allows both characters, since
 		// the backends attach no meaning to it
@@ -131,9 +144,9 @@ func TestAddressValidation(t *testing.T) {
 		{"https:///nohost", false},
 		{"", false},
 	} {
-		_, errs := addressValidation(tc.address, "address")
+		_, errs := httpsURLValidation(tc.address, "address")
 		if got := len(errs) == 0; got != tc.valid {
-			t.Errorf("addressValidation(%q) valid = %v, want %v (%v)",
+			t.Errorf("httpsURLValidation(%q) valid = %v, want %v (%v)",
 				tc.address, got, tc.valid, errs)
 		}
 	}
@@ -301,6 +314,107 @@ func TestValidateVaultAuth(t *testing.T) {
 				t.Errorf("expected an error containing %q", tc.errPart)
 			case tc.errPart != "" && !strings.Contains(err.Error(), tc.errPart):
 				t.Errorf("error = %v, want it to contain %q", err, tc.errPart)
+			}
+		})
+	}
+}
+
+func TestAzureKvConfigRoundTrip(t *testing.T) {
+	block := map[string]any{
+		"prefix":    "acme-prod",
+		"vault_url": "https://acme.vault.azure.net",
+		"cloud":     "usgov",
+		"auth": []any{map[string]any{
+			"method":    client.SecretStoreAzureAuthClientSecret,
+			"tenant_id": "8ea310af-fd38-43b1",
+			"client_id": "35e9cbbc-45ee-4ec6",
+		}},
+	}
+	d := schema.TestResourceDataRaw(t, SecretStoreResourceSchema(), map[string]any{
+		"name":     "azure-store",
+		"azure_kv": []any{block},
+	})
+
+	config, err := expandConfig(d)
+	if err != nil {
+		t.Fatalf("expandConfig: %v", err)
+	}
+	if config.Kind != client.SecretStoreKindAzureKv {
+		t.Errorf("kind = %q, want %q", config.Kind, client.SecretStoreKindAzureKv)
+	}
+	for _, tc := range []struct{ name, got, want string }{
+		{"prefix", config.Prefix, "acme-prod"},
+		{"vault_url", config.VaultURL, "https://acme.vault.azure.net"},
+		{"cloud", config.Cloud, "usgov"},
+		{"auth.method", config.Auth.Method, client.SecretStoreAzureAuthClientSecret},
+		{"auth.tenant_id", config.Auth.TenantID, "8ea310af-fd38-43b1"},
+		{"auth.client_id", config.Auth.ClientID, "35e9cbbc-45ee-4ec6"},
+	} {
+		if tc.got != tc.want {
+			t.Errorf("%s = %q, want %q", tc.name, tc.got, tc.want)
+		}
+	}
+	// no other kind's field rides along, which the API's strict model refuses
+	if config.Address != "" || config.Region != "" || config.Auth.Role != "" {
+		t.Errorf("another kind's fields are set: %+v", config)
+	}
+
+	// and back into state: a read of an azure_kv store must not error, which it
+	// did before this kind had a setConfigBlocks arm -- in a configuration that
+	// need not mention Azure at all
+	fresh := schema.TestResourceDataRaw(t, SecretStoreResourceSchema(), map[string]any{})
+	if err := setConfigBlocks(fresh, config); err != nil {
+		t.Fatalf("setConfigBlocks: %v", err)
+	}
+	stored := fresh.Get("azure_kv").([]any)
+	if len(stored) != 1 {
+		t.Fatalf("azure_kv = %v, want one block", stored)
+	}
+	got := stored[0].(map[string]any)
+	if got["vault_url"] != "https://acme.vault.azure.net" {
+		t.Errorf("vault_url = %v", got["vault_url"])
+	}
+}
+
+func TestValidateAzureAuth(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		auth    map[string]any
+		errPart string
+	}{
+		{
+			name: "default names nothing",
+			auth: map[string]any{"method": "default", "tenant_id": "t"},
+		},
+		{
+			name: "client_secret with a client id",
+			auth: map[string]any{
+				"method": "client_secret", "tenant_id": "t", "client_id": "cid",
+			},
+		},
+		{
+			name: "default refuses a client id",
+			auth: map[string]any{
+				"method": "default", "tenant_id": "t", "client_id": "cid",
+			},
+			errPart: "does not use client_id",
+		},
+		{
+			name:    "client_secret needs a client id",
+			auth:    map[string]any{"method": "client_secret", "tenant_id": "t"},
+			errPart: "needs client_id",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateAzureAuth(tc.auth)
+			if tc.errPart == "" {
+				if err != nil {
+					t.Fatalf("validateAzureAuth: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.errPart) {
+				t.Fatalf("validateAzureAuth = %v, want %q", err, tc.errPart)
 			}
 		})
 	}

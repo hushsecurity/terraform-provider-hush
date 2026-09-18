@@ -30,6 +30,7 @@ data "hush_secret_store" "example" {
 
 - `aws_sm` (List of Object) Configuration for an AWS Secrets Manager backend. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--aws_sm))
 - `aws_ssm` (List of Object) Configuration for an AWS SSM Parameter Store backend. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--aws_ssm))
+- `azure_kv` (List of Object) Configuration for an Azure Key Vault backend. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--azure_kv))
 - `deployment_ids` (List of String) List of deployment IDs this secret store is associated with
 - `description` (String) The description of the secret store
 - `gcp_sm` (List of Object) Configuration for a GCP Secret Manager backend. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--gcp_sm))
@@ -56,6 +57,27 @@ Read-Only:
 - `kms_key_id` (String)
 - `prefix` (String)
 - `region` (String)
+
+
+<a id="nestedatt--azure_kv"></a>
+### Nested Schema for `azure_kv`
+
+Read-Only:
+
+- `auth` (List of Object) (see [below for nested schema](#nestedobjatt--azure_kv--auth))
+- `cloud` (String)
+- `prefix` (String)
+- `vault_url` (String)
+
+<a id="nestedobjatt--azure_kv--auth"></a>
+### Nested Schema for `azure_kv.auth`
+
+Read-Only:
+
+- `client_id` (String)
+- `method` (String)
+- `tenant_id` (String)
+
 
 
 <a id="nestedatt--gcp_sm"></a>
