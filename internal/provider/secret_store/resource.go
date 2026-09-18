@@ -29,22 +29,61 @@ func Resource() *schema.Resource {
 	}
 }
 
-// customizeDiff applies the rules the schema cannot: which fields a vault auth
+// customizeDiff applies the rules the schema cannot: which fields an auth
 // method requires. Doing it here rather than at apply is the point -- the API
 // refuses these too, and a customer should hear it from the plan.
 func customizeDiff(
 	_ context.Context, d *schema.ResourceDiff, _ any,
 ) error {
-	v, ok := d.GetOk("hc_vault")
+	if hasAuthBlock(d, "hc_vault") {
+		return validateVaultAuth(d)
+	}
+	if hasAuthBlock(d, "azure_kv") {
+		return validateAzureAuth(d)
+	}
+	return nil
+}
+
+func hasAuthBlock(d *schema.ResourceDiff, kind string) bool {
+	v, ok := d.GetOk(kind)
 	if !ok {
-		return nil
+		return false
 	}
 	block := v.([]any)[0].(map[string]any)
 	auth, ok := block["auth"].([]any)
-	if !ok || len(auth) == 0 || auth[0] == nil {
+	return ok && len(auth) != 0 && auth[0] != nil
+}
+
+// validateAzureAuth refuses a client id on the default method rather than
+// ignoring it. The SDK has no option field for one and reads AZURE_CLIENT_ID
+// from the environment, which the workload identity webhook sets, so a store
+// created with one here could never build a silo -- and its config cannot be
+// edited afterwards.
+//
+// client_id is judged only once it is known, for the reason validateVaultAuth
+// gives: one taken from an azuread_application is unknown at plan time.
+func validateAzureAuth(d *schema.ResourceDiff) error {
+	const base = "azure_kv.0.auth.0."
+
+	if !d.NewValueKnown(base + "method") {
 		return nil
 	}
-	return validateVaultAuth(d)
+	method := d.Get(base + "method").(string)
+	clientIDKnown := d.NewValueKnown(base + "client_id")
+	clientID := d.Get(base + "client_id").(string)
+
+	if method == client.SecretStoreAzureAuthClientSecret {
+		if clientIDKnown && clientID == "" {
+			return fmt.Errorf(
+				"auth method %q needs client_id, the service principal's application id",
+				method)
+		}
+		return nil
+	}
+	if clientIDKnown && clientID != "" {
+		return fmt.Errorf("auth method %q does not use client_id", method)
+	}
+	return nil
 }
 
 // validateVaultAuth requires the field the named method uses and refuses the
@@ -207,10 +246,26 @@ func expandConfig(d *schema.ResourceData) (*client.SecretStoreConfig, error) {
 			Mount:          block["mount"].(string),
 			VaultNamespace: block["vault_namespace"].(string),
 			CaCert:         block["ca_cert"].(string),
-			Auth: &client.SecretStoreVaultAuth{
+			Auth: &client.SecretStoreAuth{
 				Method: auth["method"].(string),
 				Mount:  auth["mount"].(string),
 				Role:   auth["role"].(string),
+			},
+		}, nil
+	}
+	if v, ok := d.GetOk("azure_kv"); ok {
+		block := v.([]any)[0].(map[string]any)
+		// the auth block is Required with MaxItems 1, so exactly one is here
+		auth := block["auth"].([]any)[0].(map[string]any)
+		return &client.SecretStoreConfig{
+			Kind:     client.SecretStoreKindAzureKv,
+			Prefix:   block["prefix"].(string),
+			VaultURL: block["vault_url"].(string),
+			Cloud:    block["cloud"].(string),
+			Auth: &client.SecretStoreAuth{
+				Method:   auth["method"].(string),
+				TenantID: auth["tenant_id"].(string),
+				ClientID: auth["client_id"].(string),
 			},
 		}, nil
 	}

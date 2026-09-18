@@ -109,3 +109,43 @@ resource "hush_secret_store" "hc_vault_token" {
     }
   }
 }
+
+# azure_kv - Azure Key Vault
+resource "hush_secret_store" "azure_kv" {
+  name           = "prod-keyvault"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  azure_kv {
+    # at most 32 characters: a Key Vault secret name is capped at 127 and the
+    # rest is taken by what the access manager appends
+    prefix    = "hush"
+    vault_url = "https://acme-prod.vault.azure.net"
+    # cloud   = "usgov" # optional; "public" when omitted
+
+    auth {
+      # the access manager's own identity -- on AKS, workload identity, which
+      # needs no secret configured anywhere
+      method    = "default"
+      tenant_id = "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}
+
+# A service principal, for a cluster without workload identity. The secret
+# itself is the deployment's, from SILO_AZURE_KV_CLIENT_SECRET; nothing here
+# names it.
+resource "hush_secret_store" "azure_kv_client_secret" {
+  name           = "prod-keyvault-sp"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  azure_kv {
+    prefix    = "hush"
+    vault_url = "https://acme-prod.vault.azure.net"
+
+    auth {
+      method    = "client_secret"
+      tenant_id = "00000000-0000-0000-0000-000000000000"
+      client_id = "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

@@ -13,6 +13,72 @@ import (
 // The acceptance tests cover these through a plan, but need the fixtures
 // "make fetch-mock-fixtures" pulls. These are pure functions, so the boundary
 // rows are cheaper here. Expectations mirror midgard's validate_prefix.
+// Both mirror midgard, which mirrors the access-manager. config is immutable,
+// so a value only terraform accepts makes a store that can only be deleted.
+// midgard refuses all of these; a plan that accepts them fails at apply, and
+// the store's config cannot be edited afterwards.
+func TestAzureVaultURLValidation(t *testing.T) {
+	for _, tc := range []struct {
+		url   string
+		valid bool
+	}{
+		{"https://acme.vault.azure.net", true},
+		{"https://acme.vault.azure.net/", true},
+		{"https://acme.vault.azure.net/secrets", false},
+		{"https://acme.vault.azure.net?x=1", false},
+		{"https://acme.vault.azure.net#f", false},
+		{"https://acme.managedhsm.azure.net", false},
+		{"https://acme.vault.azure.net:443", false},
+		{"https://acme.vault.azure.net:", false},
+		{"HTTPS://ACME.VAULT.AZURE.NET", false},
+		{"https://user:pw@acme.vault.azure.net", false},
+		{"http://acme.vault.azure.net", false},
+		{"https://" + strings.Repeat("a", 260) + ".vault.azure.net", false},
+	} {
+		_, errs := azureVaultURLValidation(tc.url, "vault_url")
+		if got := len(errs) == 0; got != tc.valid {
+			t.Errorf("validate(%q) valid = %v, want %v (%v)",
+				tc.url, got, tc.valid, errs)
+		}
+	}
+}
+
+func TestAzureIdentityValidation(t *testing.T) {
+	const guid = "11111111-2222-3333-4444-555555555555"
+	for _, tc := range []struct {
+		field    string
+		validate func(any, string) ([]string, []error)
+		value    string
+		valid    bool
+	}{
+		// azidentity's validTenantID charset: a guid or a domain
+		{"tenant_id", azureTenantValidation, guid, true},
+		{"tenant_id", azureTenantValidation, "contoso.onmicrosoft.com", true},
+		{"tenant_id", azureTenantValidation, "", false},
+		{"tenant_id", azureTenantValidation, guid + " ", false},
+		{"tenant_id", azureTenantValidation, " " + guid, false},
+		{"tenant_id", azureTenantValidation,
+			"https://login.microsoftonline.com/" + guid, false},
+		{"tenant_id", azureTenantValidation, "contoso onmicrosoft.com", false},
+
+		// an Entra application id, which is a guid and nothing else
+		{"client_id", azureClientIDValidation, guid, true},
+		{"client_id", azureClientIDValidation, strings.ToUpper(guid), true},
+		{"client_id", azureClientIDValidation, "", false},
+		{"client_id", azureClientIDValidation, "cid", false},
+		{"client_id", azureClientIDValidation, "{" + guid + "}", false},
+		{"client_id", azureClientIDValidation, guid[:len(guid)-1], false},
+		// a tenant may be a domain; an application id may not
+		{"client_id", azureClientIDValidation, "contoso.onmicrosoft.com", false},
+	} {
+		_, errs := tc.validate(tc.value, tc.field)
+		if got := len(errs) == 0; got != tc.valid {
+			t.Errorf("%s: validate(%q) valid = %v, want %v (%v)",
+				tc.field, tc.value, got, tc.valid, errs)
+		}
+	}
+}
+
 func TestPrefixValidation(t *testing.T) {
 	for _, tc := range []struct {
 		kind     string
@@ -45,6 +111,29 @@ func TestPrefixValidation(t *testing.T) {
 		{"hc_vault", hcVaultPrefixValidation, "acme/prod/secrets", true},
 		{"hc_vault", hcVaultPrefixValidation, "acme+prod", false},
 		{"hc_vault", hcVaultPrefixValidation, "acme@prod", false},
+		// azure_kv allows no punctuation but the separator
+		{"azure_kv", azureKvPrefixValidation, "acme", true},
+		{"azure_kv", azureKvPrefixValidation, "acme-prod-eu", true},
+		{"azure_kv", azureKvPrefixValidation, "acme_prod", false},
+		{"azure_kv", azureKvPrefixValidation, "acme.prod", false},
+		{"azure_kv", azureKvPrefixValidation, "acme/prod", false},
+		{"azure_kv", azureKvPrefixValidation, "ac--me", false},
+
+		// length, which is the one rule that differs per kind. Checked here
+		// rather than left to the API: a tightening is otherwise missed until
+		// apply, which is the failure this provider exists to prevent.
+		{"azure_kv", azureKvPrefixValidation, strings.Repeat("a", 32), true},
+		{"azure_kv", azureKvPrefixValidation, strings.Repeat("a", 33), false},
+		{"aws_sm", awsSMPrefixValidation, strings.Repeat("a", 80), true},
+		{"aws_sm", awsSMPrefixValidation, strings.Repeat("a", 81), false},
+		{"aws_ssm", awsSSMPrefixValidation, strings.Repeat("a", 80), true},
+		{"aws_ssm", awsSSMPrefixValidation, strings.Repeat("a", 81), false},
+		{"gcp_sm", gcpSMPrefixValidation, strings.Repeat("a", 80), true},
+		{"gcp_sm", gcpSMPrefixValidation, strings.Repeat("a", 81), false},
+		{"k8s_secrets", k8sPrefixValidation, strings.Repeat("a", 80), true},
+		{"k8s_secrets", k8sPrefixValidation, strings.Repeat("a", 81), false},
+		{"hc_vault", hcVaultPrefixValidation, strings.Repeat("a", 80), true},
+		{"hc_vault", hcVaultPrefixValidation, strings.Repeat("a", 81), false},
 
 		// adjacency: allowed wherever the charset allows both characters, since
 		// the backends attach no meaning to it
@@ -147,9 +236,9 @@ func TestAddressValidation(t *testing.T) {
 		{"https://vault.acme.internal:8200/a%", false},
 		{"https://vault.acme.internal:8200/a%2", false},
 	} {
-		_, errs := addressValidation(tc.address, "address")
+		_, errs := httpsURLValidation(tc.address, "address")
 		if got := len(errs) == 0; got != tc.valid {
-			t.Errorf("addressValidation(%q) valid = %v, want %v (%v)",
+			t.Errorf("httpsURLValidation(%q) valid = %v, want %v (%v)",
 				tc.address, got, tc.valid, errs)
 		}
 	}
@@ -398,6 +487,167 @@ func TestValidateVaultAuth(t *testing.T) {
 				t.Errorf("expected an error containing %q", tc.errPart)
 			case tc.errPart != "" && !strings.Contains(err.Error(), tc.errPart):
 				t.Errorf("error = %v, want it to contain %q", err, tc.errPart)
+			}
+		})
+	}
+}
+
+func TestAzureKvConfigRoundTrip(t *testing.T) {
+	block := map[string]any{
+		"prefix":    "acme-prod",
+		"vault_url": "https://acme.vault.azure.net",
+		"cloud":     "usgov",
+		"auth": []any{map[string]any{
+			"method":    client.SecretStoreAzureAuthClientSecret,
+			"tenant_id": "8ea310af-fd38-43b1",
+			"client_id": "35e9cbbc-45ee-4ec6",
+		}},
+	}
+	d := schema.TestResourceDataRaw(t, SecretStoreResourceSchema(), map[string]any{
+		"name":     "azure-store",
+		"azure_kv": []any{block},
+	})
+
+	config, err := expandConfig(d)
+	if err != nil {
+		t.Fatalf("expandConfig: %v", err)
+	}
+	if config.Kind != client.SecretStoreKindAzureKv {
+		t.Errorf("kind = %q, want %q", config.Kind, client.SecretStoreKindAzureKv)
+	}
+	for _, tc := range []struct{ name, got, want string }{
+		{"prefix", config.Prefix, "acme-prod"},
+		{"vault_url", config.VaultURL, "https://acme.vault.azure.net"},
+		{"cloud", config.Cloud, "usgov"},
+		{"auth.method", config.Auth.Method, client.SecretStoreAzureAuthClientSecret},
+		{"auth.tenant_id", config.Auth.TenantID, "8ea310af-fd38-43b1"},
+		{"auth.client_id", config.Auth.ClientID, "35e9cbbc-45ee-4ec6"},
+	} {
+		if tc.got != tc.want {
+			t.Errorf("%s = %q, want %q", tc.name, tc.got, tc.want)
+		}
+	}
+	// no other kind's field rides along, which the API's strict model refuses
+	if config.Address != "" || config.Region != "" || config.Auth.Role != "" {
+		t.Errorf("another kind's fields are set: %+v", config)
+	}
+
+	// and back into state: a read of an azure_kv store must not error, which it
+	// did before this kind had a setConfigBlocks arm -- in a configuration that
+	// need not mention Azure at all
+	fresh := schema.TestResourceDataRaw(t, SecretStoreResourceSchema(), map[string]any{})
+	if err := setConfigBlocks(fresh, config); err != nil {
+		t.Fatalf("setConfigBlocks: %v", err)
+	}
+	stored := fresh.Get("azure_kv").([]any)
+	if len(stored) != 1 {
+		t.Fatalf("azure_kv = %v, want one block", stored)
+	}
+	got := stored[0].(map[string]any)
+	if got["vault_url"] != "https://acme.vault.azure.net" {
+		t.Errorf("vault_url = %v", got["vault_url"])
+	}
+}
+
+// azureAuthDiff runs the real resource diff, CustomizeDiff included, for a new
+// store whose azure auth block is the one given.
+func azureAuthDiff(t *testing.T, auth map[string]any) error {
+	t.Helper()
+	config := terraform.NewResourceConfigRaw(map[string]any{
+		"name":           "s",
+		"deployment_ids": []any{"dep-xxxxxxxxxxxxxxxx"},
+		"azure_kv": []any{map[string]any{
+			"prefix":    "hush",
+			"vault_url": "https://acme.vault.azure.net",
+			"auth":      []any{auth},
+		}},
+	})
+	_, err := Resource().Diff(context.Background(), nil, config, nil)
+	return err
+}
+
+func TestValidateAzureAuth(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		auth    map[string]any
+		errPart string
+	}{
+		{
+			name: "default names nothing",
+			auth: map[string]any{"method": "default", "tenant_id": "t"},
+		},
+		{
+			name: "client_secret with a client id",
+			auth: map[string]any{
+				"method": "client_secret", "tenant_id": "t", "client_id": "cid",
+			},
+		},
+		{
+			name: "default refuses a client id",
+			auth: map[string]any{
+				"method": "default", "tenant_id": "t", "client_id": "cid",
+			},
+			errPart: "does not use client_id",
+		},
+		{
+			name:    "client_secret needs a client id",
+			auth:    map[string]any{"method": "client_secret", "tenant_id": "t"},
+			errPart: "needs client_id",
+		},
+		// a client id taken from an azuread_application is unknown at plan
+		// time and reads as "", so neither rule may judge it yet
+		{
+			name: "client_secret with an unknown client id",
+			auth: map[string]any{
+				"method": "client_secret", "tenant_id": "t",
+				"client_id": unknownValue,
+			},
+		},
+		{
+			name: "default with an unknown client id",
+			auth: map[string]any{
+				"method": "default", "tenant_id": "t", "client_id": unknownValue,
+			},
+		},
+		{
+			name: "an unknown method is left to apply",
+			auth: map[string]any{"method": unknownValue, "tenant_id": "t"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := azureAuthDiff(t, tc.auth)
+			if tc.errPart == "" {
+				if err != nil {
+					t.Fatalf("validateAzureAuth: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.errPart) {
+				t.Fatalf("validateAzureAuth = %v, want %q", err, tc.errPart)
+			}
+		})
+	}
+}
+
+// The maximum is the one prefix rule a caller cannot infer from an example,
+// and it is now per kind, so every kind has to state its own. k8s_secrets lost
+// the sentence when the shared description was split for azure_kv's 32.
+func TestEveryKindsPrefixDescriptionStatesItsMaximum(t *testing.T) {
+	want := map[string]string{
+		"aws_sm":      "At most 80 characters.",
+		"aws_ssm":     "At most 80 characters.",
+		"gcp_sm":      "At most 80 characters.",
+		"k8s_secrets": "At most 80 characters.",
+		"hc_vault":    "At most 80 characters.",
+		"azure_kv":    "at most 32 characters",
+	}
+	schemaMap := SecretStoreResourceSchema()
+	for _, kind := range configBlockNames {
+		t.Run(kind, func(t *testing.T) {
+			block := schemaMap[kind].Elem.(*schema.Resource).Schema
+			got := block["prefix"].Description
+			if !strings.Contains(got, want[kind]) {
+				t.Errorf("prefix description = %q, want it to state %q", got, want[kind])
 			}
 		})
 	}
