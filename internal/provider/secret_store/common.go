@@ -46,11 +46,10 @@ const (
 	vaultNsDesc = "A Vault Enterprise namespace to address the secrets in (optional). Unrelated to the prefix, which names the secrets themselves; Vault OSS ignores it."
 	caCertDesc  = "The PEM certificate the Vault server's certificate is verified against (optional). Needed only when it does not chain to a root the access manager already trusts."
 
-	authDesc         = "How the access manager authenticates to Vault"
-	authMethodDesc   = "The Vault auth method: \"kubernetes\" (the access manager presents its pod's service-account token and the cluster's TokenReview api vouches for it), \"jwt\" (the same token, validated against the cluster's JWKS, for a Vault that cannot reach the api server), or \"token\" (a token the deployment already holds). Defaults to \"kubernetes\"."
-	authMountDesc    = "The path the auth method is mounted at (defaults to the method's own name when omitted). Not used by the \"token\" method, which does not log in."
-	authRoleDesc     = "The Vault role the access manager's service account is bound to. Required by the \"kubernetes\" and \"jwt\" methods, and not used by \"token\"."
-	authTokenEnvDesc = "The environment variable the access manager reads this store's token from. Required by the \"token\" method, and not used by the others. Only the name is stored here; the deployment holds the token itself, so its environment must carry that variable."
+	authDesc       = "How the access manager authenticates to Vault"
+	authMethodDesc = "The Vault auth method: \"kubernetes\" (the access manager presents its pod's service-account token and the cluster's TokenReview api vouches for it), \"jwt\" (the same token, validated against the cluster's JWKS, for a Vault that cannot reach the api server), or \"token\" (a token the deployment already holds). Defaults to \"kubernetes\"."
+	authMountDesc  = "The path the auth method is mounted at (defaults to the method's own name when omitted). Not used by the \"token\" method, which does not log in."
+	authRoleDesc   = "The Vault role the access manager's service account is bound to. Required by the \"kubernetes\" and \"jwt\" methods, and not used by \"token\"."
 )
 
 // 15 Parameter Store hierarchy levels less the six a remote key appends.
@@ -412,13 +411,6 @@ func hcVaultConfigResource() *schema.Resource {
 							ForceNew:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
-						"token_env_name": {
-							Description:  authTokenEnvDesc,
-							Type:         schema.TypeString,
-							Optional:     true,
-							ForceNew:     true,
-							ValidateFunc: validation.StringIsNotEmpty,
-						},
 					},
 				},
 			},
@@ -471,11 +463,6 @@ func hcVaultConfigDataSource() *schema.Resource {
 						"method": {Description: authMethodDesc, Type: schema.TypeString, Computed: true},
 						"mount":  {Description: authMountDesc, Type: schema.TypeString, Computed: true},
 						"role":   {Description: authRoleDesc, Type: schema.TypeString, Computed: true},
-						"token_env_name": {
-							Description: authTokenEnvDesc,
-							Type:        schema.TypeString,
-							Computed:    true,
-						},
 					},
 				},
 			},
@@ -568,7 +555,6 @@ func setConfigBlocks(d *schema.ResourceData, config *client.SecretStoreConfig) e
 			auth["method"] = config.Auth.Method
 			auth["mount"] = config.Auth.Mount
 			auth["role"] = config.Auth.Role
-			auth["token_env_name"] = config.Auth.TokenEnvName
 		}
 		block["auth"] = []map[string]any{auth}
 	default:

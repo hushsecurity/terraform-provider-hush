@@ -120,8 +120,7 @@ resource "hush_secret_store" "hc_vault_token" {
     address = "https://vault.example.internal:8200"
 
     auth {
-      method         = "token"
-      token_env_name = "SILO_VAULT_TOKEN_PROD"
+      method = "token"
     }
   }
 }
@@ -208,7 +207,6 @@ Optional:
 - `method` (String) The Vault auth method: "kubernetes" (the access manager presents its pod's service-account token and the cluster's TokenReview api vouches for it), "jwt" (the same token, validated against the cluster's JWKS, for a Vault that cannot reach the api server), or "token" (a token the deployment already holds). Defaults to "kubernetes".
 - `mount` (String) The path the auth method is mounted at (defaults to the method's own name when omitted). Not used by the "token" method, which does not log in.
 - `role` (String) The Vault role the access manager's service account is bound to. Required by the "kubernetes" and "jwt" methods, and not used by "token".
-- `token_env_name` (String) The environment variable the access manager reads this store's token from. Required by the "token" method, and not used by the others. Only the name is stored here; the deployment holds the token itself, so its environment must carry that variable.
 
 
 

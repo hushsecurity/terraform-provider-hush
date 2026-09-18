@@ -105,8 +105,7 @@ resource "hush_secret_store" "hc_vault_token" {
     address = "https://vault.example.internal:8200"
 
     auth {
-      method         = "token"
-      token_env_name = "SILO_VAULT_TOKEN_PROD"
+      method = "token"
     }
   }
 }

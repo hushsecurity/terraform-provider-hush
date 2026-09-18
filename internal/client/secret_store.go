@@ -37,13 +37,12 @@ var SecretStoreVaultAuthMethods = []string{
 }
 
 // SecretStoreVaultAuth is how the access manager authenticates to Vault.
-// Role belongs to the kubernetes and jwt methods, TokenEnvName to token; the
-// API refuses a field belonging to another method, so both are omitempty.
+// Mount and Role belong to the kubernetes and jwt methods; the API refuses a
+// field belonging to another method, so both are omitempty.
 type SecretStoreVaultAuth struct {
-	Method       string `json:"method"`
-	Mount        string `json:"mount,omitempty"`
-	Role         string `json:"role,omitempty"`
-	TokenEnvName string `json:"token_env_name,omitempty"`
+	Method string `json:"method"`
+	Mount  string `json:"mount,omitempty"`
+	Role   string `json:"role,omitempty"`
 }
 
 // SecretStoreConfig is the backend's discriminated config union flattened into a

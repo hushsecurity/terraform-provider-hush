@@ -237,8 +237,8 @@ func TestValidateVaultAuth(t *testing.T) {
 			auth: map[string]any{"method": "jwt", "role": "hush-am"},
 		},
 		{
-			name: "token with an env name",
-			auth: map[string]any{"method": "token", "token_env_name": "E"},
+			name: "token names nothing",
+			auth: map[string]any{"method": "token"},
 		},
 		{
 			name:    "kubernetes without a role",
@@ -250,33 +250,17 @@ func TestValidateVaultAuth(t *testing.T) {
 			auth:    map[string]any{"method": "jwt"},
 			errPart: `auth method "jwt" needs a role`,
 		},
-		{
-			name:    "token without an env name",
-			auth:    map[string]any{"method": "token"},
-			errPart: `auth method "token" needs token_env_name`,
-		},
 		// a field of another method is refused rather than ignored: the config
 		// is immutable, so it cannot be corrected after the fact
 		{
-			name: "token with a role",
-			auth: map[string]any{
-				"method": "token", "token_env_name": "E", "role": "hush-am",
-			},
+			name:    "token with a role",
+			auth:    map[string]any{"method": "token", "role": "hush-am"},
 			errPart: `auth method "token" does not use role`,
 		},
 		{
-			name: "token with a mount",
-			auth: map[string]any{
-				"method": "token", "token_env_name": "E", "mount": "kubernetes",
-			},
+			name:    "token with a mount",
+			auth:    map[string]any{"method": "token", "mount": "kubernetes"},
 			errPart: `auth method "token" does not use mount`,
-		},
-		{
-			name: "kubernetes with an env name",
-			auth: map[string]any{
-				"method": "kubernetes", "role": "hush-am", "token_env_name": "E",
-			},
-			errPart: `auth method "kubernetes" does not use token_env_name`,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

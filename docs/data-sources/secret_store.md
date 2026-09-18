@@ -87,7 +87,6 @@ Read-Only:
 - `method` (String)
 - `mount` (String)
 - `role` (String)
-- `token_env_name` (String)
 
 
 

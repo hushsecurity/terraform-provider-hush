@@ -55,15 +55,9 @@ func customizeDiff(
 func validateVaultAuth(auth map[string]any) error {
 	method, _ := auth["method"].(string)
 	role, _ := auth["role"].(string)
-	tokenEnvName, _ := auth["token_env_name"].(string)
 	mount, _ := auth["mount"].(string)
 
 	if method == client.SecretStoreVaultAuthToken {
-		if tokenEnvName == "" {
-			return fmt.Errorf(
-				"auth method %q needs token_env_name, the environment variable the access manager reads the token from",
-				method)
-		}
 		if role != "" {
 			return fmt.Errorf("auth method %q does not use role", method)
 		}
@@ -74,9 +68,6 @@ func validateVaultAuth(auth map[string]any) error {
 	}
 	if role == "" {
 		return fmt.Errorf("auth method %q needs a role", method)
-	}
-	if tokenEnvName != "" {
-		return fmt.Errorf("auth method %q does not use token_env_name", method)
 	}
 	return nil
 }
@@ -207,10 +198,9 @@ func expandConfig(d *schema.ResourceData) (*client.SecretStoreConfig, error) {
 			VaultNamespace: block["vault_namespace"].(string),
 			CaCert:         block["ca_cert"].(string),
 			Auth: &client.SecretStoreVaultAuth{
-				Method:       auth["method"].(string),
-				Mount:        auth["mount"].(string),
-				Role:         auth["role"].(string),
-				TokenEnvName: auth["token_env_name"].(string),
+				Method: auth["method"].(string),
+				Mount:  auth["mount"].(string),
+				Role:   auth["role"].(string),
 			},
 		}, nil
 	}

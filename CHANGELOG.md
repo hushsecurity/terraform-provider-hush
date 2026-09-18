@@ -22,11 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   | ------ | ---------------- | -------------------- |
   | `kubernetes` (default) | the access manager's own service-account token, which the cluster's TokenReview api vouches for | `role` |
   | `jwt` | the same token, validated against the cluster's JWKS -- for a Vault that cannot reach the api server | `role` |
-  | `token` | a token the deployment already holds | `token_env_name` |
+  | `token` | a token the deployment already holds | nothing |
 
-  A field belonging to another method is refused at plan time rather than ignored, because a store's config is immutable and cannot be corrected afterwards: `token` takes no `role` or `mount`, and the other two take no `token_env_name`.
+  A field belonging to another method is refused at plan time rather than ignored, because a store's config is immutable and cannot be corrected afterwards: `token` takes no `role` and no `mount`.
 
-  With `token`, only the *name* of the environment variable is stored. The access manager reads the token from its own environment, so **the deployment must carry that variable** -- a store whose variable is missing never becomes ready. Naming it per store is what lets two token-authenticated stores in one deployment hold different tokens.
+  With `token`, the block names nothing at all. The access manager reads the token from `SILO_VAULT_TOKEN` in its own environment, so **the deployment must carry that variable** -- a store whose variable is missing never becomes ready. That is one token for the whole deployment, shared by every token-authenticated store in it, which is why `kubernetes` is the method a deployment should use.
 
   The Vault side needs, for `kubernetes` and `jwt`, the role bound to the access manager's service account; and for every method a policy granting `create`, `update`, `read` on `<mount>/data/<prefix>/*` and `read`, `delete` on `<mount>/metadata/<prefix>/*` -- a policy missing the metadata grants leaves a store that reads and writes but can never delete.
 
