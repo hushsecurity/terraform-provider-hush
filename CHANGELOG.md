@@ -580,6 +580,8 @@ resource "hush_deployment" "k8s" {
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
 [1.24.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.23.0...v1.24.0
+[1.23.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.3...v1.23.0
+[1.22.3]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.2...v1.22.3
 [1.22.2]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.1...v1.22.2
 [1.22.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.0...v1.22.1
 [1.22.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.21.0...v1.22.0
