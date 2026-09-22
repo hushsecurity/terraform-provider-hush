@@ -15,7 +15,35 @@ const (
 	SecretStoreKindAWSSSM     = "aws_ssm"
 	SecretStoreKindGCPSM      = "gcp_sm"
 	SecretStoreKindK8sSecrets = "k8s_secrets"
+	SecretStoreKindHCVault    = "hc_vault"
 )
+
+// The auth methods the API offers. kubernetes and jwt present the access
+// manager's own service-account token to a role, validated by the cluster's
+// TokenReview api or its JWKS; token presents one the access manager reads
+// from its own environment, which the config does not name.
+const (
+	SecretStoreVaultAuthKubernetes = "kubernetes"
+	SecretStoreVaultAuthJWT        = "jwt"
+	SecretStoreVaultAuthToken      = "token"
+)
+
+// SecretStoreVaultAuthMethods is every method the API accepts, in the order
+// the documentation lists them.
+var SecretStoreVaultAuthMethods = []string{
+	SecretStoreVaultAuthKubernetes,
+	SecretStoreVaultAuthJWT,
+	SecretStoreVaultAuthToken,
+}
+
+// SecretStoreVaultAuth is how the access manager authenticates to Vault.
+// Mount and Role belong to the kubernetes and jwt methods; the API refuses a
+// field belonging to another method, so both are omitempty.
+type SecretStoreVaultAuth struct {
+	Method string `json:"method"`
+	Mount  string `json:"mount,omitempty"`
+	Role   string `json:"role,omitempty"`
+}
 
 // SecretStoreConfig is the backend's discriminated config union flattened into a
 // single struct. Only the fields relevant to Kind are populated; the omitempty
@@ -28,6 +56,13 @@ type SecretStoreConfig struct {
 	KmsKeyID  string `json:"kms_key_id,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
+	// hc_vault. Auth is a pointer so it stays out of another kind's request,
+	// which the backend's strict model would refuse.
+	Address        string                `json:"address,omitempty"`
+	Mount          string                `json:"mount,omitempty"`
+	VaultNamespace string                `json:"vault_namespace,omitempty"`
+	CaCert         string                `json:"ca_cert,omitempty"`
+	Auth           *SecretStoreVaultAuth `json:"auth,omitempty"`
 }
 
 type SecretStore struct {

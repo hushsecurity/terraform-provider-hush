@@ -33,6 +33,7 @@ data "hush_secret_store" "example" {
 - `deployment_ids` (List of String) List of deployment IDs this secret store is associated with
 - `description` (String) The description of the secret store
 - `gcp_sm` (List of Object) Configuration for a GCP Secret Manager backend. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--gcp_sm))
+- `hc_vault` (List of Object) Configuration for a HashiCorp Vault backend, on its KV v2 secrets engine. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--hc_vault))
 - `k8s_secrets` (List of Object) Configuration for a Kubernetes Secrets backend. Immutable: changing it forces a new secret store. (see [below for nested schema](#nestedatt--k8s_secrets))
 - `status` (String) The aggregate status of the secret store across its deployments (pending, ready, warning, error)
 - `status_detail` (String) Detail of the worst deployment status
@@ -64,6 +65,29 @@ Read-Only:
 
 - `prefix` (String)
 - `project_id` (String)
+
+
+<a id="nestedatt--hc_vault"></a>
+### Nested Schema for `hc_vault`
+
+Read-Only:
+
+- `address` (String)
+- `auth` (List of Object) (see [below for nested schema](#nestedobjatt--hc_vault--auth))
+- `ca_cert` (String)
+- `mount` (String)
+- `prefix` (String)
+- `vault_namespace` (String)
+
+<a id="nestedobjatt--hc_vault--auth"></a>
+### Nested Schema for `hc_vault.auth`
+
+Read-Only:
+
+- `method` (String)
+- `mount` (String)
+- `role` (String)
+
 
 
 <a id="nestedatt--k8s_secrets"></a>
