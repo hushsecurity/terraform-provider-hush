@@ -48,3 +48,64 @@ resource "hush_secret_store" "k8s" {
     namespace = "hush-secrets" # optional; defaults to the access-manager namespace
   }
 }
+
+# HashiCorp Vault, on its KV v2 secrets engine
+resource "hush_secret_store" "hc_vault" {
+  name           = "prod-vault"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+    mount   = "secret" # optional; the KV v2 mount, "secret" when omitted
+
+    # optional; only when the server's certificate does not chain to a
+    # publicly trusted root
+    # ca_cert = file("vault-ca.pem")
+
+    # optional; a Vault Enterprise namespace
+    # vault_namespace = "admin/acme"
+
+    auth {
+      # the access manager presents its pod's service-account token to this
+      # role, and the cluster's TokenReview api vouches for it
+      role = "hush-am"
+      # method = "kubernetes" # optional; the default
+      # mount  = "kubernetes" # optional; where the auth method is mounted
+    }
+  }
+}
+
+# The same, for a Vault that cannot reach the cluster's api server: the
+# service-account token is validated against the cluster's JWKS instead.
+resource "hush_secret_store" "hc_vault_jwt" {
+  name           = "prod-vault-jwt"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+
+    auth {
+      method = "jwt"
+      role   = "hush-am"
+    }
+  }
+}
+
+# A token the deployment already holds. Only the variable's name is stored
+# here; the access manager reads the token from its own environment, so the
+# deployment must carry that variable.
+resource "hush_secret_store" "hc_vault_token" {
+  name           = "prod-vault-token"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+
+    auth {
+      method = "token"
+    }
+  }
+}
