@@ -6,6 +6,59 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Azure Key Vault secret stores**: `hush_secret_store` takes an `azure_kv` block, storing each credential as one secret in an Azure Key Vault.
+
+  The block needs `vault_url` and an `auth` block naming the Entra ID `tenant_id`. `cloud` selects the Azure cloud -- `public`, `china` or `usgov` -- and picks the authority as well as the data-plane audience, so it cannot be inferred from the URL. `vault_url` must be `https`, refused at plan time.
+
+  `auth.method` is `default`, the access manager's own identity (on AKS, workload identity, which needs no secret configured anywhere), or `client_secret`, a service principal. `client_secret` needs `client_id`; `default` refuses it, because the SDK has no field for one and reads `AZURE_CLIENT_ID` from the environment instead, so a store created with one could never become ready and its config cannot be edited. The secret itself is the deployment's and no field names it.
+
+  **The prefix maximum is 32 for this kind**, where every other allows 80: a Key Vault secret name is capped at 127 characters and the rest is taken by what the access manager appends. It is now checked at plan time rather than left to the API, since a tightening is otherwise only seen at apply.
+
+  The vault must **not** have purge protection enabled, and the identity needs `get`, `set`, `delete` and `purge` on its secrets. The access manager deletes a secret by purging it so the name can be reused; a vault that forbids purging leaves every deleted name unusable for its retention period.
+
+* **HashiCorp Vault secret stores**: `hush_secret_store` takes an `hc_vault` block, storing each credential as one secret on a Vault KV v2 mount, with the credential's fields as the secret's own fields.
+
+  The block needs the Vault `address` and an `auth` block naming the role. `mount` defaults to `secret`, `ca_cert` is needed only when the server's certificate does not chain to a publicly trusted root, and `vault_namespace` addresses a Vault Enterprise namespace. Prefix punctuation follows a KV v2 path: `_` `.` and `/` besides `-`, with `/` separating segments; nothing is reserved, since the access manager writes under `<mount>/data/<prefix>/`.
+
+  `address` must be `https`, refused at plan time. Every request to Vault carries the token in a header and a login posts the access manager's service-account token in a body, so plaintext would put a live credential on the wire.
+
+  `auth.method` is one of three, matching what the Hush sensor's Vault crawler supports:
+
+  | method | what it presents | what the block needs |
+  | ------ | ---------------- | -------------------- |
+  | `kubernetes` (default) | the access manager's own service-account token, which the cluster's TokenReview api vouches for | `role` |
+  | `jwt` | the same token, validated against the cluster's JWKS -- for a Vault that cannot reach the api server | `role` |
+  | `token` | a token the deployment already holds | nothing |
+
+  A field belonging to another method is refused at plan time rather than ignored, because a store's config is immutable and cannot be corrected afterwards: `token` takes no `role` and no `mount`.
+
+  With `token`, the block names nothing at all. The access manager reads the token from `SILO_HC_VAULT_TOKEN` in its own environment, so **the deployment must carry that variable** -- a store whose variable is missing never becomes ready. That is one token for the whole deployment, shared by every token-authenticated store in it, which is why `kubernetes` is the method a deployment should use.
+
+  The Vault side needs, for `kubernetes` and `jwt`, the role bound to the access manager's service account; and for every method a policy granting `create`, `update`, `read` on `<mount>/data/<prefix>/*` and `read`, `delete` on `<mount>/metadata/<prefix>/*` -- a policy missing the metadata grants leaves a store that reads and writes but can never delete.
+
+  **The deployments need an access manager that carries the driver.** The API refuses an `hc_vault` store aimed at a deployment below the minimum version, naming it, rather than letting the store sit in error with a config that cannot be edited.
+
+```hcl
+resource "hush_secret_store" "vault" {
+  name           = "prod-vault"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+    mount   = "secret"
+
+    auth {
+      role = "hush-am"
+    }
+  }
+}
+```
+
 ## [1.25.0] - 2026-09-20
 
 ### Fixed

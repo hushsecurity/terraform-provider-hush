@@ -8,6 +8,19 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 )
 
+// what a vault block needs beyond the prefix
+const vaultBody = `address = "https://vault.acme.internal:8200"
+    auth { role = "hush-am" }`
+
+// vaultAuth builds a vault block body whose auth block carries exactly what
+// the case is about.
+func vaultAuth(auth string) string {
+	return fmt.Sprintf(`address = "https://vault.acme.internal:8200"
+    auth {
+      %s
+    }`, auth)
+}
+
 // Each config block wires its own validator, so every block needs its own
 // case: a charset legal for one backend is illegal for another.
 func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
@@ -76,6 +89,135 @@ func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
 			body:      `namespace = "hush-am"`,
 			prefix:    "acme_prod",
 			expectErr: regexp.MustCompile(`prefix must be`),
+		},
+		{
+			name:   "hc_vault.slash.delimits",
+			block:  "hc_vault",
+			body:   vaultBody,
+			prefix: "acme/prod/secrets",
+		},
+		{
+			name:   "hc_vault.underscore.and.dot.allowed",
+			block:  "hc_vault",
+			body:   vaultBody,
+			prefix: "acme_prod.v1",
+		},
+		{
+			name:      "hc_vault.rejects.plus",
+			block:     "hc_vault",
+			body:      vaultBody,
+			prefix:    "acme+corp",
+			expectErr: regexp.MustCompile(`prefix must be`),
+		},
+		// nothing is reserved: the silo writes under <mount>/data/<prefix>/...
+		{
+			name:   "hc_vault.reserves.nothing",
+			block:  "hc_vault",
+			body:   vaultBody,
+			prefix: "metadata",
+		},
+		// the address rule the API applies, applied here so a customer hears
+		// it at plan time rather than on apply
+		{
+			name:      "hc_vault.rejects.plaintext.address",
+			block:     "hc_vault",
+			body:      "address = \"http://vault.acme.internal:8200\"\n    auth { role = \"hush-am\" }",
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`address must be an https URL`),
+		},
+		{
+			name:      "hc_vault.rejects.address.without.a.scheme",
+			block:     "hc_vault",
+			body:      "address = \"vault.acme.internal:8200\"\n    auth { role = \"hush-am\" }",
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`address must be an https URL`),
+		},
+		{
+			name:      "hc_vault.rejects.unknown.auth.method",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "approle"` + "\n      " + `role = "hush-am"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`expected hc_vault\.0\.auth\.0\.method to be one of`),
+		},
+		// every branch of the diff that requires a field, or refuses one
+		// belonging to another method
+		{
+			name:      "hc_vault.kubernetes.requires.a.role",
+			block:     "hc_vault",
+			body:      vaultAuth(""),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "kubernetes" needs a role`),
+		},
+		{
+			name:   "hc_vault.jwt.accepts.a.role",
+			block:  "hc_vault",
+			body:   vaultAuth(`method = "jwt"` + "\n      " + `role = "hush-am"`),
+			prefix: "acme",
+		},
+		{
+			name:      "hc_vault.jwt.requires.a.role",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "jwt"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "jwt" needs a role`),
+		},
+		{
+			name:   "hc_vault.token.names.nothing",
+			block:  "hc_vault",
+			body:   vaultAuth(`method = "token"`),
+			prefix: "acme",
+		},
+		{
+			name:      "hc_vault.token.refuses.a.role",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "token"` + "\n      " + `role = "hush-am"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "token" does not use role`),
+		},
+		{
+			name:      "hc_vault.token.refuses.a.mount",
+			block:     "hc_vault",
+			body:      vaultAuth(`method = "token"` + "\n      " + `mount = "kubernetes"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`auth method "token" does not use mount`),
+		},
+		// Both mounts reach a request path the access manager builds, so a
+		// mount that walks out of it is refused here as midgard refuses it.
+		{
+			name:  "hc_vault.kv.mount.stays.in.its.path",
+			block: "hc_vault",
+			body: `address = "https://vault.acme.internal:8200"
+    mount = "../sys/mounts"
+    auth {
+      role = "hush-am"
+    }`,
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`mount must be letters, digits`),
+		},
+		{
+			name:      "hc_vault.auth.mount.stays.in.its.path",
+			block:     "hc_vault",
+			body:      vaultAuth(`role = "hush-am"` + "\n      " + `mount = "../sys/mounts"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`mount must be letters, digits`),
+		},
+		{
+			name:  "hc_vault.nested.mounts.are.allowed",
+			block: "hc_vault",
+			body: `address = "https://vault.acme.internal:8200"
+    mount = "team/hush-kv"
+    auth {
+      role = "hush-am"
+      mount = "k8s/east"
+    }`,
+			prefix: "acme",
+		},
+		{
+			name:      "hc_vault.requires.the.auth.block",
+			block:     "hc_vault",
+			body:      `address = "https://vault.acme.internal:8200"`,
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`Insufficient auth blocks|"hc_vault\.0\.auth" is required`),
 		},
 		{
 			name:      "uppercase.rejected",

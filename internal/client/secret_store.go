@@ -15,7 +15,56 @@ const (
 	SecretStoreKindAWSSSM     = "aws_ssm"
 	SecretStoreKindGCPSM      = "gcp_sm"
 	SecretStoreKindK8sSecrets = "k8s_secrets"
+	SecretStoreKindHCVault    = "hc_vault"
+	SecretStoreKindAzureKv    = "azure_kv"
 )
+
+// The auth methods the API offers. kubernetes and jwt present the access
+// manager's own service-account token to a role, validated by the cluster's
+// TokenReview api or its JWKS; token presents one the access manager reads
+// from its own environment, which the config does not name.
+const (
+	SecretStoreVaultAuthKubernetes = "kubernetes"
+	SecretStoreVaultAuthJWT        = "jwt"
+	SecretStoreVaultAuthToken      = "token"
+)
+
+// SecretStoreVaultAuthMethods is every method the API accepts, in the order
+// the documentation lists them.
+var SecretStoreVaultAuthMethods = []string{
+	SecretStoreVaultAuthKubernetes,
+	SecretStoreVaultAuthJWT,
+	SecretStoreVaultAuthToken,
+}
+
+// The Azure auth methods the API offers. default is the access manager's own
+// identity -- on AKS, workload identity -- and names nothing; client_secret is
+// a service principal, whose secret the deployment holds in its environment
+// and which no config names.
+const (
+	SecretStoreAzureAuthDefault      = "default"
+	SecretStoreAzureAuthClientSecret = "client_secret"
+)
+
+// SecretStoreAzureAuthMethods is every method the API accepts, in the order
+// the documentation lists them.
+var SecretStoreAzureAuthMethods = []string{
+	SecretStoreAzureAuthDefault,
+	SecretStoreAzureAuthClientSecret,
+}
+
+// SecretStoreAuth is how the access manager authenticates to the backend, the
+// union of both kinds' auth blocks flattened the way SecretStoreConfig is.
+// Mount and Role belong to Vault's kubernetes and jwt methods; TenantID and
+// ClientID to Azure. The API refuses a field belonging to another method, so
+// all but Method are omitempty.
+type SecretStoreAuth struct {
+	Method   string `json:"method"`
+	Mount    string `json:"mount,omitempty"`
+	Role     string `json:"role,omitempty"`
+	TenantID string `json:"tenant_id,omitempty"`
+	ClientID string `json:"client_id,omitempty"`
+}
 
 // SecretStoreConfig is the backend's discriminated config union flattened into a
 // single struct. Only the fields relevant to Kind are populated; the omitempty
@@ -28,6 +77,18 @@ type SecretStoreConfig struct {
 	KmsKeyID  string `json:"kms_key_id,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
+	// hc_vault. Auth is a pointer so it stays out of another kind's request,
+	// which the backend's strict model would refuse.
+	Address        string `json:"address,omitempty"`
+	Mount          string `json:"mount,omitempty"`
+	VaultNamespace string `json:"vault_namespace,omitempty"`
+	CaCert         string `json:"ca_cert,omitempty"`
+	// azure_kv
+	VaultURL string `json:"vault_url,omitempty"`
+	Cloud    string `json:"cloud,omitempty"`
+	// Auth is a pointer so it stays out of a request for a kind that has none,
+	// which the backend's strict model would refuse.
+	Auth *SecretStoreAuth `json:"auth,omitempty"`
 }
 
 type SecretStore struct {
