@@ -1,6 +1,7 @@
 package mcp_application
 
 import (
+	"maps"
 	"regexp"
 	"strings"
 
@@ -59,7 +60,7 @@ var (
 )
 
 func ResourceSchema() map[string]*schema.Schema {
-	return map[string]*schema.Schema{
+	s := map[string]*schema.Schema{
 		"app_catalog_id": {
 			Description:  appCatalogIDDesc,
 			Type:         schema.TypeString,
@@ -187,4 +188,6 @@ func ResourceSchema() map[string]*schema.Schema {
 			}},
 		},
 	}
+	maps.Copy(s, assignmentSchema())
+	return s
 }

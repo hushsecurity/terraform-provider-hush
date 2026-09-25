@@ -26,28 +26,57 @@ type ToolGroup struct {
 }
 
 type MCPApplication struct {
-	ID                 string      `json:"id"`
-	Name               string      `json:"name"`
-	Type               string      `json:"type"`
-	AppCatalogID       string      `json:"app_catalog_id"`
-	CatalogDisplayName *string     `json:"catalog_display_name"`
-	DisplayName        string      `json:"display_name"`
-	Description        *string     `json:"description"`
-	DeploymentIDs      []string    `json:"deployment_ids"`
-	AllowedAgents      []string    `json:"allowed_agents"`
-	Enabled            bool        `json:"enabled"`
-	URL                *string     `json:"url"`
-	Hosted             bool        `json:"hosted"`
-	Scopes             []string    `json:"scopes"`
-	ToolGroups         []ToolGroup `json:"tool_groups"`
-	Tools              []MCPTool   `json:"tools"`
-	ClientID           *string     `json:"client_id"`
-	OAuthRelay         bool        `json:"oauth_relay"`
+	ID                 string       `json:"id"`
+	Name               string       `json:"name"`
+	Type               string       `json:"type"`
+	AppCatalogID       string       `json:"app_catalog_id"`
+	CatalogDisplayName *string      `json:"catalog_display_name"`
+	DisplayName        string       `json:"display_name"`
+	Description        *string      `json:"description"`
+	DeploymentIDs      []string     `json:"deployment_ids"`
+	AllowedAgents      []string     `json:"allowed_agents"`
+	Enabled            bool         `json:"enabled"`
+	Assignments        []Assignment `json:"assignments"`
+	AssignAll          bool         `json:"assign_all"`
+	URL                *string      `json:"url"`
+	Hosted             bool         `json:"hosted"`
+	Scopes             []string     `json:"scopes"`
+	ToolGroups         []ToolGroup  `json:"tool_groups"`
+	Tools              []MCPTool    `json:"tools"`
+	ClientID           *string      `json:"client_id"`
+	OAuthRelay         bool         `json:"oauth_relay"`
 
 	// Returned by the Google and QuickBooks routes only.
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
 	QuickBooksCompanyID *string `json:"quickbooks_company_id,omitempty"`
 	QuickBooksSandbox   *bool   `json:"quickbooks_sandbox,omitempty"`
+}
+
+// The sides of a request an assignment predicate can look at, and the ways
+// it can compare.
+var (
+	AssignmentSources = []string{"user", "agent"}
+	AssignmentOps     = []string{"eq", "neq", "in", "nin"}
+)
+
+// Assignment grants an application to the users and agents it matches: all
+// of its conditions must hold, and a condition holds when any of its
+// predicates does. The create takes none; they are patched in afterwards.
+type Assignment struct {
+	AllOf []AssignmentCondition `json:"all_of"`
+}
+
+type AssignmentCondition struct {
+	AnyOf []AssignmentPredicate `json:"any_of"`
+}
+
+// AssignmentPredicate compares one property of the user or the agent. Value
+// is a string for eq and neq, and a list of strings for in and nin.
+type AssignmentPredicate struct {
+	Source   string `json:"source"`
+	Property string `json:"property"`
+	Op       string `json:"op"`
+	Value    any    `json:"value"`
 }
 
 // MCPApplicationInput is the create body. The Google and QuickBooks fields go
@@ -71,14 +100,16 @@ type MCPApplicationInput struct {
 // MCPApplicationUpdate is a patch: an absent key is left as it is. Fields that
 // can be cleared are double pointers, so a pointer to nil sends null.
 type MCPApplicationUpdate struct {
-	DisplayName   *string    `json:"display_name,omitempty"`
-	Description   **string   `json:"description,omitempty"`
-	DeploymentIDs *[]string  `json:"deployment_ids,omitempty"`
-	Scopes        *[]string  `json:"scopes,omitempty"`
-	AllowedAgents **[]string `json:"allowed_agents,omitempty"`
-	Enabled       *bool      `json:"enabled,omitempty"`
-	ClientID      **string   `json:"client_id,omitempty"`
-	ClientSecret  **string   `json:"client_secret,omitempty"`
+	DisplayName   *string       `json:"display_name,omitempty"`
+	Description   **string      `json:"description,omitempty"`
+	DeploymentIDs *[]string     `json:"deployment_ids,omitempty"`
+	Scopes        *[]string     `json:"scopes,omitempty"`
+	Assignments   *[]Assignment `json:"assignments,omitempty"`
+	AssignAll     *bool         `json:"assign_all,omitempty"`
+	AllowedAgents **[]string    `json:"allowed_agents,omitempty"`
+	Enabled       *bool         `json:"enabled,omitempty"`
+	ClientID      **string      `json:"client_id,omitempty"`
+	ClientSecret  **string      `json:"client_secret,omitempty"`
 
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
 	QuickBooksCompanyID *string `json:"quickbooks_company_id,omitempty"`
