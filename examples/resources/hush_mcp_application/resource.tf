@@ -31,6 +31,33 @@ resource "hush_mcp_application" "github" {
   client_id                = "Iv1.0123456789abcdef"
   client_secret_wo         = var.github_oauth_client_secret
   client_secret_wo_version = "1"
+
+  # Granted to the platform and SRE groups, or to the CTO -- through any agent
+  # but one.
+  assignment {
+    condition {
+      match {
+        source   = "user"
+        property = "groups"
+        op       = "in"
+        values   = ["grp-platform", "grp-sre"]
+      }
+      match {
+        source   = "user"
+        property = "email"
+        op       = "eq"
+        value    = "cto@example.com"
+      }
+    }
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "neq"
+        value    = "agt-shared-ci"
+      }
+    }
+  }
 }
 
 # Google Workspace servers bill their quota to a Google Cloud project.
@@ -39,6 +66,7 @@ resource "hush_mcp_application" "gmail" {
   display_name      = "Gmail"
   deployment_ids    = [hush_deployment.gateway.id]
   google_project_id = "acme-workspace-mcp"
+  assign_all        = true
 
   client_id                = "0123456789-abcdef.apps.googleusercontent.com"
   client_secret_wo         = var.google_oauth_client_secret
