@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/agw_consent_methods"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/artifactory_integration"
@@ -108,6 +109,7 @@ func New(version string) func() *schema.Provider {
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.Resource(),
+				"hush_agw_consent_methods":              agw_consent_methods.Resource(),
 				"hush_notification_channel":             notification_channel.Resource(),
 				"hush_notification_configuration":       notification_configuration.Resource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.Resource(),
