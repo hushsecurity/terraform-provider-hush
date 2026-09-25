@@ -107,6 +107,9 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 			return explainGatewayNotReady(err)
 		}
 	}
+	if err := applyToolOperations(ctx, c, d, true); err != nil {
+		return diag.FromErr(err)
+	}
 	return applicationRead(ctx, d, m)
 }
 
@@ -231,6 +234,9 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		if _, err := client.UpdateMCPApplication(ctx, c, d.Id(), appCatalogID, input); err != nil {
 			return explainGatewayNotReady(err)
 		}
+	}
+	if err := applyToolOperations(ctx, c, d, false); err != nil {
+		return diag.FromErr(err)
 	}
 	return applicationRead(ctx, d, m)
 }
@@ -389,6 +395,8 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
 		"hosted":               app.Hosted,
 		"oauth_relay":          app.OAuthRelay,
 		"tools":                tools,
+		"tool_defaults":        flattenToolDefaults(app.ToolGroups),
+		"tool_operation":       flattenToolOperations(app.Tools),
 	}
 	for key, value := range values {
 		if err := d.Set(key, value); err != nil {

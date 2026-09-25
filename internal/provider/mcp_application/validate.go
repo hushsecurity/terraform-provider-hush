@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -16,6 +17,12 @@ import (
 // skips what it cannot see rather than guess.
 func customizeDiff(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	if err := validateAssignments(d); err != nil {
+		return err
+	}
+	if err := validateToolOperations(d); err != nil {
+		return err
+	}
+	if err := planToolsRecompute(d); err != nil {
 		return err
 	}
 	if !d.NewValueKnown("app_catalog_id") {
@@ -65,6 +72,7 @@ func validateEntrySettings(d *schema.ResourceDiff, appCatalogID string) error {
 type entryShape struct {
 	labels             []string // one per address; empty strings for unlabelled ones
 	manualRegistration bool
+	tools              []string // the tools an application of it starts with
 }
 
 // validateAgainstEntry reads the entry the application is created from. An
@@ -80,6 +88,9 @@ func validateAgainstEntry(ctx context.Context, d *schema.ResourceDiff, c *client
 		}
 		for _, option := range app.URLs {
 			shape.labels = append(shape.labels, labelOf(option))
+		}
+		for _, tool := range app.Tools {
+			shape.tools = append(shape.tools, tool.Name)
 		}
 	} else {
 		entry, err := client.GetMCPCatalogEntry(ctx, c, appCatalogID)
@@ -100,9 +111,15 @@ func validateAgainstEntry(ctx context.Context, d *schema.ResourceDiff, c *client
 			}
 		}
 		shape.manualRegistration = entry.ManualRegistration
+		for _, tool := range entry.Tools {
+			shape.tools = append(shape.tools, tool.Name)
+		}
 	}
 
 	if err := validateURLLabel(d, appCatalogID, shape.labels); err != nil {
+		return err
+	}
+	if err := validateToolNames(d, appCatalogID, shape.tools); err != nil {
 		return err
 	}
 	// heimdall refuses the create unless it gets both halves.
@@ -143,4 +160,21 @@ func labelOf(option client.URLOption) string {
 		return ""
 	}
 	return *option.Label
+}
+
+// validateToolNames refuses a tool_operation for a tool the application will
+// not have. heimdall refuses it too, but only after the application exists,
+// which leaves it tainted and replaced on the next apply for what is a typo.
+func validateToolNames(d *schema.ResourceDiff, appCatalogID string, tools []string) error {
+	if !d.NewValueKnown("tool_operation") {
+		return nil
+	}
+	for _, v := range d.Get("tool_operation").(*schema.Set).List() {
+		name, _ := v.(map[string]any)["name"].(string)
+		if name != "" && !slices.Contains(tools, name) {
+			return fmt.Errorf("tool_operation: %q has no tool %q (see the hush_mcp_catalog_entry "+
+				"data source for its tools)", appCatalogID, name)
+		}
+	}
+	return nil
 }

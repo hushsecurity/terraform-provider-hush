@@ -10,10 +10,24 @@ resource "hush_mcp_application" "datadog" {
   deployment_ids = [hush_deployment.gateway.id]
   url_label      = "EU"
 
+  # Ask before any write, and let one destructive tool through with consent
+  # rather than blocking it like the rest of its class.
+  tool_defaults {
+    write = "user_consent"
+  }
+  tool_operation {
+    name      = "delete_datadog_dashboard"
+    operation = "user_consent"
+  }
+
   lifecycle {
     precondition {
       condition     = contains(data.hush_mcp_catalog_entry.datadog_app.urls[*].label, "EU")
       error_message = "Datadog no longer offers an EU address."
+    }
+    precondition {
+      condition     = contains(data.hush_mcp_catalog_entry.datadog_app.tools[*].name, "delete_datadog_dashboard")
+      error_message = "Datadog no longer has a delete_datadog_dashboard tool."
     }
   }
 }

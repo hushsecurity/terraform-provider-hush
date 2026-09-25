@@ -17,6 +17,9 @@ var (
 	QuickBooksMCPCatalogID = "quickbooks"
 )
 
+// The operations the gateway can apply to a tool call.
+var ToolOperations = []string{"allow", "block", "user_consent"}
+
 // The agent types an application can be limited to.
 var AgentTypes = []string{"claude-code", "claude", "cursor", "windsurf", "vscode", "openclaw"}
 
@@ -116,6 +119,18 @@ type MCPApplicationUpdate struct {
 	QuickBooksSandbox   *bool   `json:"quickbooks_sandbox,omitempty"`
 }
 
+// ToolOperationChange sets one tool's operation; a nil Operation returns the
+// tool to its class default.
+type ToolOperationChange struct {
+	Name      string  `json:"name"`
+	Operation *string `json:"operation"`
+}
+
+type ToolGroupOperationChange struct {
+	Type      string `json:"type"`
+	Operation string `json:"operation"`
+}
+
 func IsGoogleMCPCatalogID(appCatalogID string) bool {
 	return slices.Contains(GoogleMCPCatalogIDs, appCatalogID)
 }
@@ -171,4 +186,24 @@ func UpdateMCPApplication(ctx context.Context, c *Client, id, appCatalogID strin
 
 func DeleteApplication(ctx context.Context, c *Client, id string) error {
 	return c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/v1/applications/%s", id), nil, nil)
+}
+
+// ChangeMCPToolOperations answers 404 for a tool the application does not
+// have.
+func ChangeMCPToolOperations(ctx context.Context, c *Client, id string, changes []ToolOperationChange) (*MCPApplication, error) {
+	var app MCPApplication
+	path := fmt.Sprintf("/v1/applications/%s/mcp/tool_operations", id)
+	if err := c.doRequest(ctx, http.MethodPost, path, changes, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+func ChangeMCPToolGroupOperations(ctx context.Context, c *Client, id string, changes []ToolGroupOperationChange) (*MCPApplication, error) {
+	var app MCPApplication
+	path := fmt.Sprintf("/v1/applications/%s/mcp/tool_group_operations", id)
+	if err := c.doRequest(ctx, http.MethodPost, path, changes, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
 }
