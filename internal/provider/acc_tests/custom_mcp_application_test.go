@@ -242,3 +242,60 @@ resource "hush_custom_mcp_application" "bad" {
 		})
 	}
 }
+
+// The data source reads what the resource wrote, with the credential's shape
+// and none of its secret.
+func TestAccDataSourceCustomMCPApplication(t *testing.T) {
+	const config = `
+resource "hush_custom_mcp_application" "src" {
+  name         = "acc-custom-ds"
+  display_name = "Acc custom ds"
+  headers      = { "X-Tenant" = "acme" }
+
+  url {
+    url = "https://mcp.example.com/mcp"
+  }
+  tool {
+    name = "search"
+    type = "read"
+  }
+  auth {
+    type   = "basic"
+    username = "bob"
+    secret = "pw"
+  }
+}
+
+data "hush_custom_mcp_application" "read" {
+  name = hush_custom_mcp_application.src.name
+}
+`
+	const addr = "data.hush_custom_mcp_application.read"
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(addr, "id", "acc-custom-ds"),
+					resource.TestCheckResourceAttr(addr, "app_catalog_id", "custom-acc-custom-ds"),
+					resource.TestCheckResourceAttr(addr, "display_name", "Acc custom ds"),
+					resource.TestCheckResourceAttr(addr, "headers.X-Tenant", "acme"),
+					resource.TestCheckResourceAttr(addr, "url.0.url", "https://mcp.example.com/mcp"),
+					resource.TestCheckResourceAttr(addr, "tool.0.name", "search"),
+					resource.TestCheckResourceAttr(addr, "auth.0.type", "basic"),
+					resource.TestCheckResourceAttr(addr, "auth.0.username", "bob"),
+					resource.TestCheckNoResourceAttr(addr, "auth.0.secret"),
+				),
+			},
+			{
+				Config: `
+data "hush_custom_mcp_application" "none" {
+  name = "acc-no-such-custom"
+}
+`,
+				ExpectError: regexp.MustCompile(`no custom MCP app found with name: acc-no-such-custom`),
+			},
+		},
+	})
+}
