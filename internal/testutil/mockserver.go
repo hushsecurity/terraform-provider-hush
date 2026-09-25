@@ -52,7 +52,9 @@ type MockServer struct {
 	// resourceKey -> top-level field whose object a PATCH merges rather than
 	// replaces. Empty by default: see MergeNested.
 	mergeNested map[string]map[string]bool
-	mu          sync.RWMutex
+	// Routes a test serves itself, ahead of the fixture-driven ones: see Handle.
+	extra *http.ServeMux
+	mu    sync.RWMutex
 }
 
 // NewMockServer creates a mock server from fixtures.
@@ -62,6 +64,7 @@ func NewMockServer(f *Fixtures) *MockServer {
 		routes:      parseRoutes(f.Endpoints),
 		hooks:       make(map[string]map[Operation][]HookFunc),
 		mergeNested: make(map[string]map[string]bool),
+		extra:       http.NewServeMux(),
 		fixtures:    f,
 	}
 	ms.Server = httptest.NewServer(http.HandlerFunc(ms.handler))
@@ -104,6 +107,20 @@ func (ms *MockServer) MergeNested(resourceType, field string) {
 	ms.mergeNested[resourceType][field] = true
 }
 
+// Handle serves pattern (a net/http ServeMux pattern, such as
+// "GET /v1/applications/{application_id}/mcp") with handler, ahead of every
+// fixture-driven route.
+//
+// The fixtures are generated from the public OpenAPI schema, which leaves out
+// the routes a service hides from it -- heimdall's applications and gateway
+// settings among them -- and their paths do not follow the one-collection-per-
+// resource shape the generic store assumes. A test that needs such a route
+// fakes it here. The handler does its own locking: the mock's store and hooks
+// are not involved.
+func (ms *MockServer) Handle(pattern string, handler http.HandlerFunc) {
+	ms.extra.HandleFunc(pattern, handler)
+}
+
 // SeedObject inserts a pre-existing object into the mock store.
 // Useful for resources that require pre-existing data (e.g., predefined configs).
 func (ms *MockServer) SeedObject(storeKey, id string, obj map[string]any) {
@@ -129,6 +146,13 @@ func (ms *MockServer) handler(w http.ResponseWriter, r *http.Request) {
 	// Handle OAuth token endpoint
 	if r.URL.Path == "/v1/oauth/token" && r.Method == http.MethodPost {
 		ms.handleAuth(w)
+		return
+	}
+
+	// Handler only looks the route up; ServeHTTP is what fills in the path
+	// values the handler reads, so the request goes through the mux again.
+	if _, pattern := ms.extra.Handler(r); pattern != "" {
+		ms.extra.ServeHTTP(w, r)
 		return
 	}
 
@@ -475,14 +499,7 @@ func (ms *MockServer) getComputedFieldsKey(resourceKey string) string {
 }
 
 func (ms *MockServer) writeError(w http.ResponseWriter, status int, detail string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"status":      status,
-		"status_code": status,
-		"detail":      detail,
-		"title":       http.StatusText(status),
-	})
+	WriteError(w, status, detail)
 }
 
 // parseRoutes converts fixture endpoints to route patterns.
@@ -546,4 +563,24 @@ func generateUUID() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	return fmt.Sprintf("%x", b)
+}
+
+// WriteJSON answers a request served through Handle with status and body.
+func WriteJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if body != nil {
+		_ = json.NewEncoder(w).Encode(body)
+	}
+}
+
+// WriteError answers a request served through Handle with the problem-details
+// body the real API sends, which is what client.APIError decodes.
+func WriteError(w http.ResponseWriter, status int, detail string) {
+	WriteJSON(w, status, map[string]any{
+		"status":      status,
+		"status_code": status,
+		"detail":      detail,
+		"title":       http.StatusText(status),
+	})
 }
