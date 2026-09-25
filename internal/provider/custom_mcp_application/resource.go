@@ -76,7 +76,7 @@ func customAppRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diag
 		}
 		return diag.FromErr(err)
 	}
-	if err := flatten(d, app); err != nil {
+	if err := flatten(d, app, true); err != nil {
 		return diag.FromErr(err)
 	}
 	return nil
@@ -256,9 +256,10 @@ func optionalString(d *schema.ResourceData, key string) **string {
 }
 
 // flatten writes what heimdall returns. It never returns the client secret or
-// the auth secret, so those, and the versions that go with them, are left as
-// the configuration last set them.
-func flatten(d *schema.ResourceData, app *client.CustomMCPApplication) error {
+// the auth secret, so a managed resource leaves those, and the versions that
+// go with them, as the configuration last set them; the data source has no
+// such attributes at all.
+func flatten(d *schema.ResourceData, app *client.CustomMCPApplication, managed bool) error {
 	urls := make([]any, 0, len(app.URLs))
 	for _, option := range app.URLs {
 		label := ""
@@ -276,11 +277,13 @@ func flatten(d *schema.ResourceData, app *client.CustomMCPApplication) error {
 	var auth []any
 	if app.Auth != nil {
 		block := map[string]any{
-			"type":              app.Auth.Type,
-			"username":          app.Auth.Username,
-			"name":              app.Auth.Name,
-			"secret":            d.Get("auth.0.secret"),
-			"secret_wo_version": d.Get("auth.0.secret_wo_version"),
+			"type":     app.Auth.Type,
+			"username": app.Auth.Username,
+			"name":     app.Auth.Name,
+		}
+		if managed {
+			block["secret"] = d.Get("auth.0.secret")
+			block["secret_wo_version"] = d.Get("auth.0.secret_wo_version")
 		}
 		auth = []any{block}
 	}
