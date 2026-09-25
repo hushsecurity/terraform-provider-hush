@@ -2,6 +2,7 @@ package acc_tests
 
 import (
 	"encoding/json"
+	"maps"
 	"net/http"
 	"slices"
 	"sync"
@@ -16,10 +17,48 @@ import (
 type fakeHeimdall struct {
 	mu             sync.Mutex
 	consentMethods map[string][]string // deployment id -> method names
+	catalog        map[string]map[string]any
 }
 
 var heimdall = &fakeHeimdall{
 	consentMethods: map[string][]string{},
+	catalog:        fakeCatalog(),
+}
+
+func label(s string) *string { return &s }
+
+// fakeCatalog holds one entry of each shape an application treats
+// differently: several labelled addresses, a single unlabelled one that needs
+// manually registered OAuth credentials, and a server Hush hosts.
+func fakeCatalog() map[string]map[string]any {
+	tools := []map[string]any{
+		{"name": "search", "type": "read", "description": "Search", "operation": nil},
+		{"name": "create", "type": "write", "description": "Create", "operation": nil},
+		{"name": "drop", "type": "destructive", "description": "Drop", "operation": nil},
+	}
+	return map[string]map[string]any{
+		"datadog": {
+			"display_name": "Datadog", "category": "Observability",
+			"urls": []map[string]any{
+				{"label": label("US1"), "url": "https://mcp.datadoghq.com/v1/mcp"},
+				{"label": label("EU"), "url": "https://mcp.datadoghq.eu/v1/mcp"},
+			},
+			"hosted": false, "scopes": []string{}, "tools": tools,
+			"manual_registration": false, "oauth_relay": false,
+		},
+		"slack": {
+			"display_name": "Slack", "category": "Communication & Support",
+			"urls":   []map[string]any{{"label": nil, "url": "https://mcp.slack.com/mcp"}},
+			"hosted": false, "scopes": []string{"chat:write", "channels:read"}, "tools": tools,
+			"manual_registration": true, "oauth_relay": false,
+		},
+		"quickbooks": {
+			"display_name": "QuickBooks", "category": "Finance",
+			"urls":   []map[string]any{{"label": nil, "url": "https://quickbooks.hosted.internal/mcp"}},
+			"hosted": true, "scopes": []string{"com.intuit.quickbooks.accounting"}, "tools": tools,
+			"manual_registration": true, "oauth_relay": true,
+		},
+	}
 }
 
 func init() {
@@ -29,6 +68,24 @@ func init() {
 func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("GET /v1/deployments/{deployment_id}/agw/consent_methods", h.getConsentMethods)
 	ms.Handle("PUT /v1/deployments/{deployment_id}/agw/consent_methods", h.putConsentMethods)
+	ms.Handle("GET /v1/applications/catalog/mcp/{app_catalog_id}", h.getCatalogEntry)
+}
+
+// The API blanks a hosted entry's addresses: they are Hush's to choose.
+func (h *fakeHeimdall) getCatalogEntry(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("app_catalog_id")
+	entry, ok := h.catalog[id]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, "mcp/"+id+" not found")
+		return
+	}
+	out := maps.Clone(entry)
+	out["app_catalog_id"] = id
+	out["type"] = "mcp"
+	if out["hosted"] == true {
+		out["urls"] = []any{}
+	}
+	testutil.WriteJSON(w, http.StatusOK, out)
 }
 
 func decodeBody(w http.ResponseWriter, r *http.Request, into any) bool {
