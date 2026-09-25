@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.26.0] - 2026-09-25
+
+### Added
+
+* **MCP applications on the agent gateway**: a new `hush_mcp_application` resource manages an MCP server made available to agents through the gateways of the deployments in `deployment_ids`. It is created from an entry of Hush's catalog (`app_catalog_id = "github"`) or from a custom app, and covers the fields the console does: `display_name`, `description`, `enabled`, `allowed_agents`, `scopes`, and an OAuth client (`client_id` with `client_secret` or `client_secret_wo`).
+
+  **Who gets it.** `assign_all = true` grants the application to every user. Otherwise `assignment` blocks grant it by rule: an assignment matches when all of its `condition` blocks do, and a condition when any of its `match` blocks does. A match compares a user property (an identity-provider claim such as `email`, or `groups`) or the agent's `id`, with `eq`/`neq` against `value` or `in`/`nin` against `values`. With neither, the application is granted to no one and users can only request it.
+
+  **What the gateway does with each tool.** `tool_defaults` sets the operation -- `allow`, `block` or `user_consent` -- for each tool class (`read`, `write`, `destructive`), and `tool_operation` blocks override it for a single tool. The computed `tools` attribute lists every tool with the operation it resolves to. A class left out of `tool_defaults` keeps what the application has; the API has no way back to the built-in defaults, so removing the block changes nothing. Removing a `tool_operation` block does return that tool to its class default.
+
+  **Entry-specific settings.** The Google Workspace entries (`gcalendar`, `gdocs`, `gdrive`, `gmail`, `gpeople`, `gsheets`, `gslides`) require `google_project_id`, and `quickbooks` requires a `quickbooks { company_id, sandbox }` block. Both are refused on any other entry.
+
+  **Checked at plan time.** On create, the provider reads the catalog entry the application comes from and refuses what the API would refuse at apply: an `app_catalog_id` the catalog does not have, a `url_label` that is not one of the entry's (or none, when the entry has several addresses), and a missing `client_id` on an entry with `manual_registration`. An entry created from a custom app declared in the same configuration cannot be read yet, and is left to the apply.
+
+  **A gateway that is not running yet.** An enabled application with a client secret cannot be placed on a gateway that has not published its encryption key, which it does once it runs -- so a deployment declared in the same configuration always hits this on its first apply. The provider creates the application disabled and enables it in a second call, so the refusal leaves a tainted resource that the next apply replaces, rather than an application Terraform has no id for. Apply again once the gateway is up, or create the application with `enabled = false` and enable it later. The API records the enable even when it refuses it, so if the next plan shows no change while the gateway is still not serving the application, set `enabled = false`, apply, and set it back.
+
+  `url_label` is not returned by the API. On import it is recovered, lowercased, from the application's name, and compared without regard to case, so a configuration naming `"EU"` does not plan a replacement. The client secret is never returned, so after an import the next apply sends it again.
+
+* **Custom MCP servers**: a new `hush_custom_mcp_application` resource describes an MCP server that is not in the catalog -- its addresses (`url` blocks, labelled when there are several), `scopes`, `tool` blocks, extra `headers`, an OAuth client, and a fixed `auth` credential (`bearer`, `basic` or `header`, with `secret` or `secret_wo`). Applications are created from it with `app_catalog_id = hush_custom_mcp_application.<name>.app_catalog_id`, and edits to it carry over to them. It cannot be destroyed while an application still uses it.
+
+  `tool` is optional and computed: the gateway can detect a server's tools and write them to the custom app, and a configuration that declares none leaves them alone. Header names the gateway owns, an unlabelled address among several, and `bearer` or `basic` auth next to `client_id` (both use the Authorization header) are refused at plan time.
+
+* **Gateway consent methods**: a new `hush_agw_consent_methods` resource sets how a deployment's gateway asks a user for consent when a tool's operation is `user_consent`: `oidc_callback` (a browser sign-in with the organization's identity provider) or `push_slack` (a Slack direct message). Declare it once per deployment. The API cannot clear the setting, so destroying the resource only stops Terraform managing it, and the gateway keeps the methods last applied.
+
+* **Data sources for the new resources**: `hush_mcp_application` (by `id` or `display_name`), `hush_custom_mcp_application` (by `name`) and `hush_agw_consent_methods` (by `deployment_id`, with each method's description) report what the resources manage, including objects set up in the console. Secrets are never returned by the API, so the data sources have no attribute for them; `auth` on a custom app shows the credential's type, user name or header name only.
+
+* **MCP catalog lookups**: a new `hush_mcp_catalog_entry` data source reads an entry of Hush's catalog: its addresses and their labels, whether Hush hosts it, whether it needs a manually registered OAuth app, its default scopes and its tools. Use it to pick a `url_label` or to check tool names in a precondition before applying.
+
 ## [1.25.0] - 2026-09-20
 
 ### Fixed
@@ -579,6 +607,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.26.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.25.0...v1.26.0
 [1.25.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.24.0...v1.25.0
 [1.24.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.23.0...v1.24.0
 [1.23.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.22.3...v1.23.0
