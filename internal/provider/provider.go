@@ -25,6 +25,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bitbucket_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/confluence_integration"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/custom_mcp_application"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
@@ -111,6 +112,7 @@ func New(version string) func() *schema.Provider {
 			ResourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.Resource(),
 				"hush_agw_consent_methods":              agw_consent_methods.Resource(),
+				"hush_custom_mcp_application":           custom_mcp_application.Resource(),
 				"hush_notification_channel":             notification_channel.Resource(),
 				"hush_notification_configuration":       notification_configuration.Resource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.Resource(),

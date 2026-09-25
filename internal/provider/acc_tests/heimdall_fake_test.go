@@ -5,6 +5,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
@@ -18,11 +19,16 @@ type fakeHeimdall struct {
 	mu             sync.Mutex
 	consentMethods map[string][]string // deployment id -> method names
 	catalog        map[string]map[string]any
+	customApps     map[string]map[string]any // name -> custom app, as returned
+	// Secrets the API never echoes, kept so a test can see what was sent.
+	customSecrets map[string]map[string]any // name -> client_secret, auth secret
 }
 
 var heimdall = &fakeHeimdall{
 	consentMethods: map[string][]string{},
 	catalog:        fakeCatalog(),
+	customApps:     map[string]map[string]any{},
+	customSecrets:  map[string]map[string]any{},
 }
 
 func label(s string) *string { return &s }
@@ -69,7 +75,152 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("GET /v1/deployments/{deployment_id}/agw/consent_methods", h.getConsentMethods)
 	ms.Handle("PUT /v1/deployments/{deployment_id}/agw/consent_methods", h.putConsentMethods)
 	ms.Handle("GET /v1/applications/catalog/mcp/{app_catalog_id}", h.getCatalogEntry)
+	ms.Handle("POST /v1/applications/custom/mcp", h.createCustomApp)
+	ms.Handle("GET /v1/applications/custom/{name}/mcp", h.getCustomApp)
+	ms.Handle("PATCH /v1/applications/custom/{name}/mcp", h.patchCustomApp)
+	ms.Handle("DELETE /v1/applications/custom/{name}", h.deleteCustomApp)
 }
+
+// Every key a custom app's create or patch may carry: anything else is
+// refused, as heimdall's strict models refuse it.
+var customAppKeys = map[string]bool{
+	"name": true, "display_name": true, "description": true, "urls": true, "scopes": true,
+	"tools": true, "oauth_relay": true, "headers": true, "client_id": true,
+	"client_secret": true, "auth": true,
+}
+
+var authSecretKey = map[string]string{"bearer": "token", "basic": "password", "header": "value"}
+
+// setCustomAppFields applies a create or patch body. The secrets are split
+// off, as heimdall keeps them apart, and auth is masked the way it is shown.
+func (h *fakeHeimdall) setCustomAppFields(name string, app, body map[string]any) string {
+	for key := range body {
+		if !customAppKeys[key] {
+			return "unknown field " + key
+		}
+	}
+	secrets := h.customSecrets[name]
+	for key, value := range body {
+		switch key {
+		case "name":
+		case "client_secret":
+			secrets["client_secret"] = value
+		case "client_id":
+			app["client_id"] = value
+			if value == nil {
+				delete(secrets, "client_secret")
+			}
+		case "auth":
+			if value == nil {
+				app["auth"] = nil
+				delete(secrets, "auth")
+				continue
+			}
+			auth := maps.Clone(value.(map[string]any))
+			field := authSecretKey[auth["type"].(string)]
+			if auth[field] == nil || auth[field] == "" {
+				return "auth requires its secret"
+			}
+			secrets["auth"] = auth[field]
+			auth[field] = "****"
+			app["auth"] = auth
+		case "headers":
+			if value == nil {
+				return "headers cannot be null"
+			}
+			app["headers"] = value
+		default:
+			app[key] = value
+		}
+	}
+	return ""
+}
+
+func (h *fakeHeimdall) createCustomApp(w http.ResponseWriter, r *http.Request) {
+	var body map[string]any
+	if !decodeBody(w, r, &body) {
+		return
+	}
+	name, _ := body["name"].(string)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if _, exists := h.customApps[name]; exists {
+		testutil.WriteError(w, http.StatusConflict, name+" already exists")
+		return
+	}
+	app := map[string]any{
+		"name": name, "app_catalog_id": "custom-" + name, "type": "mcp", "description": nil,
+		"scopes": []any{}, "tools": []any{}, "oauth_relay": false, "headers": map[string]any{},
+		"client_id": nil, "auth": nil,
+	}
+	h.customSecrets[name] = map[string]any{}
+	if problem := h.setCustomAppFields(name, app, body); problem != "" {
+		delete(h.customSecrets, name)
+		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
+		return
+	}
+	h.customApps[name] = app
+	testutil.WriteJSON(w, http.StatusCreated, app)
+}
+
+func (h *fakeHeimdall) getCustomApp(w http.ResponseWriter, r *http.Request) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.customApps[r.PathValue("name")]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, r.PathValue("name")+" not found")
+		return
+	}
+	testutil.WriteJSON(w, http.StatusOK, app)
+}
+
+func (h *fakeHeimdall) patchCustomApp(w http.ResponseWriter, r *http.Request) {
+	var body map[string]any
+	if !decodeBody(w, r, &body) {
+		return
+	}
+	name := r.PathValue("name")
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.customApps[name]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, name+" not found")
+		return
+	}
+	if _, ok := body["name"]; ok {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, "unknown field name")
+		return
+	}
+	updated := maps.Clone(app)
+	if problem := h.setCustomAppFields(name, updated, body); problem != "" {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
+		return
+	}
+	h.customApps[name] = updated
+	testutil.WriteJSON(w, http.StatusOK, updated)
+}
+
+func (h *fakeHeimdall) deleteCustomApp(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.customApps[name]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, name+" not found")
+		return
+	}
+	if users := h.applicationsFrom("custom-" + name); len(users) > 0 {
+		testutil.WriteError(w, http.StatusConflict, name+" is used by "+strings.Join(users, ", "))
+		return
+	}
+	delete(h.customApps, name)
+	delete(h.customSecrets, name)
+	testutil.WriteJSON(w, http.StatusOK, app)
+}
+
+// applicationsFrom lists the applications created from a catalog id. None
+// exist yet; the MCP applications fake fills this in.
+func (h *fakeHeimdall) applicationsFrom(string) []string { return nil }
 
 // The API blanks a hosted entry's addresses: they are Hush's to choose.
 func (h *fakeHeimdall) getCatalogEntry(w http.ResponseWriter, r *http.Request) {
