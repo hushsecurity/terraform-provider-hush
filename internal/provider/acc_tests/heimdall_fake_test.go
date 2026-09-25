@@ -102,6 +102,7 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("POST /v1/applications/custom/mcp", h.createCustomApp)
 	ms.Handle("DELETE /v1/applications/custom/{name}", h.deleteCustomApp)
 	ms.Handle("POST /v1/applications/mcp/{app}", h.createApp)
+	ms.Handle("GET /v1/applications", h.listApps)
 	ms.Handle("GET /v1/applications/{id}", h.getApp)
 	ms.Handle("DELETE /v1/applications/{id}", h.deleteApp)
 	ms.Handle("GET /v1/applications/{id}/mcp", h.getApp)
@@ -758,4 +759,32 @@ func (h *fakeHeimdall) toolGroupOperations(w http.ResponseWriter, r *http.Reques
 	}
 	app["tool_groups"] = groups
 	testutil.WriteJSON(w, http.StatusOK, h.appOut(app, ""))
+}
+
+// listApps serves the summary list, filtered by type, one application per
+// page: the provider has to follow the cursor to find anything past the first.
+func (h *fakeHeimdall) listApps(w http.ResponseWriter, r *http.Request) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	ids := make([]string, 0, len(h.apps))
+	for id, app := range h.apps {
+		if typ := r.URL.Query().Get("type"); typ == "" || app["type"] == typ {
+			ids = append(ids, id)
+		}
+	}
+	slices.Sort(ids)
+	start, _ := strconv.Atoi(r.URL.Query().Get("cursor"))
+	items := []any{}
+	var next any
+	if start < len(ids) {
+		app := h.apps[ids[start]]
+		items = append(items, map[string]any{
+			"id": app["id"], "name": app["name"], "type": app["type"],
+			"app_catalog_id": app["app_catalog_id"], "display_name": app["display_name"],
+		})
+		if start+1 < len(ids) {
+			next = strconv.Itoa(start + 1)
+		}
+	}
+	testutil.WriteJSON(w, http.StatusOK, map[string]any{"items": items, "next_page": next})
 }

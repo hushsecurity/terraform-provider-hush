@@ -246,6 +246,34 @@ resource "hush_mcp_application" "no_scopes" {
 	})
 }
 
+// Only an MCP application with a catalog id can be imported: one created
+// before applications carried it leaves no entry to read it through.
+func TestAccResourceMCPApplication_importLegacy(t *testing.T) {
+	heimdall.mu.Lock()
+	heimdall.apps["app-acc-legacy"] = map[string]any{
+		"id": "app-acc-legacy", "type": "mcp", "app_catalog_id": nil, "name": "linear", "display_name": "acc-legacy",
+	}
+	heimdall.mu.Unlock()
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+resource "hush_mcp_application" "legacy" {
+  app_catalog_id = "linear"
+  display_name   = "acc-legacy"
+  deployment_ids = ["` + mockDeploymentID + `"]
+}
+`,
+				ResourceName:  "hush_mcp_application.legacy",
+				ImportState:   true,
+				ImportStateId: "app-acc-legacy",
+				ExpectError:   regexp.MustCompile(`app-acc-legacy predates catalog ids`),
+			},
+		},
+	})
+}
+
 // Only an MCP application can be imported.
 func TestAccResourceMCPApplication_importOtherType(t *testing.T) {
 	heimdall.mu.Lock()
@@ -267,7 +295,7 @@ resource "hush_mcp_application" "db" {
 				ResourceName:  "hush_mcp_application.db",
 				ImportState:   true,
 				ImportStateId: "app-acc-db",
-				ExpectError:   regexp.MustCompile(`app-acc-db is a db application: only MCP applications`),
+				ExpectError:   regexp.MustCompile(`cannot manage it: application app-acc-db is a db application`),
 			},
 		},
 	})
@@ -453,6 +481,133 @@ resource "hush_mcp_application" "bad" {
 	}
 }
 
+// The data source finds an application by display name or by id, and reports
+// it as the resource does, less the client secret.
+func TestAccDataSourceMCPApplication(t *testing.T) {
+	const config = `
+resource "hush_mcp_application" "src" {
+  app_catalog_id    = "gmail"
+  display_name      = "acc-ds-gmail"
+  deployment_ids    = ["` + mockDeploymentID + `"]
+  google_project_id = "acc-project"
+  assign_all        = true
+
+  tool_operation {
+    name      = "search"
+    operation = "block"
+  }
+}
+
+data "hush_mcp_application" "by_name" {
+  display_name = hush_mcp_application.src.display_name
+}
+
+data "hush_mcp_application" "by_id" {
+  id = hush_mcp_application.src.id
+}
+`
+	registerFakeCatalogEntry("gmail", false)
+	heimdall.mu.Lock()
+	heimdall.catalog["gmail"]["tools"] = []map[string]any{
+		{"name": "search", "type": "read", "description": "Search", "operation": nil},
+	}
+	heimdall.mu.Unlock()
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      mcpAppsDestroyed("acc-ds-gmail"),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrPair("data.hush_mcp_application.by_name", "id", "hush_mcp_application.src", "id"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_name", "app_catalog_id", "gmail"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_name", "google_project_id", "acc-project"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_name", "assign_all", "true"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_name", "tool_operation.#", "1"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_name", "tools.0.operation", "block"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_id", "display_name", "acc-ds-gmail"),
+					resource.TestCheckResourceAttr("data.hush_mcp_application.by_id", "tool_defaults.0.write", "user_consent"),
+				),
+			},
+			{
+				Config: `
+data "hush_mcp_application" "none" {
+  display_name = "acc-no-such-app"
+}
+`,
+				ExpectError: regexp.MustCompile(`no MCP application found with display_name: acc-no-such-app`),
+			},
+		},
+	})
+}
+
+// Display names are unique in heimdall; were two ever to match, the data
+// source refuses to pick one rather than report either.
+func TestAccDataSourceMCPApplication_ambiguousName(t *testing.T) {
+	heimdall.mu.Lock()
+	for _, id := range []string{"app-acc-twin-1", "app-acc-twin-2"} {
+		heimdall.apps[id] = map[string]any{
+			"id": id, "type": "mcp", "name": "slack", "app_catalog_id": "slack", "display_name": "acc-twin",
+		}
+	}
+	heimdall.mu.Unlock()
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{{
+			Config: `
+data "hush_mcp_application" "twin" {
+  display_name = "acc-twin"
+}
+`,
+			ExpectError: regexp.MustCompile(`multiple MCP applications found with display_name: acc-twin`),
+		}},
+	})
+}
+
+// An empty allowed_agents is no limit, as leaving it out is: it is what the
+// configuration an import generates writes for an application without one,
+// and heimdall refuses an empty list, so none is ever sent.
+func TestAccResourceMCPApplication_emptyAllowedAgents(t *testing.T) {
+	const addr = "hush_mcp_application.any_agent"
+	config := func(agents string) string {
+		return `
+resource "hush_mcp_application" "any_agent" {
+  app_catalog_id = "datadog"
+  display_name   = "acc-any-agent"
+  url_label      = "US1"
+  deployment_ids = ["` + mockDeploymentID + `"]
+  allowed_agents = ` + agents + `
+}
+`
+	}
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      mcpAppsDestroyed("acc-any-agent"),
+		Steps: []resource.TestStep{
+			{
+				Config: config(`[]`),
+				Check:  resource.TestCheckResourceAttr(addr, "allowed_agents.#", "0"),
+			},
+			{
+				Config: config(`["cursor"]`),
+				Check:  resource.TestCheckResourceAttr(addr, "allowed_agents.#", "1"),
+			},
+			// Back to empty lifts the limit: heimdall is sent null.
+			{
+				Config: config(`[]`),
+				Check: func(s *terraform.State) error {
+					heimdall.mu.Lock()
+					defer heimdall.mu.Unlock()
+					if got := heimdall.apps[s.RootModule().Resources[addr].Primary.ID]["allowed_agents"]; got != nil {
+						return fmt.Errorf("heimdall holds allowed_agents %v, want null", got)
+					}
+					return nil
+				},
+			},
+		},
+	})
+}
+
 // An application of a custom app that names no OAuth client inherits the
 // custom app's, and follows it when it changes. What a read finds is then
 // inherited, not drift: were it planned as a change to empty, the apply would
@@ -506,50 +661,6 @@ resource "hush_mcp_application" "inherits" {
 				),
 			},
 			{Config: config("cid-2", "s-2"), PlanOnly: true},
-		},
-	})
-}
-
-// An empty allowed_agents is no limit, as leaving it out is: it is what the
-// configuration an import generates writes for an application without one,
-// and heimdall refuses an empty list, so none is ever sent.
-func TestAccResourceMCPApplication_emptyAllowedAgents(t *testing.T) {
-	const addr = "hush_mcp_application.any_agent"
-	config := func(agents string) string {
-		return `
-resource "hush_mcp_application" "any_agent" {
-  app_catalog_id = "datadog"
-  display_name   = "acc-any-agent"
-  url_label      = "US1"
-  deployment_ids = ["` + mockDeploymentID + `"]
-  allowed_agents = ` + agents + `
-}
-`
-	}
-	resource.ParallelTest(t, resource.TestCase{
-		ProviderFactories: providerFactories,
-		CheckDestroy:      mcpAppsDestroyed("acc-any-agent"),
-		Steps: []resource.TestStep{
-			{
-				Config: config(`[]`),
-				Check:  resource.TestCheckResourceAttr(addr, "allowed_agents.#", "0"),
-			},
-			{
-				Config: config(`["cursor"]`),
-				Check:  resource.TestCheckResourceAttr(addr, "allowed_agents.#", "1"),
-			},
-			// Back to empty lifts the limit: heimdall is sent null.
-			{
-				Config: config(`[]`),
-				Check: func(s *terraform.State) error {
-					heimdall.mu.Lock()
-					defer heimdall.mu.Unlock()
-					if got := heimdall.apps[s.RootModule().Resources[addr].Primary.ID]["allowed_agents"]; got != nil {
-						return fmt.Errorf("heimdall holds allowed_agents %v, want null", got)
-					}
-					return nil
-				},
-			},
 		},
 	})
 }

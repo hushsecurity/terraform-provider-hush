@@ -184,6 +184,7 @@ func New(version string) func() *schema.Provider {
 				"hush_agw_consent_methods":              agw_consent_methods.DataSource(),
 				"hush_mcp_catalog_entry":                mcp_catalog_entry.DataSource(),
 				"hush_custom_mcp_application":           custom_mcp_application.DataSource(),
+				"hush_mcp_application":                  mcp_application.DataSource(),
 				"hush_notification_channel":             notification_channel.DataSource(),
 				"hush_notification_configuration":       notification_configuration.DataSource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.DataSource(),

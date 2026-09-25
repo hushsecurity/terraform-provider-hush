@@ -116,25 +116,12 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 func applicationRead(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
-	appCatalogID := d.Get("app_catalog_id").(string)
-	var app *client.MCPApplication
-	var err error
-	if appCatalogID == "" {
-		// An import knows the id alone, and the id alone does not say which
-		// route the application is read through.
-		app, err = client.GetApplication(ctx, c, d.Id())
-		if err == nil {
-			if app.Type != "mcp" || app.AppCatalogID == "" {
-				return diag.Errorf("application %s is a %s application: only MCP applications "+
-					"can be managed by hush_mcp_application", d.Id(), app.Type)
-			}
-			appCatalogID = app.AppCatalogID
-		}
-	}
-	if err == nil {
-		app, err = client.GetMCPApplication(ctx, c, d.Id(), appCatalogID)
-	}
+	app, err := readMCPApplication(ctx, c, d.Id(), d.Get("app_catalog_id").(string))
 	if err != nil {
+		var notMCP *notMCPError
+		if errors.As(err, &notMCP) {
+			return diag.Errorf("hush_mcp_application cannot manage it: %s", err)
+		}
 		var apiErr *client.APIError
 		if errors.As(err, &apiErr) && apiErr.IsNotFound() {
 			d.SetId("")
@@ -146,6 +133,36 @@ func applicationRead(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		return diag.FromErr(err)
 	}
 	return nil
+}
+
+// notMCPError is an id that names an application this resource cannot
+// manage: one of another type, or an MCP one created before applications
+// carried their catalog id, which leaves nothing to say where it came from.
+type notMCPError struct{ id, typ string }
+
+func (e *notMCPError) Error() string {
+	if e.typ == "mcp" {
+		return fmt.Sprintf("application %s predates catalog ids, so which entry it was "+
+			"created from is unknown; create it again to manage it", e.id)
+	}
+	return fmt.Sprintf("application %s is a %s application", e.id, e.typ)
+}
+
+// readMCPApplication reads an application through its own route. Without its
+// catalog id -- an import, or a data source given only the id -- it is read by
+// id first, which says both what the application is and which route serves it.
+func readMCPApplication(ctx context.Context, c *client.Client, id, appCatalogID string) (*client.MCPApplication, error) {
+	if appCatalogID == "" {
+		app, err := client.GetApplication(ctx, c, id)
+		if err != nil {
+			return nil, err
+		}
+		if app.Type != "mcp" || app.AppCatalogID == "" {
+			return nil, &notMCPError{id: id, typ: app.Type}
+		}
+		appCatalogID = app.AppCatalogID
+	}
+	return client.GetMCPApplication(ctx, c, id, appCatalogID)
 }
 
 func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
