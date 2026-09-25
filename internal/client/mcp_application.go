@@ -207,3 +207,21 @@ func ChangeMCPToolGroupOperations(ctx context.Context, c *Client, id string, cha
 	}
 	return &app, nil
 }
+
+type mcpApplicationListResponse struct {
+	Items    []MCPApplication `json:"items"`
+	NextPage *string          `json:"next_page"`
+}
+
+// ListMCPApplications lists the organization's MCP applications. The list
+// carries the summary fields only -- read one through GetMCPApplication for
+// the rest.
+func ListMCPApplications(ctx context.Context, c *Client) ([]MCPApplication, error) {
+	return collectPages(func(cursor string) ([]MCPApplication, *string, error) {
+		var resp mcpApplicationListResponse
+		if err := c.doRequest(ctx, http.MethodGet, withCursor("/v1/applications?type=mcp", cursor), nil, &resp); err != nil {
+			return nil, nil, err
+		}
+		return resp.Items, resp.NextPage, nil
+	})
+}
