@@ -47,6 +47,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kafka_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mariadb_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mcp_application"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mcp_catalog_entry"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_privilege"
@@ -113,6 +114,7 @@ func New(version string) func() *schema.Provider {
 				"hush_deployment":                       deployment.Resource(),
 				"hush_agw_consent_methods":              agw_consent_methods.Resource(),
 				"hush_custom_mcp_application":           custom_mcp_application.Resource(),
+				"hush_mcp_application":                  mcp_application.Resource(),
 				"hush_notification_channel":             notification_channel.Resource(),
 				"hush_notification_configuration":       notification_configuration.Resource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.Resource(),
