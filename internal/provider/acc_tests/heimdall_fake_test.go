@@ -106,6 +106,8 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("DELETE /v1/applications/{id}", h.deleteApp)
 	ms.Handle("GET /v1/applications/{id}/mcp", h.getApp)
 	ms.Handle("PATCH /v1/applications/{id}/mcp", h.patchApp)
+	ms.Handle("POST /v1/applications/{id}/mcp/tool_operations", h.toolOperations)
+	ms.Handle("POST /v1/applications/{id}/mcp/tool_group_operations", h.toolGroupOperations)
 	// The catalog, custom app and per-entry routes all have four segments
 	// under /v1/applications, and ServeMux refuses patterns that overlap
 	// without one being more specific, so they share one dispatcher.
@@ -697,4 +699,63 @@ func (h *fakeHeimdall) putConsentMethods(w http.ResponseWriter, r *http.Request)
 	defer h.mu.Unlock()
 	h.consentMethods[r.PathValue("deployment_id")] = names
 	testutil.WriteJSON(w, http.StatusOK, describeConsentMethods(names))
+}
+
+// toolOperations sets tools' own operations by name; an unknown name is a
+// 404, and nothing changes.
+func (h *fakeHeimdall) toolOperations(w http.ResponseWriter, r *http.Request) {
+	var changes []map[string]any
+	if !decodeBody(w, r, &changes) {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.apps[r.PathValue("id")]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
+		return
+	}
+	tools := cloneTools(app["tools"])
+	byName := map[string]map[string]any{}
+	for _, tool := range tools {
+		byName[tool.(map[string]any)["name"].(string)] = tool.(map[string]any)
+	}
+	for _, change := range changes {
+		tool, ok := byName[change["name"].(string)]
+		if !ok {
+			testutil.WriteError(w, http.StatusNotFound, change["name"].(string)+" not found")
+			return
+		}
+		tool["operation"] = change["operation"]
+	}
+	app["tools"] = tools
+	testutil.WriteJSON(w, http.StatusOK, h.appOut(app, ""))
+}
+
+func (h *fakeHeimdall) toolGroupOperations(w http.ResponseWriter, r *http.Request) {
+	var changes []map[string]any
+	if !decodeBody(w, r, &changes) {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.apps[r.PathValue("id")]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
+		return
+	}
+	groups := cloneTools(app["tool_groups"])
+	for _, change := range changes {
+		if change["operation"] == nil {
+			testutil.WriteError(w, http.StatusUnprocessableEntity, "a group needs an operation")
+			return
+		}
+		for _, group := range groups {
+			if group.(map[string]any)["type"] == change["type"] {
+				group.(map[string]any)["operation"] = change["operation"]
+			}
+		}
+	}
+	app["tool_groups"] = groups
+	testutil.WriteJSON(w, http.StatusOK, h.appOut(app, ""))
 }
