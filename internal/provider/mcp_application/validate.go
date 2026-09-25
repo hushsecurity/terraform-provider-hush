@@ -15,6 +15,9 @@ import (
 // another resource supplies is unknown here and reads as empty, so each rule
 // skips what it cannot see rather than guess.
 func customizeDiff(ctx context.Context, d *schema.ResourceDiff, m any) error {
+	if err := validateAssignments(d); err != nil {
+		return err
+	}
 	if !d.NewValueKnown("app_catalog_id") {
 		return nil
 	}

@@ -78,8 +78,9 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	}
 	d.SetId(app.ID)
 
-	// The create takes no scopes: an application starts with its entry's.
-	// Written ones are patched in straight after, with enabled.
+	// The create takes neither scopes nor assignments: an application starts
+	// with its entry's scopes and granted to no one. Written ones are patched
+	// in straight after, with enabled.
 	update := &client.MCPApplicationUpdate{}
 	patch := false
 	if d.Get("enabled").(bool) {
@@ -90,6 +91,15 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	if scopesConfigured(d) {
 		scopes := listStrings(d, "scopes")
 		update.Scopes = &scopes
+		patch = true
+	}
+	if assignments := expandAssignments(d); len(assignments) > 0 {
+		update.Assignments = &assignments
+		patch = true
+	}
+	if d.Get("assign_all").(bool) {
+		all := true
+		update.AssignAll = &all
 		patch = true
 	}
 	if patch {
@@ -173,6 +183,16 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	if d.HasChange("scopes") {
 		scopes := listStrings(d, "scopes")
 		input.Scopes = &scopes
+		changed = true
+	}
+	if d.HasChange("assignment") {
+		assignments := expandAssignments(d)
+		input.Assignments = &assignments
+		changed = true
+	}
+	if d.HasChange("assign_all") {
+		all := d.Get("assign_all").(bool)
+		input.AssignAll = &all
 		changed = true
 	}
 	if d.HasChange("client_id") {
@@ -358,6 +378,8 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
 		"description":          deref(app.Description),
 		"deployment_ids":       app.DeploymentIDs,
 		"enabled":              app.Enabled,
+		"assign_all":           app.AssignAll,
+		"assignment":           flattenAssignments(app.Assignments),
 		"allowed_agents":       app.AllowedAgents,
 		"scopes":               app.Scopes,
 		"client_id":            deref(app.ClientID),

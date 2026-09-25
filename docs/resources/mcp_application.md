@@ -46,6 +46,33 @@ resource "hush_mcp_application" "github" {
   client_id                = "Iv1.0123456789abcdef"
   client_secret_wo         = var.github_oauth_client_secret
   client_secret_wo_version = "1"
+
+  # Granted to the platform and SRE groups, or to the CTO -- through any agent
+  # but one.
+  assignment {
+    condition {
+      match {
+        source   = "user"
+        property = "groups"
+        op       = "in"
+        values   = ["grp-platform", "grp-sre"]
+      }
+      match {
+        source   = "user"
+        property = "email"
+        op       = "eq"
+        value    = "cto@example.com"
+      }
+    }
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "neq"
+        value    = "agt-shared-ci"
+      }
+    }
+  }
 }
 
 # Google Workspace servers bill their quota to a Google Cloud project.
@@ -54,6 +81,7 @@ resource "hush_mcp_application" "gmail" {
   display_name      = "Gmail"
   deployment_ids    = [hush_deployment.gateway.id]
   google_project_id = "acme-workspace-mcp"
+  assign_all        = true
 
   client_id                = "0123456789-abcdef.apps.googleusercontent.com"
   client_secret_wo         = var.google_oauth_client_secret
@@ -83,6 +111,8 @@ resource "hush_mcp_application" "internal_tools_eu" {
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
 - `allowed_agents` (Set of String) Limit the application to these agent types: 'claude-code', 'claude', 'cursor', 'windsurf', 'vscode' and 'openclaw'. Leave unset, or empty, to allow any agent.
+- `assign_all` (Boolean) Grant the application to every user of the organization, whatever `assignment` says.
+- `assignment` (Block List) A rule granting the application to the users and agents it matches. An agent may use the application when any of the rules matches it; a rule matches when all of its `condition` blocks do. With neither this nor `assign_all`, the application is granted to no one, and users can only request access to it. (see [below for nested schema](#nestedblock--assignment))
 - `client_id` (String) The client id of an OAuth app registered with the server. Required for an entry with `manual_registration`. An application of a custom app left without one inherits the custom app's client id and secret, and follows the custom app when they change. Removing it removes the client secret too, except on an application of a custom app, where removing it leaves the credentials the application has.
 - `client_secret` (String, Sensitive) The client secret of that OAuth app. Stored in Terraform state; prefer client_secret_wo. The API never returns it.
 - `client_secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The client secret, kept out of Terraform state. Sent when client_secret_wo_version changes.
@@ -103,6 +133,37 @@ resource "hush_mcp_application" "internal_tools_eu" {
 - `oauth_relay` (Boolean) Whether the server's OAuth flow goes through Hush's relay.
 - `tools` (List of Object) The tools the application offers, as copied from its catalog entry or custom app. (see [below for nested schema](#nestedatt--tools))
 - `url` (String) The address the gateway reaches the server at. Empty for a server Hush hosts.
+
+<a id="nestedblock--assignment"></a>
+### Nested Schema for `assignment`
+
+Required:
+
+- `condition` (Block List, Min: 1) A condition of the rule. It holds when any of its `match` blocks does. (see [below for nested schema](#nestedblock--assignment--condition))
+
+<a id="nestedblock--assignment--condition"></a>
+### Nested Schema for `assignment.condition`
+
+Required:
+
+- `match` (Block List, Min: 1) One comparison of a property of the user or of the agent. (see [below for nested schema](#nestedblock--assignment--condition--match))
+
+<a id="nestedblock--assignment--condition--match"></a>
+### Nested Schema for `assignment.condition.match`
+
+Required:
+
+- `op` (String) How the property is compared: 'eq' and 'neq' against `value`, 'in' and 'nin' against `values`.
+- `property` (String) The property compared: for 'user', a claim such as 'email' or 'groups'; for 'agent', only 'id'.
+- `source` (String) What the property belongs to: 'user' (a claim of the user's identity provider profile, or 'groups' for the groups the user is in) or 'agent'.
+
+Optional:
+
+- `value` (String) The value 'eq' and 'neq' compare against.
+- `values` (List of String) The values 'in' and 'nin' compare against. At least one.
+
+
+
 
 <a id="nestedblock--quickbooks"></a>
 ### Nested Schema for `quickbooks`
