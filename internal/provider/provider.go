@@ -176,6 +176,7 @@ func New(version string) func() *schema.Provider {
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
+				"hush_agw_consent_methods":              agw_consent_methods.DataSource(),
 				"hush_notification_channel":             notification_channel.DataSource(),
 				"hush_notification_configuration":       notification_configuration.DataSource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.DataSource(),

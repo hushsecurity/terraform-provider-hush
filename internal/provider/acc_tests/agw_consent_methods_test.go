@@ -79,3 +79,51 @@ func TestAccResourceAgwConsentMethods_unknownMethod(t *testing.T) {
 		},
 	})
 }
+
+func TestAccDataSourceAgwConsentMethods(t *testing.T) {
+	heimdall.mu.Lock()
+	heimdall.consentMethods["dep-consent-ds"] = []string{"oidc_callback", "push_slack"}
+	heimdall.mu.Unlock()
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+data "hush_agw_consent_methods" "test" {
+  deployment_id = "dep-consent-ds"
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("data.hush_agw_consent_methods.test", "id", "dep-consent-ds"),
+					resource.TestCheckResourceAttr("data.hush_agw_consent_methods.test", "methods.#", "2"),
+					resource.TestCheckTypeSetElemAttr("data.hush_agw_consent_methods.test", "methods.*", "push_slack"),
+					resource.TestCheckResourceAttr("data.hush_agw_consent_methods.test", "method.0.name", "oidc_callback"),
+					resource.TestCheckResourceAttr("data.hush_agw_consent_methods.test", "method.0.description", "prompts through oidc_callback"),
+				),
+			},
+			// A deployment that exists with nothing set reads as an empty set.
+			{
+				PreConfig: func() {
+					mockServer.SeedObject("deployments", "dep-consent-unset", map[string]any{
+						"id": "dep-consent-unset", "name": "unset", "kind": "k8s",
+					})
+				},
+				Config: `
+data "hush_agw_consent_methods" "unset" {
+  deployment_id = "dep-consent-unset"
+}
+`,
+				Check: resource.TestCheckResourceAttr("data.hush_agw_consent_methods.unset", "methods.#", "0"),
+			},
+			// One that does not exist is an error.
+			{
+				Config: `
+data "hush_agw_consent_methods" "none" {
+  deployment_id = "dep-consent-none"
+}
+`,
+				ExpectError: regexp.MustCompile(`no deployment found with ID: dep-consent-none`),
+			},
+		},
+	})
+}
