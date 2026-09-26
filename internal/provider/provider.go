@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/agw_consent_methods"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/artifactory_integration"
@@ -24,6 +25,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bitbucket_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/confluence_integration"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/custom_mcp_application"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/deployment"
@@ -45,6 +47,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kafka_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kv_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mariadb_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mcp_application"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mcp_catalog_entry"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/mongodb_atlas_access_credential"
@@ -108,6 +112,9 @@ func New(version string) func() *schema.Provider {
 			},
 			ResourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.Resource(),
+				"hush_agw_consent_methods":              agw_consent_methods.Resource(),
+				"hush_custom_mcp_application":           custom_mcp_application.Resource(),
+				"hush_mcp_application":                  mcp_application.Resource(),
 				"hush_notification_channel":             notification_channel.Resource(),
 				"hush_notification_configuration":       notification_configuration.Resource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.Resource(),
@@ -174,6 +181,10 @@ func New(version string) func() *schema.Provider {
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
+				"hush_agw_consent_methods":              agw_consent_methods.DataSource(),
+				"hush_mcp_catalog_entry":                mcp_catalog_entry.DataSource(),
+				"hush_custom_mcp_application":           custom_mcp_application.DataSource(),
+				"hush_mcp_application":                  mcp_application.DataSource(),
 				"hush_notification_channel":             notification_channel.DataSource(),
 				"hush_notification_configuration":       notification_configuration.DataSource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.DataSource(),
