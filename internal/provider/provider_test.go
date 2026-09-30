@@ -70,6 +70,7 @@ func TestProvider(t *testing.T) {
 	// Test that data sources are registered
 	expectedDataSources := []string{
 		"hush_deployment",
+		"hush_image_pull_credentials",
 		"hush_notification_channel",
 		"hush_notification_configuration",
 		"hush_plaintext_access_credential",
