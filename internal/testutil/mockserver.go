@@ -35,10 +35,30 @@ type HookFunc func(op Operation, obj map[string]any) *HookError
 
 // route represents a parsed endpoint pattern.
 type route struct {
-	method   string
-	pattern  *regexp.Regexp
-	template string // original pattern like "/v1/deployments/{deployment_id}"
-	response map[string]any
+	method    string
+	pattern   *regexp.Regexp
+	template  string // original pattern like "/v1/deployments/{deployment_id}"
+	response  map[string]any
+	singleton bool // see isSingleton
+}
+
+// isSingleton reports whether a route addresses one fixed object instead of a
+// collection: a literal path nested under a collection (for example
+// /v1/deployments/image_pull_credentials) whose response is not a list
+// envelope. No store backs such an endpoint, so it is served straight from the
+// fixture response.
+func isSingleton(template string, response map[string]any) bool {
+	if response == nil {
+		return false // no object to serve: a fixture whose 200 is not one
+	}
+	if strings.Contains(template, "{") {
+		return false
+	}
+	if strings.Count(strings.Trim(template, "/"), "/") < 2 {
+		return false // /v1/<collection>, i.e. a list endpoint
+	}
+	_, isList := response["items"]
+	return !isList
 }
 
 // MockServer is a dynamic mock HTTP server driven by fixtures.
@@ -180,6 +200,11 @@ func (ms *MockServer) handleAuth(w http.ResponseWriter) {
 }
 
 func (ms *MockServer) handleRoute(w http.ResponseWriter, r *http.Request, rt route, matches []string) {
+	if r.Method == http.MethodGet && rt.singleton {
+		WriteJSON(w, http.StatusOK, rt.response)
+		return
+	}
+
 	resourceKey := extractResourceKey(rt.template)
 	storeKey := normalizeStoreKey(resourceKey)
 	var id string
@@ -527,12 +552,26 @@ func parseRoutes(endpoints map[string]map[string]any) []route {
 		}
 
 		routes = append(routes, route{
-			method:   method,
-			pattern:  re,
-			template: path,
-			response: resp,
+			method:    method,
+			pattern:   re,
+			template:  path,
+			response:  resp,
+			singleton: isSingleton(path, resp),
 		})
 	}
+
+	// /v1/deployments/{deployment_id} also matches
+	// /v1/deployments/image_pull_credentials, and map iteration order is random,
+	// so sort literal paths ahead of parameterized ones to make the more
+	// specific route win deterministically.
+	sort.SliceStable(routes, func(i, j int) bool {
+		literalI := !strings.Contains(routes[i].template, "{")
+		literalJ := !strings.Contains(routes[j].template, "{")
+		if literalI != literalJ {
+			return literalI
+		}
+		return routes[i].template < routes[j].template
+	})
 	return routes
 }
 
