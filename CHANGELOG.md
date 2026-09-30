@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.27.0] - 2026-10-01
+
+### Added
+
+* **Image pull credentials**: new `hush_image_pull_credentials` data source exposing the container registry credentials for the Hush container images. They are issued per organization rather than per deployment, so the data source takes no arguments.
+
+```hcl
+data "hush_image_pull_credentials" "this" {}
+```
+
+### Removed
+
+* **`hush_deployment.image_pull_secret`**: removed. The create-deployment API never returned this field, so the attribute always read back as an empty string. Use the new `hush_image_pull_credentials` data source instead.
+
 ## [1.26.0] - 2026-09-25
 
 ### Added
@@ -607,6 +621,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.27.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.26.0...v1.27.0
 [1.26.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.25.0...v1.26.0
 [1.25.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.24.0...v1.25.0
 [1.24.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.23.0...v1.24.0
