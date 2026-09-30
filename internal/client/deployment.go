@@ -227,6 +227,26 @@ func GetDeploymentsByName(ctx context.Context, c *Client, name string) ([]Deploy
 	})
 }
 
+// ImagePullCredentials are the registry credentials for pulling the Hush
+// container images. They are issued per organization rather than per
+// deployment, so the endpoint takes no deployment id.
+type ImagePullCredentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Registry string `json:"registry"`
+	Token    string `json:"token"`
+}
+
+// GetImagePullCredentials retrieves the organization's image pull credentials.
+func GetImagePullCredentials(ctx context.Context, c *Client) (*ImagePullCredentials, error) {
+	path := deploymentsEndpoint + "/image_pull_credentials"
+	var resp ImagePullCredentials
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // AccessBridgeStatus represents the response from the access_bridge endpoint
 type AccessBridgeStatus struct {
 	Status string `json:"status"`

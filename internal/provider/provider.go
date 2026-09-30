@@ -41,6 +41,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gitlab_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/grok_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/grok_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/image_pull_credentials"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/infisical_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/jira_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/kafka_access_credential"
@@ -185,6 +186,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mcp_catalog_entry":                mcp_catalog_entry.DataSource(),
 				"hush_custom_mcp_application":           custom_mcp_application.DataSource(),
 				"hush_mcp_application":                  mcp_application.DataSource(),
+				"hush_image_pull_credentials":           image_pull_credentials.DataSource(),
 				"hush_notification_channel":             notification_channel.DataSource(),
 				"hush_notification_configuration":       notification_configuration.DataSource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.DataSource(),
