@@ -14,16 +14,15 @@ import (
 )
 
 const (
-	idDesc              = "The unique identifier of the deployment"
-	nameDesc            = "The name of the deployment"
-	descriptionDesc     = "The description of the deployment"
-	envTypeDesc         = "The environment type for the deployment (dev, prod)"
-	kindDesc            = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway."
-	kindDataDesc        = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway."
-	statusDesc          = "The current status of the deployment"
-	tokenDesc           = "The deployment token for authentication"
-	passwordDesc        = "The deployment password for authentication"
-	imagePullSecretDesc = "The image pull secret for accessing private container images"
+	idDesc          = "The unique identifier of the deployment"
+	nameDesc        = "The name of the deployment"
+	descriptionDesc = "The description of the deployment"
+	envTypeDesc     = "The environment type for the deployment (dev, prod)"
+	kindDesc        = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway."
+	kindDataDesc    = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway."
+	statusDesc      = "The current status of the deployment"
+	tokenDesc       = "The deployment token for authentication"
+	passwordDesc    = "The deployment password for authentication"
 
 	agwDesc             = "Agent gateway configuration. What it describes follows 'kind': on a 'hosted' deployment the block is required and places a gateway Hush runs, so it takes 'region' and no 'hostname'; on a 'k8s' deployment it is optional and records a gateway you run yourself, so it takes 'hostname' and no 'region'. No other kind accepts the block."
 	agwDataDesc         = "The deployment's agent gateway, or nothing when it has none. A gateway Hush runs reports the 'region' it is placed in, one you run yourself reports the 'hostname' it answers on, and both report the derived 'gateway_url'."
@@ -132,12 +131,6 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 	}
 	s["password"] = &schema.Schema{
 		Description: passwordDesc,
-		Type:        schema.TypeString,
-		Computed:    true,
-		Sensitive:   true,
-	}
-	s["image_pull_secret"] = &schema.Schema{
-		Description: imagePullSecretDesc,
 		Type:        schema.TypeString,
 		Computed:    true,
 		Sensitive:   true,

@@ -290,9 +290,6 @@ func deploymentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.D
 	if err := d.Set("password", resp.Password); err != nil {
 		return diag.FromErr(fmt.Errorf("failed to set password: %w", err))
 	}
-	if err := d.Set("image_pull_secret", resp.ImagePullSecret); err != nil {
-		return diag.FromErr(fmt.Errorf("failed to set image_pull_secret: %w", err))
-	}
 
 	return nil
 }

@@ -160,9 +160,8 @@ func NewAgwUpdate(agw *AgwPatch) *agwUpdate {
 // DeploymentCredentialsResponse embeds Deployment and adds credentials
 type DeploymentCredentialsResponse struct {
 	Deployment
-	Token           string `json:"token"`
-	Password        string `json:"password"`
-	ImagePullSecret string `json:"image_pull_secret"`
+	Token    string `json:"token"`
+	Password string `json:"password"`
 }
 
 func CreateDeployment(ctx context.Context, c *Client, input *CreateDeploymentInput) (*Deployment, error) {

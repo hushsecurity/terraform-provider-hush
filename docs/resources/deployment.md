@@ -114,7 +114,6 @@ output "deployment" {
 ### Read-Only
 
 - `id` (String) The unique identifier of the deployment
-- `image_pull_secret` (String, Sensitive) The image pull secret for accessing private container images
 - `password` (String, Sensitive) The deployment password for authentication
 - `status` (String) The current status of the deployment
 - `token` (String, Sensitive) The deployment token for authentication
