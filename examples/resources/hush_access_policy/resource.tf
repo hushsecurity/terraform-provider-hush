@@ -319,3 +319,43 @@ resource "hush_access_policy" "sdk_example" {
     }
   }
 }
+
+# Override a value for some of the workloads another policy also matches.
+# Both policies deliver API_KEY to the pods labelled track=canary in the
+# production namespace, and the higher priority wins there.
+resource "hush_access_policy" "api_key_example" {
+  name                 = "api-key-policy"
+  access_credential_id = hush_plaintext_access_credential.example.id
+  deployment_ids       = ["dep-example123456789"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  env_delivery_config {
+    name = "API_KEY"
+  }
+}
+
+resource "hush_access_policy" "api_key_canary_example" {
+  name                 = "api-key-canary-policy"
+  priority             = 10
+  access_credential_id = hush_plaintext_access_credential.example_write_only.id
+  deployment_ids       = ["dep-example123456789"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  attestation_criteria {
+    type  = "k8s:pod-label"
+    key   = "track"
+    value = "canary"
+  }
+
+  env_delivery_config {
+    name = "API_KEY"
+  }
+}

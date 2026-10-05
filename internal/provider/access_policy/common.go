@@ -16,6 +16,7 @@ const (
 	nameDesc                   = "The name of the access policy"
 	descriptionDesc            = "The description of the access policy"
 	enabledDesc                = "Whether the access policy is enabled"
+	priorityDesc               = "The priority of the access policy, from 0 to 1000. When several policies deliver the same environment variable, file or cloud identity to a workload, the one with the higher priority wins"
 	accessCredentialIDDesc     = "The ID of the access credential"
 	accessPrivilegeIDsDesc     = "The list of access privilege IDs"
 	deploymentIDsDesc          = "The list of deployment IDs. Currently limited to a single deployment"
@@ -58,6 +59,13 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			Default:     true,
 			Description: enabledDesc,
+		},
+		"priority": {
+			Type:         schema.TypeInt,
+			Optional:     true,
+			Default:      0,
+			Description:  priorityDesc,
+			ValidateFunc: validation.IntBetween(0, 1000),
 		},
 		"access_credential_id": {
 			Type:        schema.TypeString,
@@ -334,6 +342,11 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 			Computed:    true,
 			Description: enabledDesc,
 		},
+		"priority": {
+			Type:        schema.TypeInt,
+			Computed:    true,
+			Description: priorityDesc,
+		},
 		"access_credential_id": {
 			Type:        schema.TypeString,
 			Computed:    true,
@@ -584,6 +597,7 @@ func setAccessPolicyFields(d *schema.ResourceData, policy *client.AccessPolicy) 
 		"name":                 policy.Name,
 		"description":          policy.Description,
 		"enabled":              policy.Enabled,
+		"priority":             policy.Priority,
 		"access_credential_id": policy.AccessCredentialID,
 		"access_privilege_ids": policy.AccessPrivilegeIDs,
 		"deployment_ids":       policy.DeploymentIDs,
