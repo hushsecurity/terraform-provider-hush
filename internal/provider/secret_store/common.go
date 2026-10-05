@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -27,6 +29,8 @@ const (
 	gcpSMPrefixDesc  = prefixBaseDesc + " GCP Secret Manager also allows \"_\", with \"-\" separating segments."
 	k8sPrefixDesc    = prefixBaseDesc + " A Kubernetes Secret name also allows \".\", with \"-\" separating segments, and no other punctuation."
 
+	hcVaultPrefixDesc = prefixBaseDesc + " A Vault KV v2 path also allows \"_\" \".\" and \"/\", with \"/\" separating segments."
+
 	regionDesc    = "The cloud region of the backend store"
 	kmsKeyIDDesc  = "The KMS key used to encrypt secrets (optional)"
 	projectIDDesc = "The GCP project that hosts the backend store"
@@ -36,12 +40,31 @@ const (
 	awsSSMDesc = "Configuration for an AWS SSM Parameter Store backend. Immutable: changing it forces a new secret store."
 	gcpSMDesc  = "Configuration for a GCP Secret Manager backend. Immutable: changing it forces a new secret store."
 	k8sDesc    = "Configuration for a Kubernetes Secrets backend. Immutable: changing it forces a new secret store."
+	vaultDesc  = "Configuration for a HashiCorp Vault backend, on its KV v2 secrets engine. Immutable: changing it forces a new secret store."
+
+	addressDesc = "The https address of the Vault server, at most 255 characters. Plaintext is refused: every request carries the Vault token in a header, and a login posts the access manager's service-account token in a body."
+	mountDesc   = "The KV v2 mount the secrets live under, at most 255 characters (defaults to \"secret\" when omitted)"
+	vaultNsDesc = "A Vault Enterprise namespace to address the secrets in, at most 255 characters (optional). Unrelated to the prefix, which names the secrets themselves; Vault OSS ignores it."
+	caCertDesc  = "The PEM certificate the Vault server's certificate is verified against, at most 64 KiB (optional). Needed only when it does not chain to a root the access manager already trusts."
+
+	authDesc       = "How the access manager authenticates to Vault"
+	authMethodDesc = "The Vault auth method: \"kubernetes\" (the access manager presents its pod's service-account token and the cluster's TokenReview api vouches for it), \"jwt\" (the same token, validated against the cluster's JWKS, for a Vault that cannot reach the api server), or \"token\" (a token the deployment already holds). Defaults to \"kubernetes\"."
+	authMountDesc  = "The path the auth method is mounted at, at most 255 characters (defaults to the method's own name when omitted). Not used by the \"token\" method, which does not log in."
+	authRoleDesc   = "The Vault role the access manager's service account is bound to, at most 255 characters. Required by the \"kubernetes\" and \"jwt\" methods, and not used by \"token\"."
+)
+
+// midgard's MAX_NAME_LENGTH and MAX_CA_CERT_LENGTH, restated so a too-long
+// value is refused at plan time. Without these it plans cleanly and the API
+// refuses it on apply.
+const (
+	vaultFieldMax  = 255
+	vaultCACertMax = 64 * 1024
 )
 
 // 15 Parameter Store hierarchy levels less the six a remote key appends.
 const awsSSMMaxSegments = 9
 
-var configBlockNames = []string{"aws_sm", "aws_ssm", "gcp_sm", "k8s_secrets"}
+var configBlockNames = []string{"aws_sm", "aws_ssm", "gcp_sm", "k8s_secrets", "hc_vault"}
 
 // Charset and shape only. The length maximum is one figure for every kind and
 // the API enforces it, so it is described in the attribute rather than checked
@@ -60,7 +83,76 @@ var (
 		"lowercase alphanumerics separated by - or _")
 	k8sPrefixValidation = prefixCharsetValidation(".", "-",
 		"lowercase alphanumerics separated by single - or .")
+	// A KV v2 path. Nothing is reserved: the silo writes under
+	// <mount>/data/<prefix>/..., where "data" and "metadata" are not special.
+	hcVaultPrefixValidation = prefixCharsetValidation("-_.", "/",
+		"lowercase alphanumerics separated by - _ . or /")
 )
+
+// hasBadPercentEscape reports a "%" that does not start a two-digit escape.
+// midgard refuses one with VAULT_ADDRESS_BAD_ESCAPE; RE2 has no lookahead, so
+// the same rule is a scan here.
+func hasBadPercentEscape(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] != '%' {
+			continue
+		}
+		if i+2 >= len(s) || !isHexDigit(s[i+1]) || !isHexDigit(s[i+2]) {
+			return true
+		}
+	}
+	return false
+}
+
+func isHexDigit(c byte) bool {
+	return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
+}
+
+// addressValidation refuses at plan time what the API refuses on the request:
+// a Vault address that is not https. Mirrors midgard's
+// _validate_vault_address; Go and python lower the scheme alike, so an
+// address typed in capitals is accepted by both.
+//
+// The whitespace and percent-escape checks run before url.Parse because the two
+// parsers disagree: url.Parse refuses a tab or a newline but accepts a space, a
+// U+00A0 and a bad escape, all of which midgard refuses. An address only this
+// side accepts plans cleanly and fails on apply.
+func addressValidation(i any, k string) ([]string, []error) {
+	v, ok := i.(string)
+	if !ok {
+		return nil, []error{fmt.Errorf("%s: expected a string", k)}
+	}
+	for _, r := range v {
+		if unicode.IsSpace(r) || r < 0x20 || r == 0x7F {
+			return nil, []error{fmt.Errorf(
+				"%s: address must not contain whitespace or control characters, got %q",
+				k, v)}
+		}
+	}
+	if hasBadPercentEscape(v) {
+		return nil, []error{fmt.Errorf(
+			"%s: address has an invalid percent-escape, got %q", k, v)}
+	}
+	parsed, err := url.Parse(v)
+	if err != nil {
+		return nil, []error{fmt.Errorf("%s: %q is not a URL: %w", k, v, err)}
+	}
+	if parsed.Scheme != "https" {
+		return nil, []error{fmt.Errorf("%s: address must be an https URL, got %q", k, v)}
+	}
+	if parsed.Hostname() == "" {
+		return nil, []error{fmt.Errorf("%s: address must have a host, got %q", k, v)}
+	}
+	return nil, nil
+}
+
+// mountValidation keeps a mount inside the request path the access manager
+// builds it into -- "<mount>/data/<prefix>/..." for the KV mount and
+// "auth/<mount>/login" for the auth one -- so a mount cannot walk out of it.
+// Mirrors midgard's VAULT_MOUNT.
+var mountValidation = validation.StringMatch(
+	regexp.MustCompile(`^[A-Za-z0-9_-]+(/[A-Za-z0-9_-]+)*$`),
+	"mount must be letters, digits, '-' and '_', with '/' between segments")
 
 // The separator is kept single: it delimits the segments the API counts, and a
 // doubled one would leave an empty segment -- Parameter Store rejects that
@@ -161,6 +253,7 @@ func SecretStoreResourceSchema() map[string]*schema.Schema {
 		awsConfigResource(awsSSMPrefixDesc, awsSSMPrefixValidation))
 	s["gcp_sm"] = resourceConfigBlock(gcpSMDesc, gcpConfigResource())
 	s["k8s_secrets"] = resourceConfigBlock(k8sDesc, k8sConfigResource())
+	s["hc_vault"] = resourceConfigBlock(vaultDesc, hcVaultConfigResource())
 
 	return s
 }
@@ -206,6 +299,7 @@ func SecretStoreDataSourceSchema() map[string]*schema.Schema {
 		"aws_ssm":     dataSourceConfigBlock(awsSSMDesc, awsConfigDataSource()),
 		"gcp_sm":      dataSourceConfigBlock(gcpSMDesc, gcpConfigDataSource()),
 		"k8s_secrets": dataSourceConfigBlock(k8sDesc, k8sConfigDataSource()),
+		"hc_vault":    dataSourceConfigBlock(vaultDesc, hcVaultConfigDataSource()),
 	}
 }
 
@@ -301,6 +395,94 @@ func k8sConfigResource() *schema.Resource {
 	}
 }
 
+func hcVaultConfigResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"prefix": {
+				Description:  hcVaultPrefixDesc,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: hcVaultPrefixValidation,
+			},
+			"address": {
+				Description: addressDesc,
+				Type:        schema.TypeString,
+				Required:    true,
+				ForceNew:    true,
+				ValidateFunc: validation.All(
+					addressValidation,
+					validation.StringLenBetween(1, vaultFieldMax),
+				),
+			},
+			"mount": {
+				Description: mountDesc,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				ValidateFunc: validation.All(
+					mountValidation,
+					validation.StringLenBetween(1, vaultFieldMax),
+				),
+			},
+			"vault_namespace": {
+				Description:  vaultNsDesc,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringLenBetween(1, vaultFieldMax),
+			},
+			"ca_cert": {
+				Description:  caCertDesc,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringLenBetween(1, vaultCACertMax),
+			},
+			"auth": {
+				Description: authDesc,
+				Type:        schema.TypeList,
+				Required:    true,
+				ForceNew:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"method": {
+							Description: authMethodDesc,
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Default:     client.SecretStoreVaultAuthKubernetes,
+							ValidateFunc: validation.StringInSlice(
+								client.SecretStoreVaultAuthMethods, false),
+						},
+						"mount": {
+							Description: authMountDesc,
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							ValidateFunc: validation.All(
+								mountValidation,
+								validation.StringLenBetween(1, vaultFieldMax),
+							),
+						},
+						// Required by method, which the schema cannot express,
+						// so both of these are optional here and the diff
+						// requires the one the method uses.
+						"role": {
+							Description:  authRoleDesc,
+							Type:         schema.TypeString,
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: validation.StringLenBetween(1, vaultFieldMax),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func awsConfigDataSource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -325,6 +507,30 @@ func k8sConfigDataSource() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"prefix":    {Description: prefixBaseDesc, Type: schema.TypeString, Computed: true},
 			"namespace": {Description: namespaceDesc, Type: schema.TypeString, Computed: true},
+		},
+	}
+}
+
+func hcVaultConfigDataSource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"prefix":          {Description: prefixBaseDesc, Type: schema.TypeString, Computed: true},
+			"address":         {Description: addressDesc, Type: schema.TypeString, Computed: true},
+			"mount":           {Description: mountDesc, Type: schema.TypeString, Computed: true},
+			"vault_namespace": {Description: vaultNsDesc, Type: schema.TypeString, Computed: true},
+			"ca_cert":         {Description: caCertDesc, Type: schema.TypeString, Computed: true},
+			"auth": {
+				Description: authDesc,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"method": {Description: authMethodDesc, Type: schema.TypeString, Computed: true},
+						"mount":  {Description: authMountDesc, Type: schema.TypeString, Computed: true},
+						"role":   {Description: authRoleDesc, Type: schema.TypeString, Computed: true},
+					},
+				},
+			},
 		},
 	}
 }
@@ -404,6 +610,18 @@ func setConfigBlocks(d *schema.ResourceData, config *client.SecretStoreConfig) e
 		block["project_id"] = config.ProjectID
 	case client.SecretStoreKindK8sSecrets:
 		block["namespace"] = config.Namespace
+	case client.SecretStoreKindHCVault:
+		block["address"] = config.Address
+		block["mount"] = config.Mount
+		block["vault_namespace"] = config.VaultNamespace
+		block["ca_cert"] = config.CaCert
+		auth := map[string]any{}
+		if config.Auth != nil {
+			auth["method"] = config.Auth.Method
+			auth["mount"] = config.Auth.Mount
+			auth["role"] = config.Auth.Role
+		}
+		block["auth"] = []map[string]any{auth}
 	default:
 		return fmt.Errorf("unknown secret store kind: %s", config.Kind)
 	}
