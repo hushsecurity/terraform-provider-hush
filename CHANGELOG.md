@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **HashiCorp Vault secret stores**: `hush_secret_store` takes an `hc_vault` block, storing each credential as one secret on a Vault KV v2 mount, with the credential's fields as the secret's own fields.
+
+  The block needs the Vault `address` and an `auth` block naming the role. `mount` defaults to `secret`, `ca_cert` is needed only when the server's certificate does not chain to a publicly trusted root, and `vault_namespace` addresses a Vault Enterprise namespace. Prefix punctuation follows a KV v2 path: `_` `.` and `/` besides `-`, with `/` separating segments; nothing is reserved, since the access manager writes under `<mount>/data/<prefix>/`.
+
+  `address` must be `https`, refused at plan time, so that Vault credentials never cross the network in plaintext.
+
+  `auth.method` is one of three:
+
+  | method | what it presents | what the block needs |
+  | ------ | ---------------- | -------------------- |
+  | `kubernetes` (default) | the access manager's own service-account token, which the cluster's TokenReview api vouches for | `role` |
+  | `jwt` | the same token, validated against the cluster's JWKS -- for a Vault that cannot reach the api server | `role` |
+  | `token` | a token the deployment already holds | nothing |
+
+  A field belonging to another method is refused at plan time rather than ignored, because a store's config is immutable and cannot be corrected afterwards: `token` takes no `role` and no `mount`.
+
+  With `token`, the `auth` block carries only `method = "token"`: no `role`, no `mount`, and nothing that identifies the token. The token comes from the deployment's own `hush-am` chart values, `secretStore.hcVault.auth.token` or `auth.tokenSecretRef`, which also carry the CA fallback and the audience of the service-account token a `kubernetes` or `jwt` role has to accept. It is one token for the whole deployment, shared by every token-authenticated store in it, and **nothing renews it** -- which is why `kubernetes` is the method a deployment should use.
+
+  The Vault side needs, for `kubernetes` and `jwt`, the role bound to the access manager's service account; and for every method a policy granting `create`, `update`, `read` on `<mount>/data/<prefix>/*` and `read`, `delete` on `<mount>/metadata/<prefix>/*` -- a policy missing the metadata grants leaves a store that reads and writes but can never delete.
+
+  **An `hc_vault` store can only be attached to deployments running `hush-am` 0.28.0 or later**, the chart release that added the kind. The API refuses an older deployment at apply, naming it, rather than letting the store sit in error with a config that cannot be edited.
+
+```hcl
+resource "hush_secret_store" "vault" {
+  name           = "prod-vault"
+  deployment_ids = ["dep-xxxxxxxxxxxxxxxx"]
+
+  hc_vault {
+    prefix  = "hush"
+    address = "https://vault.example.internal:8200"
+    mount   = "secret"
+
+    auth {
+      role = "hush-am"
+    }
+  }
+}
+```
+
 ## [1.27.0] - 2026-10-01
 
 ### Added
