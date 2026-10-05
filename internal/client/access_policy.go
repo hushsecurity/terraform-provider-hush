@@ -112,6 +112,7 @@ type AccessPolicy struct {
 	Name                string                 `json:"name"`
 	Description         string                 `json:"description,omitempty"`
 	Enabled             bool                   `json:"enabled"`
+	Priority            int                    `json:"priority"`
 	AccessCredentialID  string                 `json:"access_credential_id"`
 	AccessPrivilegeIDs  []string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
@@ -125,6 +126,7 @@ type CreateAccessPolicyInput struct {
 	Name                string                 `json:"name"`
 	Description         string                 `json:"description,omitempty"`
 	Enabled             bool                   `json:"enabled"`
+	Priority            int                    `json:"priority"`
 	AccessCredentialID  string                 `json:"access_credential_id"`
 	AccessPrivilegeIDs  []string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria []AttestationCriterion `json:"attestation_criteria"`
@@ -136,6 +138,7 @@ type UpdateAccessPolicyInput struct {
 	Name                *string                 `json:"name,omitempty"`
 	Description         *string                 `json:"description,omitempty"`
 	Enabled             *bool                   `json:"enabled,omitempty"`
+	Priority            *int                    `json:"priority,omitempty"`
 	AccessCredentialID  *string                 `json:"access_credential_id,omitempty"`
 	AccessPrivilegeIDs  *[]string               `json:"access_privilege_ids,omitempty"`
 	AttestationCriteria *[]AttestationCriterion `json:"attestation_criteria,omitempty"`

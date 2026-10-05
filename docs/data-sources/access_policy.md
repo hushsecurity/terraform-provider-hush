@@ -58,6 +58,7 @@ output "status" {
 - `env_delivery_config` (List of Object) Environment variable delivery configuration for the access policy (see [below for nested schema](#nestedatt--env_delivery_config))
 - `gcp_wif_delivery_config` (List of Object) GCP WIF delivery configuration for the access policy (see [below for nested schema](#nestedatt--gcp_wif_delivery_config))
 - `name` (String) The name of the access policy
+- `priority` (Number) The priority of the access policy, from 0 to 1000. When several policies deliver the same environment variable, file or cloud identity to a workload, the one with the higher priority wins
 - `sdk_delivery_config` (List of Object) SDK delivery configuration for the access policy (see [below for nested schema](#nestedatt--sdk_delivery_config))
 - `status` (String) The status of the access policy (syncing, ok, warning, error, disabled)
 - `status_detail` (String) The status detail of the access policy

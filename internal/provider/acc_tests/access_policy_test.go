@@ -1273,3 +1273,90 @@ resource "hush_access_policy" "test" {
 		},
 	})
 }
+
+// Exercises priority through create, update and the data source, and that
+// removing it from the configuration sets it back to 0 rather than leaving
+// the last value in place.
+func TestAccResourceAccessPolicy_withPriority(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("access_policy", "v1/access_policies"),
+		Steps: []resource.TestStep{
+			// Create the policy with priority 10 and read it back through
+			// the data source.
+			{
+				Config: accessPolicyPriorityConfig("test-policy-priority", "priority = 10") + `
+data "hush_access_policy" "priority" {
+  id = hush_access_policy.priority.id
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_access_policy.priority", "priority", "10",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_access_policy.priority", "priority", "10",
+					),
+				),
+			},
+			// Raise it to the maximum.
+			{
+				Config: accessPolicyPriorityConfig("test-policy-priority", "priority = 1000"),
+				Check: resource.TestCheckResourceAttr(
+					"hush_access_policy.priority", "priority", "1000",
+				),
+			},
+			// Remove the attribute. The read after the update returns what
+			// the API stored, so 0 here shows the provider sent it.
+			{
+				Config: accessPolicyPriorityConfig("test-policy-priority", ""),
+				Check: resource.TestCheckResourceAttr(
+					"hush_access_policy.priority", "priority", "0",
+				),
+			},
+		},
+	})
+}
+
+// Exercises the range check, which refuses a priority outside 0..1000 at plan
+// time, before anything reaches the API.
+func TestAccResourceAccessPolicy_withPriorityOutOfRange(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			// Below the range.
+			{
+				Config:      accessPolicyPriorityConfig("test-policy-priority-low", "priority = -1"),
+				ExpectError: regexp.MustCompile(`expected priority to be in the range \(0 - 1000\), got -1`),
+			},
+			// Above the range.
+			{
+				Config:      accessPolicyPriorityConfig("test-policy-priority-high", "priority = 1001"),
+				ExpectError: regexp.MustCompile(`expected priority to be in the range \(0 - 1000\), got 1001`),
+			},
+		},
+	})
+}
+
+func accessPolicyPriorityConfig(name, extra string) string {
+	return `
+resource "hush_access_policy" "priority" {
+  name                 = "` + name + `"
+  access_credential_id = "` + mockAccessCredentialID + `"
+  access_privilege_ids = ["` + mockAccessPrivilegeID + `"]
+  deployment_ids       = ["` + mockDeploymentID + `"]
+  ` + extra + `
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "default"
+  }
+
+  env_delivery_config {
+    key  = "port"
+    name = "PORT"
+    type = "key"
+  }
+}
+`
+}

@@ -32,6 +32,7 @@ func resourceAccessPolicyCreate(ctx context.Context, d *schema.ResourceData, met
 	input := &client.CreateAccessPolicyInput{
 		Name:                d.Get("name").(string),
 		Enabled:             d.Get("enabled").(bool),
+		Priority:            d.Get("priority").(int),
 		AccessCredentialID:  d.Get("access_credential_id").(string),
 		DeploymentIDs:       expandStringList(d.Get("deployment_ids").([]any)),
 		AttestationCriteria: expandAttestationCriteria(d.Get("attestation_criteria").([]any)),
@@ -75,6 +76,11 @@ func resourceAccessPolicyUpdate(ctx context.Context, d *schema.ResourceData, met
 	if d.HasChange("enabled") {
 		enabled := d.Get("enabled").(bool)
 		input.Enabled = &enabled
+	}
+
+	if d.HasChange("priority") {
+		priority := d.Get("priority").(int)
+		input.Priority = &priority
 	}
 
 	if d.HasChange("access_credential_id") {
