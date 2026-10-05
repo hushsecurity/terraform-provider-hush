@@ -49,6 +49,18 @@ resource "hush_secret_store" "vault" {
 }
 ```
 
+* **`hush_access_policy.priority`**: decides which policy wins when several deliver the same environment variable, file or cloud identity to a workload: the higher priority wins. It takes a value from 0 to 1000 and defaults to 0, so existing policies behave as before until one is given a priority. The `hush_access_policy` data source exposes it too.
+
+  Removing `priority` from a configuration sets it back to 0. A priority other than 0 needs hush-am 0.29.0 or later on the policy's deployment; on an older one the apply fails.
+
+```hcl
+resource "hush_access_policy" "canary" {
+  name     = "api-key-canary-policy"
+  priority = 10
+  # ...
+}
+```
+
 ## [1.27.0] - 2026-10-01
 
 ### Added
