@@ -72,6 +72,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/secret_store"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sendgrid_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sendgrid_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/service_agent"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/service_agent_client_secret"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/snowflake_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/snowflake_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/sonatype_integration"
@@ -116,6 +118,8 @@ func New(version string) func() *schema.Provider {
 				"hush_agw_consent_methods":              agw_consent_methods.Resource(),
 				"hush_custom_mcp_application":           custom_mcp_application.Resource(),
 				"hush_mcp_application":                  mcp_application.Resource(),
+				"hush_service_agent":                    service_agent.Resource(),
+				"hush_service_agent_client_secret":      service_agent_client_secret.Resource(),
 				"hush_notification_channel":             notification_channel.Resource(),
 				"hush_notification_configuration":       notification_configuration.Resource(),
 				"hush_plaintext_access_credential":      plaintext_access_credential.Resource(),
@@ -186,6 +190,7 @@ func New(version string) func() *schema.Provider {
 				"hush_mcp_catalog_entry":                mcp_catalog_entry.DataSource(),
 				"hush_custom_mcp_application":           custom_mcp_application.DataSource(),
 				"hush_mcp_application":                  mcp_application.DataSource(),
+				"hush_service_agent":                    service_agent.DataSource(),
 				"hush_image_pull_credentials":           image_pull_credentials.DataSource(),
 				"hush_notification_channel":             notification_channel.DataSource(),
 				"hush_notification_configuration":       notification_configuration.DataSource(),
