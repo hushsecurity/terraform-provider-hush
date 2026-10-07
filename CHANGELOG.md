@@ -10,6 +10,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+* **Service agents**: `hush_service_agent` (resource and data source) manages an AI agent that signs in to Hush with the identity of the workload it runs on, instead of a person's sign-in. It acts as itself or, with `acts_for_users`, for a signed-in user, and exports the `resource` a front end signs users in with for it.
+
+  Its identities are inline blocks, any number of each: `aws_iam_role` (e.g. Bedrock AgentCore), `kubernetes` (a service account), `azure` (a managed identity, an app registration or an Entra agent identity, e.g. Azure AI Foundry) and `oidc` (any issuer), each with optional claim `conditions`. Identities can't be edited in Hush, so a changed block is removed and added again. The data source reads an agent by `id` or `name`.
+
+  `hush_service_agent_client_secret` creates a client secret for a workload with no identity to sign in with. Hush returns it only when it is created, so it is kept in state; an agent can have two, so rotating is adding a second one, moving the workload to it, then removing the first.
+
+  Apps are given to a service agent with a `hush_mcp_application` assignment rule on `agent.id`: assigning an app to all users does not cover service agents.
+
 * **HashiCorp Vault secret stores**: `hush_secret_store` takes an `hc_vault` block, storing each credential as one secret on a Vault KV v2 mount, with the credential's fields as the secret's own fields.
 
   The block needs the Vault `address` and an `auth` block naming the role. `mount` defaults to `secret`, `ca_cert` is needed only when the server's certificate does not chain to a publicly trusted root, and `vault_namespace` addresses a Vault Enterprise namespace. Prefix punctuation follows a KV v2 path: `_` `.` and `/` besides `-`, with `/` separating segments; nothing is reserved, since the access manager writes under `<mount>/data/<prefix>/`.
