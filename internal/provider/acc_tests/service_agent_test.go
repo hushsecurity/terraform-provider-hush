@@ -220,7 +220,25 @@ resource "hush_service_agent" "bad" {
   }
 }`,
 				PlanOnly:    true,
-				ExpectError: regexp.MustCompile(`the same kubernetes identity is written twice`),
+				ExpectError: regexp.MustCompile(`the same identity is written twice`),
+			},
+			{
+				// heimdall binds the issuer and subject, whatever the block.
+				Config: `
+resource "hush_service_agent" "bad" {
+  name = "acc-bad"
+  kubernetes {
+    issuer          = "https://oidc.example.com"
+    namespace       = "agents"
+    service_account = "summarizer"
+  }
+  oidc {
+    issuer  = "https://oidc.example.com"
+    subject = "system:serviceaccount:agents:summarizer"
+  }
+}`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`the same identity is written twice`),
 			},
 			{
 				Config:      oidcAgent("acc-bad", 0, 11),
@@ -319,6 +337,50 @@ resource "hush_service_agent" "test" {
   }
 }`,
 				Check: agentHolds("acc-summarizer", "aws_iam_role", "aws_iam_role"),
+			},
+		},
+	})
+}
+
+func oidcAgents(subjectA, subjectB string) string {
+	agent := func(name, subject string) string {
+		return fmt.Sprintf(`
+resource "hush_service_agent" %[1]q {
+  name = "acc-summarizer-%[1]s"
+  oidc {
+    issuer  = "https://oidc.example.com"
+    subject = %[2]q
+  }
+}
+`, name, subject)
+	}
+	return agent("a", subjectA) + agent("b", subjectB)
+}
+
+// A refused add leaves the agent's old identity in place, and moving an
+// identity between agents is refused until the other lets it go.
+func TestAccServiceAgentKeepsIdentityWhenAddFails(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{Config: oidcAgents("s1", "s2")},
+			{
+				Config:      oidcAgents("s2", "s2"),
+				ExpectError: regexp.MustCompile(`identity already bound`),
+			},
+			{Config: oidcAgents("s1", "s2"), PlanOnly: true},
+			// A kubernetes block may take over the same identity from an oidc one.
+			{Config: oidcAgents("system:serviceaccount:agents:a", "s2")},
+			{
+				Config: strings.Replace(oidcAgents("system:serviceaccount:agents:a", "s2"), `oidc {
+    issuer  = "https://oidc.example.com"
+    subject = "system:serviceaccount:agents:a"
+  }`, `kubernetes {
+    issuer          = "https://oidc.example.com"
+    namespace       = "agents"
+    service_account = "a"
+  }`, 1),
+				Check: resource.TestCheckResourceAttr("hush_service_agent.a", "kubernetes.#", "1"),
 			},
 		},
 	})
