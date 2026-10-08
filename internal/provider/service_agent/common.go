@@ -144,9 +144,8 @@ func ResourceSchema() map[string]*schema.Schema {
 	}
 }
 
-// identityFields are the fields that name the identity, which heimdall binds
-// once per organization; the rest of a block (its conditions, an Azure
-// audience) can change while the identity stays.
+// identityFields are the fields that name the identity; the rest of a block
+// (its conditions, an Azure audience) can change while the identity stays.
 var identityFields = map[string][]string{
 	client.CredentialAWSIAMRole: {"issuer", "role_arn"},
 	client.CredentialKubernetes: {"issuer", "namespace", "service_account"},
@@ -155,8 +154,8 @@ var identityFields = map[string][]string{
 }
 
 // credential is a federated credential keyed two ways: key by everything in
-// it (a changed block is a different credential), identity by what heimdall
-// binds once.
+// it (a changed block is a different credential), identity by the issuer and
+// subject heimdall binds once per organization, whatever the block's type.
 type credential struct {
 	key      string
 	identity string
@@ -169,15 +168,24 @@ func newCredential(body map[string]any) (credential, error) {
 	if err != nil {
 		return credential{}, err
 	}
-	who := map[string]any{"type": body["type"]}
-	for _, field := range identityFields[body["type"].(string)] {
-		who[field] = body[field]
+	issuer, subject := identityOf(body)
+	return credential{key: key, identity: issuer + " " + subject, body: body}, nil
+}
+
+// identityOf derives the issuer and subject as heimdall does, so a typed block
+// and the oidc block naming the same identity collide here too.
+func identityOf(body map[string]any) (issuer, subject string) {
+	field := func(name string) string { v, _ := body[name].(string); return v }
+	switch body["type"] {
+	case client.CredentialAWSIAMRole:
+		return field("issuer"), field("role_arn")
+	case client.CredentialKubernetes:
+		return field("issuer"), "system:serviceaccount:" + field("namespace") + ":" + field("service_account")
+	case client.CredentialAzure:
+		return "https://login.microsoftonline.com/" + field("tenant_id") + "/v2.0", field("service_principal_id")
+	default:
+		return field("issuer"), field("subject")
 	}
-	identity, err := credentialKey(who)
-	if err != nil {
-		return credential{}, err
-	}
-	return credential{key: key, identity: identity, body: body}, nil
 }
 
 // getter is what both a plan's diff and an applied resource read from.
@@ -340,7 +348,7 @@ func validateCredentials(d getter) error {
 			continue // a value from another resource, unknown until apply
 		}
 		if seen[c.identity] {
-			return fmt.Errorf("the same %s identity is written twice: %s", c.body["type"], c.identity)
+			return fmt.Errorf("the same identity is written twice: %s", c.identity)
 		}
 		seen[c.identity] = true
 	}
