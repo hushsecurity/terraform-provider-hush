@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
-## [Unreleased]
+## [1.28.0] - 2026-10-08
 
 ### Added
 
@@ -684,6 +684,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.28.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.27.0...v1.28.0
 [1.27.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.26.0...v1.27.0
 [1.26.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.25.0...v1.26.0
 [1.25.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.24.0...v1.25.0
