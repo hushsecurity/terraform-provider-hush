@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Azure Key Vault secret stores**: `hush_secret_store` takes an `azure_kv` block, storing each credential as one secret in an Azure Key Vault.
+
+  The block needs `vault_url` and an `auth` block naming the Entra ID `tenant_id`. `cloud` selects the Azure cloud -- `public`, `china` or `usgov` -- and picks the Entra ID authority as well as the data-plane audience. It must match the host: `.vault.azure.net`, `.vault.azure.cn` and `.vault.usgovcloudapi.net` respectively. `vault_url` must be `https` and name a vault and nothing else, all refused at plan time.
+
+  `auth.method` is `default`, the access manager's own identity (on AKS, workload identity, which needs no secret configured anywhere), or `client_secret`, a service principal. `client_secret` needs `client_id`; `default` refuses it, because the SDK has no field for one and reads `AZURE_CLIENT_ID` from the environment instead, so a store created with one could never become ready and its config cannot be edited. The secret itself is the deployment's and no field names it.
+
+  **The prefix maximum is 32 for this kind**, where every other allows 80: a Key Vault secret name is capped at 127 characters and the rest is taken by what the access manager appends. It is now checked at plan time rather than left to the API, since a tightening is otherwise only seen at apply.
+
+  The vault must **not** have purge protection enabled, and the identity needs `get`, `set`, `delete` and `purge` on its secrets. The access manager deletes a secret by purging it so the name can be reused; a vault that forbids purging leaves every deleted name unusable for its retention period.
+
 ## [1.28.0] - 2026-10-08
 
 ### Added
@@ -17,7 +31,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
   `hush_service_agent_client_secret` creates a client secret for a workload with no identity to sign in with. Hush returns it only when it is created, so it is kept in state; an agent can have two, so rotating is adding a second one, moving the workload to it, then removing the first.
 
   Apps are given to a service agent with a `hush_mcp_application` assignment rule on `agent.id`: assigning an app to all users does not cover service agents.
-
 * **HashiCorp Vault secret stores**: `hush_secret_store` takes an `hc_vault` block, storing each credential as one secret on a Vault KV v2 mount, with the credential's fields as the secret's own fields.
 
   The block needs the Vault `address` and an `auth` block naming the role. `mount` defaults to `secret`, `ca_cert` is needed only when the server's certificate does not chain to a publicly trusted root, and `vault_namespace` addresses a Vault Enterprise namespace. Prefix punctuation follows a KV v2 path: `_` `.` and `/` besides `-`, with `/` separating segments; nothing is reserved, since the access manager writes under `<mount>/data/<prefix>/`.
