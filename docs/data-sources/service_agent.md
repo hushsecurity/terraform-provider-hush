@@ -48,6 +48,7 @@ Read-Only:
 - `conditions` (List of Object) (see [below for nested schema](#nestedobjatt--aws_iam_role--conditions))
 - `issuer` (String)
 - `role_arn` (String)
+- `subject_match` (String)
 
 <a id="nestedobjatt--aws_iam_role--conditions"></a>
 ### Nested Schema for `aws_iam_role.conditions`
@@ -90,6 +91,7 @@ Read-Only:
 - `issuer` (String)
 - `namespace` (String)
 - `service_account` (String)
+- `subject_match` (String)
 
 <a id="nestedobjatt--kubernetes--conditions"></a>
 ### Nested Schema for `kubernetes.conditions`
@@ -110,6 +112,7 @@ Read-Only:
 - `conditions` (List of Object) (see [below for nested schema](#nestedobjatt--oidc--conditions))
 - `issuer` (String)
 - `subject` (String)
+- `subject_match` (String)
 
 <a id="nestedobjatt--oidc--conditions"></a>
 ### Nested Schema for `oidc.conditions`

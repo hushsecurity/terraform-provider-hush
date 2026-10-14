@@ -36,6 +36,19 @@ resource "hush_service_agent" "nightly_report" {
   }
 }
 
+# One agent for every service account in a trusted namespace, so new
+# workloads there sign in without registering each one. A service account
+# with its own agent still signs in as that one: the most specific wins.
+resource "hush_service_agent" "agents_namespace" {
+  name = "agents-namespace"
+
+  kubernetes {
+    issuer        = "https://oidc.eks.eu-central-1.amazonaws.com/id/2881A7E8F2BEE882D793CDE80D900F5F"
+    namespace     = "agents"
+    subject_match = "prefix"
+  }
+}
+
 # An Azure AI Foundry agent, signing in with its Entra agent identity. The
 # app registration (audience) must issue v2 tokens and be dedicated to Hush.
 resource "hush_service_agent" "foundry_helper" {
@@ -81,11 +94,12 @@ output "summarizer_resource" {
 Required:
 
 - `issuer` (String) The AWS account's outbound identity federation issuer, from `aws iam get-outbound-web-identity-federation-info`.
-- `role_arn` (String) The role's ARN. The role needs `sts:GetWebIdentityToken`.
+- `role_arn` (String) The role's ARN. The role needs `sts:GetWebIdentityToken`. With `subject_match = "prefix"`, a role path ending in `/` (e.g. `arn:aws:iam::123456789012:role/agents/`) admits every role under it.
 
 Optional:
 
 - `conditions` (Block List, Max: 10) Extra checks on the token's claims; all must hold. (see [below for nested schema](#nestedblock--aws_iam_role--conditions))
+- `subject_match` (String) 'exact' (the default) or 'prefix'. The most specific credential wins: a workload's own exact credential, else the longest prefix, so one agent can own a namespace or path and another a narrower one inside it. If that credential refuses the token (a condition fails, or its agent is disabled), a broader one is not tried.
 
 <a id="nestedblock--aws_iam_role--conditions"></a>
 ### Nested Schema for `aws_iam_role.conditions`
@@ -135,11 +149,12 @@ Required:
 
 - `issuer` (String) The cluster's OIDC issuer, as its `/.well-known/openid-configuration` reports it.
 - `namespace` (String) The service account's namespace.
-- `service_account` (String) The service account's name.
 
 Optional:
 
 - `conditions` (Block List, Max: 10) Extra checks on the token's claims; all must hold. (see [below for nested schema](#nestedblock--kubernetes--conditions))
+- `service_account` (String) The service account's name. Leave it out, with `subject_match = "prefix"`, to admit every service account in the namespace.
+- `subject_match` (String) 'exact' (the default) or 'prefix'. The most specific credential wins: a workload's own exact credential, else the longest prefix, so one agent can own a namespace or path and another a narrower one inside it. If that credential refuses the token (a condition fails, or its agent is disabled), a broader one is not tried.
 
 <a id="nestedblock--kubernetes--conditions"></a>
 ### Nested Schema for `kubernetes.conditions`
@@ -161,11 +176,12 @@ Optional:
 Required:
 
 - `issuer` (String) The issuer, an https URL whose `/.well-known/openid-configuration` is public.
-- `subject` (String) The token's `sub`.
+- `subject` (String) The token's `sub`, or with `subject_match = "prefix"` what it starts with: it ends in `:` or `/` and has at least two parts (e.g. `repo:acme/`).
 
 Optional:
 
 - `conditions` (Block List, Max: 10) Extra checks on the token's claims; all must hold. (see [below for nested schema](#nestedblock--oidc--conditions))
+- `subject_match` (String) 'exact' (the default) or 'prefix'. The most specific credential wins: a workload's own exact credential, else the longest prefix, so one agent can own a namespace or path and another a narrower one inside it. If that credential refuses the token (a condition fails, or its agent is disabled), a broader one is not tried.
 
 <a id="nestedblock--oidc--conditions"></a>
 ### Nested Schema for `oidc.conditions`

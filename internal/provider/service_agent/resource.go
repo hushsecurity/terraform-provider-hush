@@ -2,6 +2,7 @@ package service_agent
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -158,8 +159,9 @@ func syncCredentials(ctx context.Context, c *client.Client, d *schema.ResourceDa
 		if heldKeys[w.key] {
 			continue
 		}
-		if old, ok := staleByIdentity[w.identity]; ok {
-			if err := remove(old); err != nil {
+		replaced, replacing := staleByIdentity[w.identity]
+		if replacing {
+			if err := remove(replaced); err != nil {
 				return err
 			}
 		}
@@ -173,6 +175,12 @@ func syncCredentials(ctx context.Context, c *client.Client, d *schema.ResourceDa
 			}
 		}
 		if _, err := client.AddAgentCredential(ctx, c, d.Id(), w.body); err != nil {
+			// Put back what it replaced, so a refused edit leaves the identity working.
+			if replacing {
+				if _, rerr := client.AddAgentCredential(ctx, c, d.Id(), replaced.body); rerr != nil {
+					return fmt.Errorf("%w (restoring the previous credential also failed: %v)", err, rerr)
+				}
+			}
 			return err
 		}
 		held++

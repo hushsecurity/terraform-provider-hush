@@ -155,13 +155,17 @@ func derive(c map[string]any) {
 	case "aws_iam_role":
 		c["subject"] = c["role_arn"]
 	case "kubernetes":
-		c["subject"] = fmt.Sprintf("system:serviceaccount:%v:%v", c["namespace"], c["service_account"])
+		sa, _ := c["service_account"].(string)
+		c["subject"] = fmt.Sprintf("system:serviceaccount:%v:%s", c["namespace"], sa)
 	case "azure":
 		c["issuer"] = fmt.Sprintf("https://login.microsoftonline.com/%v/v2.0", c["tenant_id"])
 		c["subject"] = c["service_principal_id"]
 	}
 	if _, ok := c["conditions"]; !ok && c["type"] != "client_secret" {
 		c["conditions"] = []any{}
+	}
+	if _, ok := c["subject_match"]; !ok && c["type"] != "client_secret" {
+		c["subject_match"] = "exact"
 	}
 }
 
@@ -196,6 +200,16 @@ func (f *fakeAgents) addCredential(w http.ResponseWriter, r *http.Request) {
 		credential["hint"] = secret[len(secret)-4:]
 		f.credentials[id] = append(f.credentials[id], credential)
 		testutil.WriteJSON(w, http.StatusCreated, credential)
+		return
+	}
+	// As heimdall: subject_match is sent only for a prefix (one from before
+	// prefixes refuses the field), and the kubernetes shape must match it.
+	if match, ok := body["subject_match"]; ok && match != "prefix" {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, "subject_match sent for an exact identity")
+		return
+	}
+	if body["type"] == "kubernetes" && (body["service_account"] == nil) != (body["subject_match"] == "prefix") {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, "subject_match must match service_account")
 		return
 	}
 	derive(credential)
