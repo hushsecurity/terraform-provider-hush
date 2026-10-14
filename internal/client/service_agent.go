@@ -31,6 +31,13 @@ const (
 	MaxAgentClientSecrets = 2
 )
 
+// How a credential's subject matches a token's sub. prefix admits every sub
+// starting with it: a Kubernetes namespace, an AWS role path or an OIDC prefix.
+const (
+	SubjectMatchExact  = "exact"
+	SubjectMatchPrefix = "prefix"
+)
+
 // ClaimOps are the comparisons a claim condition can make.
 var ClaimOps = []string{"eq", "pfx", "sfx"}
 
@@ -68,11 +75,12 @@ func (cc *ClaimCondition) UnmarshalJSON(data []byte) error {
 // set depends on Type; Issuer and Subject are set on every federated type,
 // derived by heimdall from the typed fields where it can.
 type AgentCredential struct {
-	ID         string           `json:"id"`
-	Type       string           `json:"type"`
-	Issuer     string           `json:"issuer,omitempty"`
-	Subject    string           `json:"subject,omitempty"`
-	Conditions []ClaimCondition `json:"conditions,omitempty"`
+	ID           string           `json:"id"`
+	Type         string           `json:"type"`
+	Issuer       string           `json:"issuer,omitempty"`
+	Subject      string           `json:"subject,omitempty"`
+	SubjectMatch string           `json:"subject_match,omitempty"`
+	Conditions   []ClaimCondition `json:"conditions,omitempty"`
 	// aws_iam_role
 	RoleARN string `json:"role_arn,omitempty"`
 	// kubernetes

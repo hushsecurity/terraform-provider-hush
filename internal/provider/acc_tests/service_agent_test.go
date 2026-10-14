@@ -241,6 +241,29 @@ resource "hush_service_agent" "bad" {
 				ExpectError: regexp.MustCompile(`the same identity is written twice`),
 			},
 			{
+				// A namespace prefix is an identity of its own.
+				Config: `
+resource "hush_service_agent" "bad" {
+  name = "acc-bad"
+  kubernetes {
+    issuer        = "https://oidc.example.com"
+    namespace     = "agents"
+    subject_match = "prefix"
+  }
+  kubernetes {
+    issuer        = "https://oidc.example.com"
+    namespace     = "agents"
+    subject_match = "prefix"
+    conditions {
+      claim = ["aud"]
+      value = "hush"
+    }
+  }
+}`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`the same identity is written twice`),
+			},
+			{
 				Config:      oidcAgent("acc-bad", 0, 11),
 				PlanOnly:    true,
 				ExpectError: regexp.MustCompile(`at most 10 identities, got 11`),
@@ -381,6 +404,98 @@ func TestAccServiceAgentKeepsIdentityWhenAddFails(t *testing.T) {
     service_account = "a"
   }`, 1),
 				Check: resource.TestCheckResourceAttr("hush_service_agent.a", "kubernetes.#", "1"),
+			},
+		},
+	})
+}
+
+const serviceAgentPrefixes = `
+resource "hush_service_agent" "test" {
+  name = "acc-summarizer"
+
+  kubernetes {
+    issuer        = "https://oidc.eks.eu-central-1.amazonaws.com/id/ABC"
+    namespace     = "agents"
+    subject_match = "prefix"
+  }
+
+  aws_iam_role {
+    issuer        = "` + agentAWSIssuer + `"
+    role_arn      = "arn:aws:iam::123456789012:role/agents/"
+    subject_match = "prefix"
+  }
+
+  oidc {
+    issuer        = "https://token.actions.githubusercontent.com"
+    subject       = "repo:acme/"
+    subject_match = "prefix"
+  }
+}
+`
+
+func TestAccServiceAgentSubjectPrefixes(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      agentsDestroyed,
+		Steps: []resource.TestStep{
+			{
+				Config: serviceAgentPrefixes,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "kubernetes.*",
+						map[string]string{"namespace": "agents", "service_account": "", "subject_match": "prefix"}),
+					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "aws_iam_role.*",
+						map[string]string{"subject_match": "prefix"}),
+					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "oidc.*",
+						map[string]string{"subject": "repo:acme/", "subject_match": "prefix"}),
+					agentHolds("acc-summarizer", "aws_iam_role", "kubernetes", "oidc"),
+				),
+			},
+			{
+				ResourceName:      "hush_service_agent.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+		},
+	})
+}
+
+func k8sAgent(block string) string {
+	return `
+resource "hush_service_agent" "test" {
+  name = "acc-summarizer"
+  kubernetes {
+    issuer    = "https://oidc.eks.eu-central-1.amazonaws.com/id/ABC"
+    namespace = "agents"
+` + block + `
+  }
+}`
+}
+
+// An edit the API refuses must not cost the identity it replaces.
+func TestAccServiceAgentRestoresRefusedReplacement(t *testing.T) {
+	exact := k8sAgent(`service_account = "summarizer"`)
+	resource.Test(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      agentsDestroyed,
+		Steps: []resource.TestStep{
+			{Config: exact, Check: agentHolds("acc-summarizer", "kubernetes")},
+			{
+				Config:      k8sAgent("service_account = \"summarizer\"\nsubject_match = \"prefix\""),
+				ExpectError: regexp.MustCompile(`subject_match must match service_account`),
+			},
+			{
+				// Checked before this step's apply could add it back.
+				PreConfig: func() {
+					if got := agentsFake.credentialTypes("acc-summarizer"); !slices.Equal(got, []string{"kubernetes"}) {
+						t.Fatalf("after the refused edit the agent holds %v, want [kubernetes]", got)
+					}
+				},
+				Config: exact,
+				Check: resource.ComposeTestCheckFunc(
+					agentHolds("acc-summarizer", "kubernetes"),
+					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "kubernetes.*",
+						map[string]string{"service_account": "summarizer", "subject_match": "exact"}),
+				),
 			},
 		},
 	})

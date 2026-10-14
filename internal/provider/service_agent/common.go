@@ -29,23 +29,29 @@ const (
 		"the deployment's issuer."
 	awsIssuerDesc = "The AWS account's outbound identity federation issuer, from " +
 		"`aws iam get-outbound-web-identity-federation-info`."
-	awsRoleDesc = "The role's ARN. The role needs `sts:GetWebIdentityToken`."
-	k8sDesc     = "A Kubernetes service account, signing in with a projected token whose audience is " +
+	awsRoleDesc = "The role's ARN. The role needs `sts:GetWebIdentityToken`. With `subject_match = \"prefix\"`, " +
+		"a role path ending in `/` (e.g. `arn:aws:iam::123456789012:role/agents/`) admits every role under it."
+	k8sDesc = "A Kubernetes service account, signing in with a projected token whose audience is " +
 		"the deployment's issuer."
 	k8sIssuerDesc   = "The cluster's OIDC issuer, as its `/.well-known/openid-configuration` reports it."
 	k8sNSDesc       = "The service account's namespace."
-	k8sSADesc       = "The service account's name."
+	k8sSADesc       = "The service account's name. Leave it out, with `subject_match = \"prefix\"`, to admit every service account in the namespace."
 	azureDesc       = "An Azure / Entra service principal: a managed identity, an app registration or an Entra agent identity (e.g. a Foundry agent). It signs in with an app-only Entra token for `audience`, so it also sends `resource` (the gateway) when it signs in. The app registration must issue v2 tokens and be dedicated to Hush: anything that receives tokens for it could replay them."
 	azureTenantDesc = "The Entra tenant id, lowercase."
 	azureSPDesc     = "The service principal's object id (the token's `sub`), lowercase."
 	azureAudDesc    = "The application (client) id of the app registration the identity requests tokens for, lowercase."
 	oidcDesc        = "Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience."
 	oidcIssuerDesc  = "The issuer, an https URL whose `/.well-known/openid-configuration` is public."
-	oidcSubjectDesc = "The token's `sub`."
-	conditionsDesc  = "Extra checks on the token's claims; all must hold."
-	claimDesc       = "The claim: its name, or a path into nested claims (up to 5 names)."
-	opDesc          = "'eq' (equal), 'pfx' (starts with) or 'sfx' (ends with)."
-	valueDesc       = "The value to compare with. A list claim matches if any element does."
+	oidcSubjectDesc = "The token's `sub`, or with `subject_match = \"prefix\"` what it starts with: it ends " +
+		"in `:` or `/` and has at least two parts (e.g. `repo:acme/`)."
+	subjectMatchDesc = "'exact' (the default) or 'prefix'. The most specific credential wins: a workload's " +
+		"own exact credential, else the longest prefix, so one agent can own a namespace or path and " +
+		"another a narrower one inside it. If that credential refuses the token (a condition fails, or " +
+		"its agent is disabled), a broader one is not tried."
+	conditionsDesc = "Extra checks on the token's claims; all must hold."
+	claimDesc      = "The claim: its name, or a path into nested claims (up to 5 names)."
+	opDesc         = "'eq' (equal), 'pfx' (starts with) or 'sfx' (ends with)."
+	valueDesc      = "The value to compare with. A list claim matches if any element does."
 )
 
 var (
@@ -58,10 +64,20 @@ var (
 // credentialFields are each federated type's own fields, in the order they
 // are written in a block.
 var credentialFields = map[string][]string{
-	client.CredentialAWSIAMRole: {"issuer", "role_arn"},
-	client.CredentialKubernetes: {"issuer", "namespace", "service_account"},
+	client.CredentialAWSIAMRole: {"issuer", "role_arn", "subject_match"},
+	client.CredentialKubernetes: {"issuer", "namespace", "service_account", "subject_match"},
 	client.CredentialAzure:      {"tenant_id", "service_principal_id", "audience"},
-	client.CredentialOIDC:       {"issuer", "subject"},
+	client.CredentialOIDC:       {"issuer", "subject", "subject_match"},
+}
+
+func subjectMatchSchema() *schema.Schema {
+	return &schema.Schema{
+		Description:  subjectMatchDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		Default:      client.SubjectMatchExact,
+		ValidateFunc: validation.StringInSlice([]string{client.SubjectMatchExact, client.SubjectMatchPrefix}, false),
+	}
 }
 
 func conditionsSchema() *schema.Schema {
@@ -124,13 +140,20 @@ func ResourceSchema() map[string]*schema.Schema {
 		"acts_for_users": {Description: actsForUsersDesc, Type: schema.TypeBool, Optional: true, Default: false},
 		"resource":       {Description: resourceAttrDesc, Type: schema.TypeString, Computed: true},
 		client.CredentialAWSIAMRole: credentialBlock(awsDesc, map[string]*schema.Schema{
-			"issuer":   str(awsIssuerDesc, https),
-			"role_arn": str(awsRoleDesc, validation.StringMatch(awsRolePattern, "must be an IAM role ARN")),
+			"issuer":        str(awsIssuerDesc, https),
+			"role_arn":      str(awsRoleDesc, validation.StringMatch(awsRolePattern, "must be an IAM role ARN")),
+			"subject_match": subjectMatchSchema(),
 		}),
 		client.CredentialKubernetes: credentialBlock(k8sDesc, map[string]*schema.Schema{
-			"issuer":          str(k8sIssuerDesc, https),
-			"namespace":       str(k8sNSDesc, validation.StringMatch(k8sNSPattern, "must be a Kubernetes namespace name")),
-			"service_account": str(k8sSADesc, validation.StringMatch(k8sSAPattern, "must be a Kubernetes service account name")),
+			"issuer":    str(k8sIssuerDesc, https),
+			"namespace": str(k8sNSDesc, validation.StringMatch(k8sNSPattern, "must be a Kubernetes namespace name")),
+			"service_account": {
+				Description:  k8sSADesc,
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringMatch(k8sSAPattern, "must be a Kubernetes service account name"),
+			},
+			"subject_match": subjectMatchSchema(),
 		}),
 		client.CredentialAzure: credentialBlock(azureDesc, map[string]*schema.Schema{
 			"tenant_id":            str(azureTenantDesc, guid),
@@ -138,8 +161,9 @@ func ResourceSchema() map[string]*schema.Schema {
 			"audience":             str(azureAudDesc, guid),
 		}),
 		client.CredentialOIDC: credentialBlock(oidcDesc, map[string]*schema.Schema{
-			"issuer":  str(oidcIssuerDesc, https),
-			"subject": str(oidcSubjectDesc, validation.StringLenBetween(1, 2048)),
+			"issuer":        str(oidcIssuerDesc, https),
+			"subject":       str(oidcSubjectDesc, validation.StringLenBetween(1, 2048)),
+			"subject_match": subjectMatchSchema(),
 		}),
 	}
 }
@@ -201,7 +225,8 @@ func configuredCredentials(d getter) ([]credential, error) {
 			block, _ := raw.(map[string]any)
 			body := map[string]any{"type": kind}
 			for _, field := range credentialFields[kind] {
-				body[field], _ = block[field].(string)
+				value, _ := block[field].(string)
+				setField(body, field, value)
 			}
 			conditions, _ := block["conditions"].([]any)
 			if conditions := expandConditions(conditions); len(conditions) > 0 {
@@ -245,9 +270,10 @@ func existingCredential(c client.AgentCredential) (credential, error) {
 		"issuer": c.Issuer, "role_arn": c.RoleARN, "namespace": c.Namespace,
 		"service_account": c.ServiceAccount, "tenant_id": c.TenantID,
 		"service_principal_id": c.ServicePrincipalID, "audience": c.Audience, "subject": c.Subject,
+		"subject_match": c.SubjectMatch,
 	}
 	for _, field := range credentialFields[c.Type] {
-		body[field] = values[field]
+		setField(body, field, values[field])
 	}
 	if len(c.Conditions) > 0 {
 		body["conditions"] = c.Conditions
@@ -255,6 +281,21 @@ func existingCredential(c client.AgentCredential) (credential, error) {
 	out, err := newCredential(body)
 	out.id = c.ID
 	return out, err
+}
+
+// setField leaves out what heimdall takes as absent: an omitted service
+// account, and an exact match (its default), so heimdall from before subject
+// prefixes accepts the body and keys match what either version returns.
+func setField(body map[string]any, field, value string) {
+	if (field == "service_account" && value == "") ||
+		(field == "subject_match" && value != client.SubjectMatchPrefix) {
+		return
+	}
+	body[field] = value
+}
+
+func isPrefix(body map[string]any) bool {
+	return body["subject_match"] == client.SubjectMatchPrefix
 }
 
 // credentialKey is the body as canonical JSON: map keys sort, and both sides
@@ -297,6 +338,12 @@ func flatten(d *schema.ResourceData, agent *client.ServiceAgent) error {
 			block = map[string]any{"issuer": c.Issuer, "subject": c.Subject}
 		default:
 			continue
+		}
+		if c.Type != client.CredentialAzure {
+			block["subject_match"] = client.SubjectMatchExact
+			if c.SubjectMatch == client.SubjectMatchPrefix {
+				block["subject_match"] = client.SubjectMatchPrefix
+			}
 		}
 		block["conditions"] = flattenConditions(c.Conditions)
 		blocks[c.Type] = append(blocks[c.Type], block)
@@ -357,7 +404,10 @@ func validateCredentials(d getter) error {
 
 func identityKnown(c credential) bool {
 	for _, field := range identityFields[c.body["type"].(string)] {
-		if c.body[field] == "" {
+		if field == "service_account" && isPrefix(c.body) {
+			continue
+		}
+		if v, _ := c.body[field].(string); v == "" {
 			return false
 		}
 	}

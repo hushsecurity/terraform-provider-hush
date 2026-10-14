@@ -21,6 +21,19 @@ resource "hush_service_agent" "nightly_report" {
   }
 }
 
+# One agent for every service account in a trusted namespace, so new
+# workloads there sign in without registering each one. A service account
+# with its own agent still signs in as that one: the most specific wins.
+resource "hush_service_agent" "agents_namespace" {
+  name = "agents-namespace"
+
+  kubernetes {
+    issuer        = "https://oidc.eks.eu-central-1.amazonaws.com/id/2881A7E8F2BEE882D793CDE80D900F5F"
+    namespace     = "agents"
+    subject_match = "prefix"
+  }
+}
+
 # An Azure AI Foundry agent, signing in with its Entra agent identity. The
 # app registration (audience) must issue v2 tokens and be dedicated to Hush.
 resource "hush_service_agent" "foundry_helper" {
