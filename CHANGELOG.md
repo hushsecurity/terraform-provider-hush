@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.29.0] - 2026-10-14
+
+### Added
+
+* **Service agents: subject prefixes**: `kubernetes`, `aws_iam_role` and `oidc` identities take `subject_match = "prefix"` to admit every workload in a namespace (leave out `service_account`), under an IAM role path (`role_arn` ending in `/`) or under an OIDC subject prefix (e.g. `repo:acme/`). The most specific identity wins.
+
+  ```hcl
+  resource "hush_service_agent" "agents_namespace" {
+    name = "agents-namespace"
+
+    kubernetes {
+      issuer        = "https://oidc.eks.eu-central-1.amazonaws.com/id/..."
+      namespace     = "agents"
+      subject_match = "prefix"
+    }
+  }
+  ```
+
 ## [1.28.0] - 2026-10-08
 
 ### Added
@@ -684,6 +702,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.29.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.28.0...v1.29.0
 [1.28.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.27.0...v1.28.0
 [1.27.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.26.0...v1.27.0
 [1.26.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.25.0...v1.26.0
