@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+* **Prefix maximums are checked at plan time** for every kind -- `aws_sm`, `aws_ssm`, `gcp_sm`, `k8s_secrets` and `hc_vault`. The maximum was previously documented as enforced by the API, so an over-long prefix planned cleanly and failed on apply.
+
 ## [1.29.0] - 2026-10-14
 
 ### Added
