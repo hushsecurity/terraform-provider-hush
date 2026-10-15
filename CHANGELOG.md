@@ -8,9 +8,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+* **Azure Key Vault secret stores**: `hush_secret_store` takes an `az_key_vault` block, storing each credential as one secret in an Azure Key Vault.
+
+  The block needs `vault_url` and an `auth` block. `cloud` selects the Azure cloud -- `public`, `china` or `usgov` -- and picks the Entra ID authority as well as the data-plane audience. It must match the host -- `.vault.azure.net`, `.vault.azure.cn` and `.vault.usgovcloudapi.net` respectively. That, and `vault_url` being `https` and naming a vault and nothing else, are refused at plan time.
+
+  `auth.method` is `default`, the access manager's own identity (on AKS, workload identity, which needs no secret configured anywhere), or `client_secret`, a service principal. `tenant_id` and `client_id` belong to `client_secret` alone, which needs both; `default` refuses both, because the access manager's own identity already carries them. The plan fails, as the API would: a store's config cannot be edited after it is created, so the pair is refused before anything exists rather than after. A user-assigned identity is named by `accessManager.workloadIdentity.azure.clientId` in the deployment's hush-am chart values. The secret for `client_secret` is the deployment's and no field here names it: set `secretStore.azKeyVault.auth.clientSecretRef`, or `auth.clientSecret`, in those same values.
+
+  **The prefix maximum is 32 for this kind**, where every other allows 80: a Key Vault secret name is capped at 127 characters and the rest is taken by what the access manager appends.
+
+  The vault must **not** have purge protection enabled, and the identity needs `get`, `set`, `delete` and `purge` on its secrets. The access manager deletes a secret by purging it so the name can be reused; a vault that forbids purging leaves every deleted name unusable for its retention period.
+
 ### Changed
 
-* **Prefix maximums are checked at plan time** for every kind -- `aws_sm`, `aws_ssm`, `gcp_sm`, `k8s_secrets` and `hc_vault`. The maximum was previously documented as enforced by the API, so an over-long prefix planned cleanly and failed on apply.
+* **Prefix maximums are checked at plan time** for every kind -- `aws_sm`, `aws_ssm`, `gcp_sm`, `k8s_secrets`, `hc_vault` and `az_key_vault`. The maximum was previously documented as enforced by the API, so an over-long prefix planned cleanly and failed on apply.
 
 ## [1.29.0] - 2026-10-14
 

@@ -23,7 +23,7 @@ const (
 	statusDesc        = "The aggregate status of the secret store across its deployments (pending, ready, warning, error)"
 	statusDetailDesc  = "Detail of the worst deployment status"
 
-	prefixBaseDesc   = "Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. \"-\" is allowed for every kind and \".\" may not repeat. At most 80 characters, enforced by the API."
+	prefixBaseDesc   = "Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. \"-\" is allowed for every kind and \".\" may not repeat."
 	prefix80Desc     = prefixBaseDesc + " At most 80 characters."
 	awsSMPrefixDesc  = prefix80Desc + " AWS Secrets Manager also allows \"_\" \".\" \"+\" \"=\" \"@\" and \"/\", with \"/\" separating segments."
 	awsSSMPrefixDesc = prefix80Desc + " AWS SSM Parameter Store also allows \"_\" \".\" and \"/\", with \"/\" separating segments, may not start with \"aws\" or \"ssm\", and is limited to 9 \"/\"-separated segments."
@@ -31,6 +31,8 @@ const (
 	k8sPrefixDesc    = prefix80Desc + " A Kubernetes Secret name also allows \".\", with \"-\" separating segments, and no other punctuation."
 
 	hcVaultPrefixDesc = prefix80Desc + " A Vault KV v2 path also allows \"_\" \".\" and \"/\", with \"/\" separating segments."
+	// 32, not 80: a secret name is capped at 127 and the rest is appended.
+	azKeyVaultPrefixDesc = prefixBaseDesc + " A Key Vault secret name allows no other punctuation, with \"-\" separating segments, and at most 32 characters -- the backend caps a name at 127 and the rest is taken by what the access manager appends."
 
 	regionDesc    = "The cloud region of the backend store"
 	kmsKeyIDDesc  = "The KMS key used to encrypt secrets (optional)"
@@ -42,6 +44,15 @@ const (
 	gcpSMDesc  = "Configuration for a GCP Secret Manager backend. Immutable: changing it forces a new secret store."
 	k8sDesc    = "Configuration for a Kubernetes Secrets backend. Immutable: changing it forces a new secret store."
 	vaultDesc  = "Configuration for a HashiCorp Vault backend, on its KV v2 secrets engine. Immutable: changing it forces a new secret store."
+	azureDesc  = "Configuration for an Azure Key Vault backend. Immutable: changing it forces a new secret store."
+
+	vaultURLDesc = "The https address of the Key Vault, e.g. \"https://acme.vault.azure.net\". The host must end with the suffix of the chosen \"cloud\", must be lowercase, and must carry no path, query, fragment, port or userinfo. A Managed HSM is not a Key Vault and is refused."
+	cloudDesc    = "The Azure cloud the vault and its Entra ID authority live in: \"public\" (the default), \"china\" or \"usgov\". It must match the host: \".vault.azure.net\" for \"public\", \".vault.azure.cn\" for \"china\" and \".vault.usgovcloudapi.net\" for \"usgov\". It selects the Entra ID authority as well as the data-plane audience, so it is not derived from the URL even though the two must agree."
+
+	azureAuthDesc       = "How the access manager authenticates to Key Vault"
+	azureAuthMethodDesc = "The auth method: \"default\" (the access manager's own identity -- on AKS, workload identity) or \"client_secret\" (a service principal). Defaults to \"default\"."
+	azureTenantDesc     = "The Entra ID tenant, as a GUID or a domain, for the \"client_secret\" method. The \"default\" method refuses one: the pod's assertion names no tenant, so the only directory that can honour it is the one holding the app registration the cluster is federated with, and AZURE_TENANT_ID carries that. Letters, digits, \".\" and \"-\" only, which is what the Azure SDK accepts."
+	azureClientIDDesc   = "The service principal's application id, for the \"client_secret\" method. The \"default\" method takes none: the SDK has no field for one and reads AZURE_CLIENT_ID from the environment, which the workload identity webhook sets, so one given here is refused rather than silently ignored. A GUID: the matching secret is the deployment's, so every \"client_secret\" store on a deployment names the same app registration."
 
 	addressDesc = "The https address of the Vault server, at most 255 characters. Plaintext is refused: every request carries the Vault token in a header, and a login posts the access manager's service-account token in a body."
 	mountDesc   = "The KV v2 mount the secrets live under, at most 255 characters (defaults to \"secret\" when omitted)"
@@ -62,19 +73,39 @@ const (
 	vaultCACertMax = 64 * 1024
 )
 
-// The prefix maximum. Checked here rather than left to the API, because a
-// tightening is otherwise missed until apply.
-const maxPrefixLength = 80
+// A Managed HSM stores keys and serves no secrets api, in any cloud.
+var managedHSMSuffixes = []string{
+	".managedhsm.azure.net",
+	".managedhsm.azure.cn",
+	".managedhsm.usgovcloudapi.net",
+}
+
+// The pairing needs both fields, so customizeDiff checks it; the name in front
+// of the suffix needs only one, so the validator below does.
+var vaultHostSuffixByCloud = map[string]string{
+	"public": ".vault.azure.net",
+	"china":  ".vault.azure.cn",
+	"usgov":  ".vault.usgovcloudapi.net",
+}
+
+// A vault name as the control plane spells it, minus the length and
+// hyphen-placement rules, which differ by cloud.
+var azureVaultNamePattern = regexp.MustCompile(`^[a-z0-9-]+$`)
 
 // 15 Parameter Store hierarchy levels less the six a remote key appends.
 const awsSSMMaxSegments = 9
 
-var configBlockNames = []string{"aws_sm", "aws_ssm", "gcp_sm", "k8s_secrets", "hc_vault"}
+var configBlockNames = []string{
+	"aws_sm", "aws_ssm", "gcp_sm", "k8s_secrets", "hc_vault", "az_key_vault",
+}
 
-// Charset and shape only. The length maximum is one figure for every kind and
-// the API enforces it, so it is described in the attribute rather than checked
-// here. Each pattern allows runs of lowercase alphanumerics separated by
-// punctuation, so a prefix never starts or ends with punctuation.
+// The prefix maxima. Checked here rather than left to the API, because a
+// tightening is otherwise missed until apply.
+const (
+	maxPrefixLength           = 80
+	azKeyVaultMaxPrefixLength = 32
+)
+
 // Each pattern allows runs of lowercase alphanumerics separated by
 // punctuation, so a prefix never starts or ends with punctuation.
 var (
@@ -106,6 +137,12 @@ var (
 		prefixCharsetValidation("-_.", "/",
 			"lowercase alphanumerics separated by - _ . or /"),
 		validation.StringLenBetween(1, maxPrefixLength),
+	)
+	// a Key Vault secret name admits [a-zA-Z0-9-] alone
+	azKeyVaultPrefixValidation = validation.All(
+		prefixCharsetValidation("", "-",
+			"lowercase alphanumerics separated by -"),
+		validation.StringLenBetween(1, azKeyVaultMaxPrefixLength),
 	)
 )
 
@@ -165,6 +202,71 @@ func httpsURLValidation(i any, k string) ([]string, []error) {
 	return nil, nil
 }
 
+// The charset azidentity accepts: it refuses the credential while building it,
+// so a pasted url or a stray space is unusable rather than merely wrong.
+var azureTenantValidation = validation.StringMatch(
+	regexp.MustCompile(`^[A-Za-z0-9.-]+$`),
+	"tenant_id must be letters, digits, '.' and '-'")
+
+// An Entra application id is a guid; nothing short of Entra refuses one that
+// is not.
+var azureClientIDValidation = validation.StringMatch(
+	regexp.MustCompile(`^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$`),
+	"client_id must be a guid")
+
+// azsecrets joins "/secrets/<name>" onto this, so a path prefixes every
+// request, and a Managed HSM has no secrets api at all.
+var azureVaultURLValidation = validation.All(
+	httpsURLValidation,
+	validation.StringLenBetween(1, vaultFieldMax),
+	func(i any, k string) ([]string, []error) {
+		v, _ := i.(string)
+		parsed, err := url.Parse(v)
+		if err != nil {
+			return nil, nil // httpsURLValidation already reported it
+		}
+		if (parsed.Path != "" && parsed.Path != "/") ||
+			parsed.RawQuery != "" || parsed.Fragment != "" {
+			return nil, []error{fmt.Errorf(
+				"%s: must name a vault, with no path, query or fragment, got %q",
+				k, v)}
+		}
+		// the SDK's challenge policy matches the vault against the raw
+		// host[:port], so a port or a capital fails every request
+		if parsed.User != nil || parsed.Host != strings.ToLower(parsed.Hostname()) {
+			return nil, []error{fmt.Errorf(
+				"%s: must be a lowercase host with no port or userinfo, got %q",
+				k, v)}
+		}
+		for _, suffix := range managedHSMSuffixes {
+			if strings.HasSuffix(parsed.Hostname(), suffix) {
+				return nil, []error{fmt.Errorf(
+					"%s: names a Managed HSM, which has no secrets api, got %q",
+					k, v)}
+			}
+		}
+		// an unset variable reaches here as a bare suffix, and a dot or an
+		// underscore makes a host that resolves nowhere
+		for _, suffix := range vaultHostSuffixByCloud {
+			name, ok := strings.CutSuffix(parsed.Hostname(), suffix)
+			if ok && !azureVaultNamePattern.MatchString(name) {
+				return nil, []error{fmt.Errorf(
+					"%s: must name a vault before %s, got %q", k, suffix, v)}
+			}
+		}
+		return nil, nil
+	},
+)
+
+// midgard stores no default, so a store created without a cloud reads back
+// empty; one created with "public" reads back "public".
+func azureCloudOrPublic(cloud string) string {
+	if cloud == "" {
+		return "public"
+	}
+	return cloud
+}
+
 // mountValidation keeps a mount inside the request path the access manager
 // builds it into -- "<mount>/data/<prefix>/..." for the KV mount and
 // "auth/<mount>/login" for the auth one -- so a mount cannot walk out of it.
@@ -184,8 +286,12 @@ var mountValidation = validation.StringMatch(
 func prefixCharsetValidation(
 	punctuation, separator, describe string,
 ) func(any, string) ([]string, []error) {
-	group := "[" + regexp.QuoteMeta(punctuation) + "]+|" +
-		regexp.QuoteMeta(separator)
+	// an empty character class is not a valid expression, so the alternation
+	// collapses to the separator alone
+	group := regexp.QuoteMeta(separator)
+	if punctuation != "" {
+		group = "[" + regexp.QuoteMeta(punctuation) + "]+|" + group
+	}
 	pattern := regexp.MustCompile(`^[a-z0-9]+((` + group + `)[a-z0-9]+)*$`)
 	match := validation.StringMatch(pattern, "prefix must be "+describe)
 	checkDot := strings.Contains(punctuation, ".")
@@ -273,6 +379,7 @@ func SecretStoreResourceSchema() map[string]*schema.Schema {
 	s["gcp_sm"] = resourceConfigBlock(gcpSMDesc, gcpConfigResource())
 	s["k8s_secrets"] = resourceConfigBlock(k8sDesc, k8sConfigResource())
 	s["hc_vault"] = resourceConfigBlock(vaultDesc, hcVaultConfigResource())
+	s["az_key_vault"] = resourceConfigBlock(azureDesc, azKeyVaultConfigResource())
 
 	return s
 }
@@ -314,11 +421,12 @@ func SecretStoreDataSourceSchema() map[string]*schema.Schema {
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
-		"aws_sm":      dataSourceConfigBlock(awsSMDesc, awsConfigDataSource()),
-		"aws_ssm":     dataSourceConfigBlock(awsSSMDesc, awsConfigDataSource()),
-		"gcp_sm":      dataSourceConfigBlock(gcpSMDesc, gcpConfigDataSource()),
-		"k8s_secrets": dataSourceConfigBlock(k8sDesc, k8sConfigDataSource()),
-		"hc_vault":    dataSourceConfigBlock(vaultDesc, hcVaultConfigDataSource()),
+		"aws_sm":       dataSourceConfigBlock(awsSMDesc, awsConfigDataSource()),
+		"aws_ssm":      dataSourceConfigBlock(awsSSMDesc, awsConfigDataSource()),
+		"gcp_sm":       dataSourceConfigBlock(gcpSMDesc, gcpConfigDataSource()),
+		"k8s_secrets":  dataSourceConfigBlock(k8sDesc, k8sConfigDataSource()),
+		"hc_vault":     dataSourceConfigBlock(vaultDesc, hcVaultConfigDataSource()),
+		"az_key_vault": dataSourceConfigBlock(azureDesc, azKeyVaultConfigDataSource()),
 	}
 }
 
@@ -502,6 +610,104 @@ func hcVaultConfigResource() *schema.Resource {
 	}
 }
 
+func azKeyVaultConfigResource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"prefix": {
+				Description:  azKeyVaultPrefixDesc,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: azKeyVaultPrefixValidation,
+			},
+			"vault_url": {
+				Description:  vaultURLDesc,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: azureVaultURLValidation,
+			},
+			"cloud": {
+				Description: cloudDesc,
+				Type:        schema.TypeString,
+				Optional:    true,
+				ForceNew:    true,
+				ValidateFunc: validation.StringInSlice(
+					[]string{"public", "china", "usgov"}, false),
+				// unset and "public" are the same cloud but differ as
+				// strings, and the attribute is ForceNew: omitting it on a
+				// store holding "public" would otherwise plan a replacement
+				DiffSuppressFunc: func(
+					_, old, new string, _ *schema.ResourceData,
+				) bool {
+					return azureCloudOrPublic(old) == azureCloudOrPublic(new)
+				},
+			},
+			"auth": {
+				Description: azureAuthDesc,
+				Type:        schema.TypeList,
+				Required:    true,
+				ForceNew:    true,
+				MaxItems:    1,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"method": {
+							Description: azureAuthMethodDesc,
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							Default:     client.SecretStoreAzureAuthDefault,
+							ValidateFunc: validation.StringInSlice(
+								client.SecretStoreAzureAuthMethods, false),
+						},
+						"tenant_id": {
+							Description: azureTenantDesc,
+							Type:        schema.TypeString,
+							Optional:    true,
+							ForceNew:    true,
+							ValidateFunc: validation.All(
+								azureTenantValidation,
+								validation.StringLenBetween(1, vaultFieldMax),
+							),
+						},
+						// required by method, which the schema cannot express,
+						// so the diff requires it where it belongs
+						"client_id": {
+							Description:  azureClientIDDesc,
+							Type:         schema.TypeString,
+							Optional:     true,
+							ForceNew:     true,
+							ValidateFunc: azureClientIDValidation,
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func azKeyVaultConfigDataSource() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"prefix":    {Description: prefixBaseDesc, Type: schema.TypeString, Computed: true},
+			"vault_url": {Description: vaultURLDesc, Type: schema.TypeString, Computed: true},
+			"cloud":     {Description: cloudDesc, Type: schema.TypeString, Computed: true},
+			"auth": {
+				Description: azureAuthDesc,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"method":    {Description: azureAuthMethodDesc, Type: schema.TypeString, Computed: true},
+						"tenant_id": {Description: azureTenantDesc, Type: schema.TypeString, Computed: true},
+						"client_id": {Description: azureClientIDDesc, Type: schema.TypeString, Computed: true},
+					},
+				},
+			},
+		},
+	}
+}
+
 func awsConfigDataSource() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
@@ -629,6 +835,16 @@ func setConfigBlocks(d *schema.ResourceData, config *client.SecretStoreConfig) e
 		block["project_id"] = config.ProjectID
 	case client.SecretStoreKindK8sSecrets:
 		block["namespace"] = config.Namespace
+	case client.SecretStoreKindAzKeyVault:
+		block["vault_url"] = config.VaultURL
+		block["cloud"] = config.Cloud
+		auth := map[string]any{}
+		if config.Auth != nil {
+			auth["method"] = config.Auth.Method
+			auth["tenant_id"] = config.Auth.TenantID
+			auth["client_id"] = config.Auth.ClientID
+		}
+		block["auth"] = []map[string]any{auth}
 	case client.SecretStoreKindHCVault:
 		block["address"] = config.Address
 		block["mount"] = config.Mount

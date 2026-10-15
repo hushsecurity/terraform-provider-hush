@@ -3,6 +3,7 @@ package acc_tests
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -19,6 +20,16 @@ func vaultAuth(auth string) string {
     auth {
       %s
     }`, auth)
+}
+
+// azKeyVaultBody builds an az_key_vault block body. The url and the auth block
+// are parameters because two of the cases are about them rather than the
+// prefix, and each field wires its own validator.
+func azKeyVaultBody(vaultURL, auth string) string {
+	return fmt.Sprintf(`vault_url = %q
+    auth {
+      %s
+    }`, vaultURL, auth)
 }
 
 // Each config block wires its own validator, so every block needs its own
@@ -245,6 +256,46 @@ func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
 			block:  "aws_sm",
 			body:   `region = "eu-west-1"`,
 			prefix: "acme__prod",
+		},
+		{
+			name:  "az_key_vault.hyphen.allowed",
+			block: "az_key_vault",
+			body: azKeyVaultBody("https://acme.vault.azure.net",
+				`method = "default"`),
+			prefix: "acme-prod",
+		},
+		{
+			name:  "az_key_vault.rejects.underscore",
+			block: "az_key_vault",
+			body: azKeyVaultBody("https://acme.vault.azure.net",
+				`method = "default"`),
+			prefix:    "acme_prod",
+			expectErr: regexp.MustCompile(`prefix must be`),
+		},
+		{
+			name:  "az_key_vault.rejects.a.prefix.over.32",
+			block: "az_key_vault",
+			body: azKeyVaultBody("https://acme.vault.azure.net",
+				`method = "default"`),
+			prefix:    strings.Repeat("a", 33),
+			expectErr: regexp.MustCompile(`range \(1 - 32\)`),
+		},
+		{
+			name:  "az_key_vault.rejects.a.path.in.the.url",
+			block: "az_key_vault",
+			body: azKeyVaultBody("https://acme.vault.azure.net/secrets",
+				`method = "default"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`no path, query or fragment`),
+		},
+		{
+			name:  "az_key_vault.default.refuses.a.tenant",
+			block: "az_key_vault",
+			body: azKeyVaultBody("https://acme.vault.azure.net",
+				`method = "default"
+      tenant_id = "00000000-0000-0000-0000-000000000000"`),
+			prefix:    "acme",
+			expectErr: regexp.MustCompile(`does not use tenant_id`),
 		},
 	}
 
