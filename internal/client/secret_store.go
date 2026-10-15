@@ -36,10 +36,12 @@ var SecretStoreVaultAuthMethods = []string{
 	SecretStoreVaultAuthToken,
 }
 
-// SecretStoreVaultAuth is how the access manager authenticates to Vault.
+// SecretStoreAuth is how the access manager authenticates to the backend,
+// flattened across kinds the way SecretStoreConfig already is, since both
+// share the "auth" key.
 // Mount and Role belong to the kubernetes and jwt methods; the API refuses a
 // field belonging to another method, so both are omitempty.
-type SecretStoreVaultAuth struct {
+type SecretStoreAuth struct {
 	Method string `json:"method"`
 	Mount  string `json:"mount,omitempty"`
 	Role   string `json:"role,omitempty"`
@@ -58,11 +60,11 @@ type SecretStoreConfig struct {
 	Namespace string `json:"namespace,omitempty"`
 	// hc_vault. Auth is a pointer so it stays out of another kind's request,
 	// which the backend's strict model would refuse.
-	Address        string                `json:"address,omitempty"`
-	Mount          string                `json:"mount,omitempty"`
-	VaultNamespace string                `json:"vault_namespace,omitempty"`
-	CaCert         string                `json:"ca_cert,omitempty"`
-	Auth           *SecretStoreVaultAuth `json:"auth,omitempty"`
+	Address        string           `json:"address,omitempty"`
+	Mount          string           `json:"mount,omitempty"`
+	VaultNamespace string           `json:"vault_namespace,omitempty"`
+	CaCert         string           `json:"ca_cert,omitempty"`
+	Auth           *SecretStoreAuth `json:"auth,omitempty"`
 }
 
 type SecretStore struct {

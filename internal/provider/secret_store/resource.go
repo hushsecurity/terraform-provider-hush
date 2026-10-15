@@ -207,7 +207,7 @@ func expandConfig(d *schema.ResourceData) (*client.SecretStoreConfig, error) {
 			Mount:          block["mount"].(string),
 			VaultNamespace: block["vault_namespace"].(string),
 			CaCert:         block["ca_cert"].(string),
-			Auth: &client.SecretStoreVaultAuth{
+			Auth: &client.SecretStoreAuth{
 				Method: auth["method"].(string),
 				Mount:  auth["mount"].(string),
 				Role:   auth["role"].(string),
