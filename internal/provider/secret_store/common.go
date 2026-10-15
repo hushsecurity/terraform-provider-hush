@@ -24,12 +24,13 @@ const (
 	statusDetailDesc  = "Detail of the worst deployment status"
 
 	prefixBaseDesc   = "Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. \"-\" is allowed for every kind and \".\" may not repeat. At most 80 characters, enforced by the API."
-	awsSMPrefixDesc  = prefixBaseDesc + " AWS Secrets Manager also allows \"_\" \".\" \"+\" \"=\" \"@\" and \"/\", with \"/\" separating segments."
-	awsSSMPrefixDesc = prefixBaseDesc + " AWS SSM Parameter Store also allows \"_\" \".\" and \"/\", with \"/\" separating segments, may not start with \"aws\" or \"ssm\", and is limited to 9 \"/\"-separated segments."
-	gcpSMPrefixDesc  = prefixBaseDesc + " GCP Secret Manager also allows \"_\", with \"-\" separating segments."
-	k8sPrefixDesc    = prefixBaseDesc + " A Kubernetes Secret name also allows \".\", with \"-\" separating segments, and no other punctuation."
+	prefix80Desc     = prefixBaseDesc + " At most 80 characters."
+	awsSMPrefixDesc  = prefix80Desc + " AWS Secrets Manager also allows \"_\" \".\" \"+\" \"=\" \"@\" and \"/\", with \"/\" separating segments."
+	awsSSMPrefixDesc = prefix80Desc + " AWS SSM Parameter Store also allows \"_\" \".\" and \"/\", with \"/\" separating segments, may not start with \"aws\" or \"ssm\", and is limited to 9 \"/\"-separated segments."
+	gcpSMPrefixDesc  = prefix80Desc + " GCP Secret Manager also allows \"_\", with \"-\" separating segments."
+	k8sPrefixDesc    = prefix80Desc + " A Kubernetes Secret name also allows \".\", with \"-\" separating segments, and no other punctuation."
 
-	hcVaultPrefixDesc = prefixBaseDesc + " A Vault KV v2 path also allows \"_\" \".\" and \"/\", with \"/\" separating segments."
+	hcVaultPrefixDesc = prefix80Desc + " A Vault KV v2 path also allows \"_\" \".\" and \"/\", with \"/\" separating segments."
 
 	regionDesc    = "The cloud region of the backend store"
 	kmsKeyIDDesc  = "The KMS key used to encrypt secrets (optional)"
@@ -61,6 +62,10 @@ const (
 	vaultCACertMax = 64 * 1024
 )
 
+// The prefix maximum. Checked here rather than left to the API, because a
+// tightening is otherwise missed until apply.
+const maxPrefixLength = 80
+
 // 15 Parameter Store hierarchy levels less the six a remote key appends.
 const awsSSMMaxSegments = 9
 
@@ -70,23 +75,38 @@ var configBlockNames = []string{"aws_sm", "aws_ssm", "gcp_sm", "k8s_secrets", "h
 // the API enforces it, so it is described in the attribute rather than checked
 // here. Each pattern allows runs of lowercase alphanumerics separated by
 // punctuation, so a prefix never starts or ends with punctuation.
+// Each pattern allows runs of lowercase alphanumerics separated by
+// punctuation, so a prefix never starts or ends with punctuation.
 var (
-	awsSMPrefixValidation = prefixCharsetValidation("-_.+=@", "/",
-		"lowercase alphanumerics separated by - _ . + = @ or /")
+	awsSMPrefixValidation = validation.All(
+		prefixCharsetValidation("-_.+=@", "/",
+			"lowercase alphanumerics separated by - _ . + = @ or /"),
+		validation.StringLenBetween(1, maxPrefixLength),
+	)
 	awsSSMPrefixValidation = validation.All(
 		prefixCharsetValidation("-_.", "/",
 			"lowercase alphanumerics separated by - _ . or /"),
 		reservedPrefixValidation("aws", "ssm"),
 		segmentCountValidation("/", awsSSMMaxSegments),
+		validation.StringLenBetween(1, maxPrefixLength),
 	)
-	gcpSMPrefixValidation = prefixCharsetValidation("_", "-",
-		"lowercase alphanumerics separated by - or _")
-	k8sPrefixValidation = prefixCharsetValidation(".", "-",
-		"lowercase alphanumerics separated by single - or .")
+	gcpSMPrefixValidation = validation.All(
+		prefixCharsetValidation("_", "-",
+			"lowercase alphanumerics separated by - or _"),
+		validation.StringLenBetween(1, maxPrefixLength),
+	)
+	k8sPrefixValidation = validation.All(
+		prefixCharsetValidation(".", "-",
+			"lowercase alphanumerics separated by single - or ."),
+		validation.StringLenBetween(1, maxPrefixLength),
+	)
 	// A KV v2 path. Nothing is reserved: the silo writes under
 	// <mount>/data/<prefix>/..., where "data" and "metadata" are not special.
-	hcVaultPrefixValidation = prefixCharsetValidation("-_.", "/",
-		"lowercase alphanumerics separated by - _ . or /")
+	hcVaultPrefixValidation = validation.All(
+		prefixCharsetValidation("-_.", "/",
+			"lowercase alphanumerics separated by - _ . or /"),
+		validation.StringLenBetween(1, maxPrefixLength),
+	)
 )
 
 // hasBadPercentEscape reports a "%" that does not start a two-digit escape.

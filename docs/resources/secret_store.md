@@ -154,7 +154,7 @@ resource "hush_secret_store" "hc_vault_token" {
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. AWS Secrets Manager also allows "_" "." "+" "=" "@" and "/", with "/" separating segments.
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. At most 80 characters. AWS Secrets Manager also allows "_" "." "+" "=" "@" and "/", with "/" separating segments.
 - `region` (String) The cloud region of the backend store
 
 Optional:
@@ -167,7 +167,7 @@ Optional:
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. AWS SSM Parameter Store also allows "_" "." and "/", with "/" separating segments, may not start with "aws" or "ssm", and is limited to 9 "/"-separated segments.
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. At most 80 characters. AWS SSM Parameter Store also allows "_" "." and "/", with "/" separating segments, may not start with "aws" or "ssm", and is limited to 9 "/"-separated segments.
 - `region` (String) The cloud region of the backend store
 
 Optional:
@@ -180,7 +180,7 @@ Optional:
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. GCP Secret Manager also allows "_", with "-" separating segments.
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. At most 80 characters. GCP Secret Manager also allows "_", with "-" separating segments.
 - `project_id` (String) The GCP project that hosts the backend store
 
 
@@ -191,7 +191,7 @@ Required:
 
 - `address` (String) The https address of the Vault server, at most 255 characters. Plaintext is refused: every request carries the Vault token in a header, and a login posts the access manager's service-account token in a body.
 - `auth` (Block List, Min: 1, Max: 1) How the access manager authenticates to Vault (see [below for nested schema](#nestedblock--hc_vault--auth))
-- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. A Vault KV v2 path also allows "_" "." and "/", with "/" separating segments.
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. At most 80 characters. A Vault KV v2 path also allows "_" "." and "/", with "/" separating segments.
 
 Optional:
 
@@ -215,7 +215,7 @@ Optional:
 
 Required:
 
-- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. A Kubernetes Secret name also allows ".", with "-" separating segments, and no other punctuation.
+- `prefix` (String) Namespace prefix for secrets in the backend store. Lowercase, and each segment must start and end with a letter or digit. "-" is allowed for every kind and "." may not repeat. At most 80 characters, enforced by the API. At most 80 characters. A Kubernetes Secret name also allows ".", with "-" separating segments, and no other punctuation.
 
 Optional:
 
