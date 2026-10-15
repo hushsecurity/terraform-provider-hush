@@ -128,16 +128,15 @@ func isHexDigit(c byte) bool {
 	return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
 }
 
-// addressValidation refuses at plan time what the API refuses on the request:
-// a Vault address that is not https. Mirrors midgard's
-// _validate_vault_address; Go and python lower the scheme alike, so an
-// address typed in capitals is accepted by both.
+// httpsURLValidation refuses at plan time what the API refuses on the request:
+// a backend URL that is not https. Shared by Vault's address and Key Vault's
+// vault_url.
 //
 // The whitespace and percent-escape checks run before url.Parse because the two
 // parsers disagree: url.Parse refuses a tab or a newline but accepts a space, a
-// U+00A0 and a bad escape, all of which midgard refuses. An address only this
-// side accepts plans cleanly and fails on apply.
-func addressValidation(i any, k string) ([]string, []error) {
+// U+00A0 and a bad escape, all of which midgard refuses for both kinds. A URL
+// only this side accepts plans cleanly and fails on apply.
+func httpsURLValidation(i any, k string) ([]string, []error) {
 	v, ok := i.(string)
 	if !ok {
 		return nil, []error{fmt.Errorf("%s: expected a string", k)}
@@ -145,23 +144,23 @@ func addressValidation(i any, k string) ([]string, []error) {
 	for _, r := range v {
 		if unicode.IsSpace(r) || r < 0x20 || r == 0x7F {
 			return nil, []error{fmt.Errorf(
-				"%s: address must not contain whitespace or control characters, got %q",
+				"%s: must not contain whitespace or control characters, got %q",
 				k, v)}
 		}
 	}
 	if hasBadPercentEscape(v) {
 		return nil, []error{fmt.Errorf(
-			"%s: address has an invalid percent-escape, got %q", k, v)}
+			"%s: has an invalid percent-escape, got %q", k, v)}
 	}
 	parsed, err := url.Parse(v)
 	if err != nil {
 		return nil, []error{fmt.Errorf("%s: %q is not a URL: %w", k, v, err)}
 	}
 	if parsed.Scheme != "https" {
-		return nil, []error{fmt.Errorf("%s: address must be an https URL, got %q", k, v)}
+		return nil, []error{fmt.Errorf("%s: must be an https URL, got %q", k, v)}
 	}
 	if parsed.Hostname() == "" {
-		return nil, []error{fmt.Errorf("%s: address must have a host, got %q", k, v)}
+		return nil, []error{fmt.Errorf("%s: must have a host, got %q", k, v)}
 	}
 	return nil, nil
 }
@@ -431,7 +430,7 @@ func hcVaultConfigResource() *schema.Resource {
 				Required:    true,
 				ForceNew:    true,
 				ValidateFunc: validation.All(
-					addressValidation,
+					httpsURLValidation,
 					validation.StringLenBetween(1, vaultFieldMax),
 				),
 			},
