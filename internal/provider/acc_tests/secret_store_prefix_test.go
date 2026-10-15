@@ -123,14 +123,14 @@ func TestAccResourceSecretStorePrefixCharset(t *testing.T) {
 			block:     "hc_vault",
 			body:      "address = \"http://vault.acme.internal:8200\"\n    auth { role = \"hush-am\" }",
 			prefix:    "acme",
-			expectErr: regexp.MustCompile(`address must be an https URL`),
+			expectErr: regexp.MustCompile(`must be an https URL`),
 		},
 		{
 			name:      "hc_vault.rejects.address.without.a.scheme",
 			block:     "hc_vault",
 			body:      "address = \"vault.acme.internal:8200\"\n    auth { role = \"hush-am\" }",
 			prefix:    "acme",
-			expectErr: regexp.MustCompile(`address must be an https URL`),
+			expectErr: regexp.MustCompile(`must be an https URL`),
 		},
 		{
 			name:      "hc_vault.rejects.unknown.auth.method",

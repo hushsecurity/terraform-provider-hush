@@ -147,9 +147,9 @@ func TestAddressValidation(t *testing.T) {
 		{"https://vault.acme.internal:8200/a%", false},
 		{"https://vault.acme.internal:8200/a%2", false},
 	} {
-		_, errs := addressValidation(tc.address, "address")
+		_, errs := httpsURLValidation(tc.address, "address")
 		if got := len(errs) == 0; got != tc.valid {
-			t.Errorf("addressValidation(%q) valid = %v, want %v (%v)",
+			t.Errorf("httpsURLValidation(%q) valid = %v, want %v (%v)",
 				tc.address, got, tc.valid, errs)
 		}
 	}
