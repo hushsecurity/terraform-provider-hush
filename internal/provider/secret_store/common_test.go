@@ -10,6 +10,81 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 )
 
+// Mirrors midgard, which mirrors the access-manager. config is immutable, so
+// a value only terraform accepts makes a store that can only be deleted:
+// midgard refuses all of these, and a plan that accepts them fails at apply.
+func TestAzureVaultURLValidation(t *testing.T) {
+	for _, tc := range []struct {
+		url   string
+		valid bool
+	}{
+		{"https://acme.vault.azure.net", true},
+		{"https://acme.vault.azure.net/", true},
+		{"https://acme.vault.azure.net/secrets", false},
+		{"https://acme.vault.azure.net?x=1", false},
+		{"https://acme.vault.azure.net#f", false},
+		{"https://acme.managedhsm.azure.net", false},
+		{"https://acme.managedhsm.azure.cn", false},
+		{"https://acme.managedhsm.usgovcloudapi.net", false},
+		{"https://.vault.azure.net", false},
+		{"https://.vault.azure.cn", false},
+		// the name in front of the suffix, which midgard matches against
+		// ^[a-z0-9-]+$ and the control plane spells the same way
+		{"https://acme-prod.vault.azure.net", true},
+		{"https://acme.prod.vault.azure.net", false},
+		{"https://acme_prod.vault.azure.net", false},
+		{"https://acme.prod.vault.usgovcloudapi.net", false},
+		{"https://acme.vault.azure.net:443", false},
+		{"https://acme.vault.azure.net:", false},
+		{"HTTPS://ACME.VAULT.AZURE.NET", false},
+		{"https://user:pw@acme.vault.azure.net", false},
+		{"http://acme.vault.azure.net", false},
+		{"https://" + strings.Repeat("a", 260) + ".vault.azure.net", false},
+	} {
+		_, errs := azureVaultURLValidation(tc.url, "vault_url")
+		if got := len(errs) == 0; got != tc.valid {
+			t.Errorf("validate(%q) valid = %v, want %v (%v)",
+				tc.url, got, tc.valid, errs)
+		}
+	}
+}
+
+func TestAzureIdentityValidation(t *testing.T) {
+	const guid = "11111111-2222-3333-4444-555555555555"
+	for _, tc := range []struct {
+		field    string
+		validate func(any, string) ([]string, []error)
+		value    string
+		valid    bool
+	}{
+		// azidentity's validTenantID charset: a guid or a domain
+		{"tenant_id", azureTenantValidation, guid, true},
+		{"tenant_id", azureTenantValidation, "contoso.onmicrosoft.com", true},
+		{"tenant_id", azureTenantValidation, "", false},
+		{"tenant_id", azureTenantValidation, guid + " ", false},
+		{"tenant_id", azureTenantValidation, " " + guid, false},
+		{"tenant_id", azureTenantValidation,
+			"https://login.microsoftonline.com/" + guid, false},
+		{"tenant_id", azureTenantValidation, "contoso onmicrosoft.com", false},
+
+		// an Entra application id, which is a guid and nothing else
+		{"client_id", azureClientIDValidation, guid, true},
+		{"client_id", azureClientIDValidation, strings.ToUpper(guid), true},
+		{"client_id", azureClientIDValidation, "", false},
+		{"client_id", azureClientIDValidation, "cid", false},
+		{"client_id", azureClientIDValidation, "{" + guid + "}", false},
+		{"client_id", azureClientIDValidation, guid[:len(guid)-1], false},
+		// a tenant may be a domain; an application id may not
+		{"client_id", azureClientIDValidation, "contoso.onmicrosoft.com", false},
+	} {
+		_, errs := tc.validate(tc.value, tc.field)
+		if got := len(errs) == 0; got != tc.valid {
+			t.Errorf("%s: validate(%q) valid = %v, want %v (%v)",
+				tc.field, tc.value, got, tc.valid, errs)
+		}
+	}
+}
+
 // The acceptance tests cover these through a plan, but need the fixtures
 // "make fetch-mock-fixtures" pulls. These are pure functions, so the boundary
 // rows are cheaper here. Expectations mirror midgard's validate_prefix.
@@ -45,6 +120,29 @@ func TestPrefixValidation(t *testing.T) {
 		{"hc_vault", hcVaultPrefixValidation, "acme/prod/secrets", true},
 		{"hc_vault", hcVaultPrefixValidation, "acme+prod", false},
 		{"hc_vault", hcVaultPrefixValidation, "acme@prod", false},
+		// az_key_vault allows no punctuation but the separator
+		{"az_key_vault", azKeyVaultPrefixValidation, "acme", true},
+		{"az_key_vault", azKeyVaultPrefixValidation, "acme-prod-eu", true},
+		{"az_key_vault", azKeyVaultPrefixValidation, "acme_prod", false},
+		{"az_key_vault", azKeyVaultPrefixValidation, "acme.prod", false},
+		{"az_key_vault", azKeyVaultPrefixValidation, "acme/prod", false},
+		{"az_key_vault", azKeyVaultPrefixValidation, "ac--me", false},
+
+		// length, which is the one rule that differs per kind. Checked here
+		// rather than left to the API: a tightening is otherwise missed until
+		// apply, which is the failure this provider exists to prevent.
+		{"az_key_vault", azKeyVaultPrefixValidation, strings.Repeat("a", 32), true},
+		{"az_key_vault", azKeyVaultPrefixValidation, strings.Repeat("a", 33), false},
+		{"aws_sm", awsSMPrefixValidation, strings.Repeat("a", 80), true},
+		{"aws_sm", awsSMPrefixValidation, strings.Repeat("a", 81), false},
+		{"aws_ssm", awsSSMPrefixValidation, strings.Repeat("a", 80), true},
+		{"aws_ssm", awsSSMPrefixValidation, strings.Repeat("a", 81), false},
+		{"gcp_sm", gcpSMPrefixValidation, strings.Repeat("a", 80), true},
+		{"gcp_sm", gcpSMPrefixValidation, strings.Repeat("a", 81), false},
+		{"k8s_secrets", k8sPrefixValidation, strings.Repeat("a", 80), true},
+		{"k8s_secrets", k8sPrefixValidation, strings.Repeat("a", 81), false},
+		{"hc_vault", hcVaultPrefixValidation, strings.Repeat("a", 80), true},
+		{"hc_vault", hcVaultPrefixValidation, strings.Repeat("a", 81), false},
 
 		// adjacency: allowed wherever the charset allows both characters, since
 		// the backends attach no meaning to it
@@ -398,6 +496,304 @@ func TestValidateVaultAuth(t *testing.T) {
 				t.Errorf("expected an error containing %q", tc.errPart)
 			case tc.errPart != "" && !strings.Contains(err.Error(), tc.errPart):
 				t.Errorf("error = %v, want it to contain %q", err, tc.errPart)
+			}
+		})
+	}
+}
+
+func TestAzKeyVaultConfigRoundTrip(t *testing.T) {
+	block := map[string]any{
+		"prefix":    "acme-prod",
+		"vault_url": "https://acme.vault.azure.net",
+		"cloud":     "usgov",
+		"auth": []any{map[string]any{
+			"method":    client.SecretStoreAzureAuthClientSecret,
+			"tenant_id": "8ea310af-fd38-43b1",
+			"client_id": "35e9cbbc-45ee-4ec6",
+		}},
+	}
+	d := schema.TestResourceDataRaw(t, SecretStoreResourceSchema(), map[string]any{
+		"name":         "azure-store",
+		"az_key_vault": []any{block},
+	})
+
+	config, err := expandConfig(d)
+	if err != nil {
+		t.Fatalf("expandConfig: %v", err)
+	}
+	if config.Kind != client.SecretStoreKindAzKeyVault {
+		t.Errorf("kind = %q, want %q", config.Kind, client.SecretStoreKindAzKeyVault)
+	}
+	for _, tc := range []struct{ name, got, want string }{
+		{"prefix", config.Prefix, "acme-prod"},
+		{"vault_url", config.VaultURL, "https://acme.vault.azure.net"},
+		{"cloud", config.Cloud, "usgov"},
+		{"auth.method", config.Auth.Method, client.SecretStoreAzureAuthClientSecret},
+		{"auth.tenant_id", config.Auth.TenantID, "8ea310af-fd38-43b1"},
+		{"auth.client_id", config.Auth.ClientID, "35e9cbbc-45ee-4ec6"},
+	} {
+		if tc.got != tc.want {
+			t.Errorf("%s = %q, want %q", tc.name, tc.got, tc.want)
+		}
+	}
+	// no other kind's field rides along, which the API's strict model refuses
+	if config.Address != "" || config.Region != "" || config.Auth.Role != "" {
+		t.Errorf("another kind's fields are set: %+v", config)
+	}
+
+	// and back into state: a read of an az_key_vault store must not error, which it
+	// did before this kind had a setConfigBlocks arm -- in a configuration that
+	// need not mention Azure at all
+	fresh := schema.TestResourceDataRaw(t, SecretStoreResourceSchema(), map[string]any{})
+	if err := setConfigBlocks(fresh, config); err != nil {
+		t.Fatalf("setConfigBlocks: %v", err)
+	}
+	stored := fresh.Get("az_key_vault").([]any)
+	if len(stored) != 1 {
+		t.Fatalf("az_key_vault = %v, want one block", stored)
+	}
+	got := stored[0].(map[string]any)
+	if got["vault_url"] != "https://acme.vault.azure.net" {
+		t.Errorf("vault_url = %v", got["vault_url"])
+	}
+}
+
+// azureAuthDiff runs the real resource diff, CustomizeDiff included, for a new
+// store whose azure auth block is the one given.
+func azureAuthDiff(t *testing.T, auth map[string]any) error {
+	t.Helper()
+	config := terraform.NewResourceConfigRaw(map[string]any{
+		"name":           "s",
+		"deployment_ids": []any{"dep-xxxxxxxxxxxxxxxx"},
+		"az_key_vault": []any{map[string]any{
+			"prefix":    "hush",
+			"vault_url": "https://acme.vault.azure.net",
+			"auth":      []any{auth},
+		}},
+	})
+	_, err := Resource().Diff(context.Background(), nil, config, nil)
+	return err
+}
+
+func TestValidateAzureAuth(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		auth    map[string]any
+		errPart string
+	}{
+		{
+			name: "default names nothing",
+			auth: map[string]any{"method": "default"},
+		},
+		{
+			// the pod's assertion names no tenant; AZURE_TENANT_ID carries it
+			name:    "default with a tenant",
+			auth:    map[string]any{"method": "default", "tenant_id": "t"},
+			errPart: "does not use tenant_id",
+		},
+		{
+			name: "client_secret with a client id",
+			auth: map[string]any{
+				"method": "client_secret", "tenant_id": "t", "client_id": "cid",
+			},
+		},
+		{
+			name: "default refuses a client id",
+			auth: map[string]any{
+				"method": "default", "tenant_id": "t", "client_id": "cid",
+			},
+			errPart: "does not use client_id",
+		},
+		{
+			name:    "client_secret needs a client id",
+			auth:    map[string]any{"method": "client_secret", "tenant_id": "t"},
+			errPart: "needs client_id",
+		},
+		// the default method's chain falls back to AZURE_TENANT_ID, which the
+		// workload identity webhook sets; NewClientSecretCredential does not
+		{
+			name:    "client_secret needs a tenant",
+			auth:    map[string]any{"method": "client_secret", "client_id": "cid"},
+			errPart: "needs tenant_id",
+		},
+		{
+			name: "client_secret with an unknown tenant",
+			auth: map[string]any{
+				"method": "client_secret", "tenant_id": unknownValue,
+				"client_id": "cid",
+			},
+		},
+		// a client id taken from an azuread_application is unknown at plan
+		// time and reads as "", so neither rule may judge it yet
+		{
+			name: "client_secret with an unknown client id",
+			auth: map[string]any{
+				"method": "client_secret", "tenant_id": "t",
+				"client_id": unknownValue,
+			},
+		},
+		{
+			name: "default with an unknown client id",
+			auth: map[string]any{
+				"method": "default", "client_id": unknownValue,
+			},
+		},
+		{
+			name: "default with an unknown tenant",
+			auth: map[string]any{"method": "default", "tenant_id": unknownValue},
+		},
+		{
+			name: "an unknown method is left to apply",
+			auth: map[string]any{"method": unknownValue, "tenant_id": "t"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := azureAuthDiff(t, tc.auth)
+			if tc.errPart == "" {
+				if err != nil {
+					t.Fatalf("validateAzureAuth: %v", err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tc.errPart) {
+				t.Fatalf("validateAzureAuth = %v, want %q", err, tc.errPart)
+			}
+		})
+	}
+}
+
+// The maximum is the one prefix rule a caller cannot infer from an example,
+// and it is now per kind, so every kind has to state its own.
+func TestEveryKindsPrefixDescriptionStatesItsMaximum(t *testing.T) {
+	want := map[string]string{
+		"aws_sm":       "At most 80 characters.",
+		"aws_ssm":      "At most 80 characters.",
+		"gcp_sm":       "At most 80 characters.",
+		"k8s_secrets":  "At most 80 characters.",
+		"hc_vault":     "At most 80 characters.",
+		"az_key_vault": "at most 32 characters",
+	}
+	schemaMap := SecretStoreResourceSchema()
+	for _, kind := range configBlockNames {
+		t.Run(kind, func(t *testing.T) {
+			block := schemaMap[kind].Elem.(*schema.Resource).Schema
+			got := block["prefix"].Description
+			if !strings.Contains(got, want[kind]) {
+				t.Errorf("prefix description = %q, want it to state %q", got, want[kind])
+			}
+		})
+	}
+}
+
+// cloud is ForceNew, and unset and "public" are the same cloud on both sides
+// of the API. Without the suppression a store holding "public" whose config
+// omits it plans a replacement: an import, or a line later deleted. A real
+// change of cloud must still plan one.
+// The pairing a ValidateFunc cannot see: it is handed one attribute, so only
+// customizeDiff can hold cloud and vault_url against each other. midgard
+// refuses the pair on the request, which is the apply this moves to plan.
+func TestAzureCloudMustMatchTheHost(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		cloud    string
+		vaultURL string
+		errPart  string
+	}{
+		{"public implied, public host", "", "https://acme.vault.azure.net", ""},
+		{"public named, public host", "public", "https://acme.vault.azure.net", ""},
+		{"usgov named, usgov host", "usgov",
+			"https://acme.vault.usgovcloudapi.net", ""},
+		{"china named, china host", "china", "https://acme.vault.azure.cn", ""},
+		// the usual mistake: a sovereign vault with cloud left unset
+		{"public implied, china host", "", "https://acme.vault.azure.cn",
+			`is a china vault; set cloud to "china"`},
+		{"usgov named, public host", "usgov", "https://acme.vault.azure.net",
+			`is a public vault; set cloud to "public"`},
+		{"china named, usgov host", "china",
+			"https://acme.vault.usgovcloudapi.net",
+			`is a usgov vault; set cloud to "usgov"`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			block := map[string]any{
+				"prefix": "p", "vault_url": tc.vaultURL,
+				"auth": []any{map[string]any{"method": "default"}},
+			}
+			if tc.cloud != "" {
+				block["cloud"] = tc.cloud
+			}
+			cfg := terraform.NewResourceConfigRaw(map[string]any{
+				"name": "n", "deployment_ids": []any{"dep-1"},
+				"az_key_vault": []any{block},
+			})
+			_, err := Resource().Diff(context.Background(), nil, cfg, nil)
+			if tc.errPart == "" {
+				if err != nil {
+					t.Fatalf("Diff: %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("cloud %q with %s was accepted", tc.cloud, tc.vaultURL)
+			}
+			if !strings.Contains(err.Error(), tc.errPart) {
+				t.Fatalf("error = %v, want it to contain %q", err, tc.errPart)
+			}
+		})
+	}
+}
+
+func TestAzureCloudOmittedDoesNotReplace(t *testing.T) {
+	// the host goes with the cloud the config names, since customizeDiff now
+	// pairs them; state is not validated, so only the config side matters
+	const publicHost, usgovHost = "https://acme.vault.azure.net",
+		"https://acme.vault.usgovcloudapi.net"
+	for _, tc := range []struct {
+		name       string
+		stateCloud string
+		cfgCloud   string
+		host       string
+		wantDiff   bool
+	}{
+		{"public in state, omitted in config", "public", "", publicHost, false},
+		{"unset in state, public in config", "", "public", publicHost, false},
+		{"unset in state, omitted in config", "", "", publicHost, false},
+		{"public in state, usgov in config", "public", "usgov", usgovHost, true},
+		{"usgov in state, omitted in config", "usgov", "", publicHost, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			state := &terraform.InstanceState{ID: "sst-1", Attributes: map[string]string{
+				"id": "sst-1", "name": "n",
+				"deployment_ids.#": "1", "deployment_ids.0": "dep-1",
+				"az_key_vault.#": "1", "az_key_vault.0.prefix": "p",
+				"az_key_vault.0.vault_url":     tc.host,
+				"az_key_vault.0.cloud":         tc.stateCloud,
+				"az_key_vault.0.auth.#":        "1",
+				"az_key_vault.0.auth.0.method": "default",
+			}}
+			block := map[string]any{
+				"prefix": "p", "vault_url": tc.host,
+				"auth": []any{map[string]any{"method": "default"}},
+			}
+			if tc.cfgCloud != "" {
+				block["cloud"] = tc.cfgCloud
+			}
+			cfg := terraform.NewResourceConfigRaw(map[string]any{
+				"name": "n", "deployment_ids": []any{"dep-1"},
+				"az_key_vault": []any{block},
+			})
+			d, err := Resource().Diff(context.Background(), state, cfg, nil)
+			if err != nil {
+				t.Fatalf("Diff: %v", err)
+			}
+			got := false
+			if d != nil {
+				_, got = d.Attributes["az_key_vault.0.cloud"]
+			}
+			if got != tc.wantDiff {
+				t.Fatalf("cloud diff = %v, want %v (diff %v)", got, tc.wantDiff, d)
+			}
+			if tc.wantDiff && !d.RequiresNew() {
+				t.Fatal("a real cloud change must still force a replacement")
 			}
 		})
 	}
