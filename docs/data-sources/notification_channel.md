@@ -42,6 +42,7 @@ output "channel_by_name" {
 
 ### Read-Only
 
+- `datadog_config` (List of Object) Datadog destination. The api key is never returned. (see [below for nested schema](#nestedatt--datadog_config))
 - `description` (String) The description of the notification channel
 - `elastic_config` (List of Object) Elasticsearch destination. The api key is never returned. (see [below for nested schema](#nestedatt--elastic_config))
 - `email_config` (List of Object) Email notification configuration (see [below for nested schema](#nestedatt--email_config))
@@ -50,6 +51,14 @@ output "channel_by_name" {
 - `splunk_config` (List of Object) Splunk HTTP Event Collector destination. The token is never returned. (see [below for nested schema](#nestedatt--splunk_config))
 - `type` (String) The type of notification channel
 - `webhook_config` (List of Object) Webhook notification configuration (see [below for nested schema](#nestedatt--webhook_config))
+
+<a id="nestedatt--datadog_config"></a>
+### Nested Schema for `datadog_config`
+
+Read-Only:
+
+- `site` (String)
+
 
 <a id="nestedatt--elastic_config"></a>
 ### Nested Schema for `elastic_config`

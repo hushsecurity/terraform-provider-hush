@@ -104,6 +104,7 @@ resource "hush_notification_channel" "elastic" {
 
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
+- `datadog_config` (Block List, Max: 100) Datadog destination: alerts go to Datadog Events, an activity stream to Datadog Logs, both on the site. The api key is validated against Datadog when it is saved. (see [below for nested schema](#nestedblock--datadog_config))
 - `description` (String) The description of the notification channel
 - `elastic_config` (Block List, Max: 100) Elasticsearch destination. The API posts each notification to `<cluster>/<index>/_bulk` with an `ApiKey` authorization and a document carrying `@timestamp`; give it the cluster, an index and an api key. The destination is proven against the cluster when the key is saved, so it needs no verification. (see [below for nested schema](#nestedblock--elastic_config))
 - `email_config` (Block List, Max: 100) Email notification configuration (see [below for nested schema](#nestedblock--email_config))
@@ -116,6 +117,19 @@ resource "hush_notification_channel" "elastic" {
 
 - `id` (String) The unique identifier of the notification channel
 - `type` (String) The type of notification channel
+
+<a id="nestedblock--datadog_config"></a>
+### Nested Schema for `datadog_config`
+
+Optional:
+
+> **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
+
+- `api_key` (String, Sensitive) The Datadog api key. Stored in Terraform state; prefer api_key_wo. The API never returns it.
+- `api_key_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The Datadog api key, kept out of Terraform state. Changing it takes effect when api_key_wo_version changes.
+- `api_key_wo_version` (String) Bump to re-send api_key_wo. Required with it: a write-only value is not in state, so without a version a rotated key would never be sent.
+- `site` (String) The Datadog site, e.g. `datadoghq.com`, `datadoghq.eu` or `us3.datadoghq.com`.
+
 
 <a id="nestedblock--elastic_config"></a>
 ### Nested Schema for `elastic_config`
@@ -201,7 +215,7 @@ Optional:
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
 - `auth` (Block List, Max: 1) Credential the endpoint requires. The API never returns it, so it is only ever sent. (see [below for nested schema](#nestedblock--webhook_config--auth))
-- `method` (String) HTTP method for webhook requests
+- `method` (String) HTTP method for webhook requests. POST is the only one the API takes.
 - `onprem_deployment_id` (String) Deliver through this on-prem deployment's access bridge instead of directly over the internet. Bridge-bound urls may use http or https on any port and may name an internal host; direct ones must be https on 443 with a public TLD.
 - `payload_format` (String) text is the human-readable blob; json is a structured envelope for SIEM/SOAR consumers.
 - `tls_verify` (Boolean) Whether to validate the endpoint's TLS certificate. Only bridge-bound endpoints may turn this off, for an internal endpoint served from a private CA.

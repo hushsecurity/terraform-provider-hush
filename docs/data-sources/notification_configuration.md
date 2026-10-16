@@ -20,7 +20,7 @@ data "hush_notification_configuration" "by_id" {
 
 # Look up notification configuration by trigger
 data "hush_notification_configuration" "by_trigger" {
-  trigger = "new_nhi_at_risk"
+  trigger = "nhi_digest"
 }
 
 # Look up notification configuration by name
@@ -48,12 +48,24 @@ output "config_by_name" {
 
 - `id` (String) The unique identifier of the notification configuration
 - `name` (String) The name of the notification configuration
-- `trigger` (String) The trigger type for notifications
+- `trigger` (String) What the notifications are about
 
 ### Read-Only
 
-- `aggregation` (String) The aggregation duration for notifications
+- `aggregation` (String) How notifications are grouped: short, day, week, month, or stream for an activity stream
 - `channel_ids` (List of String) The list of notification channel IDs to send notifications to
 - `description` (String) The description of the notification configuration
+- `dispatch_filters` (List of Object) Filters narrowing what is sent. Which names a trigger takes is the API's to check. (see [below for nested schema](#nestedatt--dispatch_filters))
 - `enabled` (Boolean) Whether the notification configuration is enabled
 - `last_triggered_at` (String) The last trigger timestamp of the notification configuration
+- `status` (String) ok, warning, error or disabled: whether what it selected can be delivered to
+- `status_message` (String) Why the status is not ok, when it is not
+
+<a id="nestedatt--dispatch_filters"></a>
+### Nested Schema for `dispatch_filters`
+
+Read-Only:
+
+- `name` (String)
+- `op` (String)
+- `values` (List of String)

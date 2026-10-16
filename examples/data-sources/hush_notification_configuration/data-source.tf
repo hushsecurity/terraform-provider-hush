@@ -5,7 +5,7 @@ data "hush_notification_configuration" "by_id" {
 
 # Look up notification configuration by trigger
 data "hush_notification_configuration" "by_trigger" {
-  trigger = "new_nhi_at_risk"
+  trigger = "nhi_digest"
 }
 
 # Look up notification configuration by name

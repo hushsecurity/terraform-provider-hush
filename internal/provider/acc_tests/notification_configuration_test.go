@@ -1,6 +1,7 @@
 package acc_tests
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -32,13 +33,7 @@ func init() {
 	})
 }
 
-// TestAccResourceNotificationConfiguration is skipped in mock mode due to a terraform-plugin-sdk
-// interaction: the resource's Create calls Read then Update, but d.Set() in Read overwrites
-// the config values that d.Get() returns in Update, causing stale channel_ids to be sent.
-// This test passes against the real API where server-side logic handles this correctly.
 func TestAccResourceNotificationConfiguration(t *testing.T) {
-	t.Skip("Skipped in mock: notification_configuration's adopt-via-Read+Update Create pattern " +
-		"causes terraform-plugin-sdk to return stale channel_ids")
 	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: providerFactories,
 		// No CheckDestroy — notification configurations are predefined and cannot be deleted.
@@ -79,9 +74,7 @@ func TestAccResourceNotificationConfiguration(t *testing.T) {
 	})
 }
 
-// TestAccDataSourceNotificationConfiguration is skipped for the same reason as the resource test.
 func TestAccDataSourceNotificationConfiguration(t *testing.T) {
-	t.Skip("Skipped in mock: depends on notification_configuration resource which has SDK interaction issue")
 	resource.Test(t, resource.TestCase{
 		ProviderFactories: providerFactories,
 		Steps: []resource.TestStep{
@@ -156,6 +149,124 @@ resource "hush_notification_configuration" "config" {
 	notificationConfigurationDataSource = `
 data "hush_notification_configuration" "config" {
   id = hush_notification_configuration.config.id
+}
+`
+)
+
+// Without config_id the resource creates the configuration, edits it in place
+// and deletes it.
+func TestAccResourceNotificationConfiguration_stream(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("notification_configuration", "v1/notification_configurations"),
+		Steps: []resource.TestStep{
+			{
+				Config: notificationChannelDependency + streamStep1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "trigger", "agw_activity"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "name", "activity"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "dispatch_filters.0.name", "deployment"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "dispatch_filters.0.values.0", mockDeploymentID),
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "channel_ids.#", "1"),
+				),
+			},
+			{
+				Config:   notificationChannelDependency + streamStep1,
+				PlanOnly: true,
+			},
+			{
+				Config: notificationChannelDependency + streamStep2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "name", "activity renamed"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "dispatch_filters.#", "0"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.stream", "channel_ids.#", "0"),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceNotificationConfiguration_planChecks(t *testing.T) {
+	for name, testCase := range map[string]struct {
+		config string
+		expect string
+	}{
+		"no name or trigger":                 {streamNoTrigger, "name and trigger are required without config_id"},
+		"aggregation on a stream":            {streamWithAggregation, "aggregation is fixed for trigger agw_activity"},
+		"certificate without aggregation":    {certificateNoAggregation, `aggregation \(day or week\) is required`},
+		"name on a predefined configuration": {predefinedWithName, "name is the predefined configuration's own"},
+		"certificate by month":               {certificateMonth, "aggregation for trigger certificate_expiring is day or week"},
+		"nhi_digest is predefined only":      {digestCreated, `expected trigger to be one of`},
+	} {
+		t.Run(name, func(t *testing.T) {
+			resource.ParallelTest(t, resource.TestCase{
+				ProviderFactories: providerFactories,
+				Steps: []resource.TestStep{{
+					Config:      testCase.config,
+					ExpectError: regexp.MustCompile(testCase.expect),
+				}},
+			})
+		})
+	}
+}
+
+const (
+	streamStep1 = `
+resource "hush_notification_configuration" "stream" {
+  name        = "activity"
+  trigger     = "agw_activity"
+  enabled     = true
+  channel_ids = [hush_notification_channel.webhook.id]
+  dispatch_filters {
+    name   = "deployment"
+    op     = "eq"
+    values = ["` + mockDeploymentID + `"]
+  }
+}
+`
+	streamStep2 = `
+resource "hush_notification_configuration" "stream" {
+  name        = "activity renamed"
+  trigger     = "agw_activity"
+  enabled     = true
+  channel_ids = []
+}
+`
+	streamNoTrigger = `
+resource "hush_notification_configuration" "bad" {
+  enabled = true
+}
+`
+	streamWithAggregation = `
+resource "hush_notification_configuration" "bad" {
+  name        = "bad"
+  trigger     = "agw_activity"
+  aggregation = "day"
+}
+`
+	certificateNoAggregation = `
+resource "hush_notification_configuration" "bad" {
+  name    = "bad"
+  trigger = "certificate_expiring"
+}
+`
+	predefinedWithName = `
+resource "hush_notification_configuration" "bad" {
+  config_id = "ncf-mock-config-1"
+  name      = "renamed"
+}
+`
+	digestCreated = `
+resource "hush_notification_configuration" "bad" {
+  name    = "bad"
+  trigger = "nhi_digest"
+}
+`
+	certificateMonth = `
+resource "hush_notification_configuration" "bad" {
+  name        = "bad"
+  trigger     = "certificate_expiring"
+  aggregation = "month"
 }
 `
 )

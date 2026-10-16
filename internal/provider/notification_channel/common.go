@@ -52,7 +52,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config", "elastic_config"},
+		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config", "elastic_config", "datadog_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"address": {
@@ -75,7 +75,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "slack_config", "splunk_config", "elastic_config"},
+		ConflictsWith: []string{"email_config", "slack_config", "splunk_config", "elastic_config", "datadog_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -84,13 +84,12 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 					Required:    true,
 				},
 				"method": {
-					Description: "HTTP method for webhook requests",
+					Description: "HTTP method for webhook requests. POST is the only one the API takes.",
 					Type:        schema.TypeString,
 					Optional:    true,
 					Default:     "POST",
 					ValidateFunc: validation.StringInSlice([]string{
 						string(client.WebhookMethodPOST),
-						string(client.WebhookMethodGET),
 					}, false),
 				},
 				"onprem_deployment_id": {
@@ -177,7 +176,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config", "elastic_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config", "elastic_config", "datadog_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"integration_id": {
@@ -205,7 +204,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "elastic_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "elastic_config", "datadog_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -269,7 +268,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "datadog_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -322,10 +321,48 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		},
 	}
 
+	s["datadog_config"] = &schema.Schema{
+		Description:   "Datadog destination: alerts go to Datadog Events, an activity stream to Datadog Logs, both on the site. The api key is validated against Datadog when it is saved.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		MinItems:      1,
+		MaxItems:      100,
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "elastic_config"},
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"site": {
+					Description: "The Datadog site, e.g. `datadoghq.com`, `datadoghq.eu` or `us3.datadoghq.com`.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     datadogDefaultSite,
+				},
+				"api_key": {
+					Description: "The Datadog api key. Stored in Terraform state; prefer api_key_wo. The API never returns it.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+				},
+				"api_key_wo": {
+					Description: "The Datadog api key, kept out of Terraform state. Changing it takes effect when api_key_wo_version changes.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					WriteOnly:   true,
+				},
+				"api_key_wo_version": {
+					Description: "Bump to re-send api_key_wo. Required with it: a write-only value is not in state, so without a version a rotated key would never be sent.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+			},
+		},
+	}
+
 	return s
 }
 
 const (
+	datadogDefaultSite      = "datadoghq.com"
 	splunkCollectorPath     = "/services/collector"
 	splunkDefaultSourcetype = "hush:notification"
 	elasticBulkPath         = "/_bulk"
@@ -573,6 +610,20 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"datadog_config": {
+			Description: "Datadog destination. The api key is never returned.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"site": {
+						Description: "The Datadog site",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -714,9 +765,9 @@ func existingWebhookCredentials(d *schema.ResourceData) map[string]webhookCreden
 }
 
 // existingSiemCredentials is the SIEM counterpart, for a block whose secret is
-// a top-level attribute: keyed by the normalized url, since the configuration
-// may spell the endpoint differently from how the api answers.
-func existingSiemCredentials(d *schema.ResourceData, block, attr string, normalize func(string) string) map[string]webhookCredential {
+// a top-level attribute: keyed by keyOf, which normalizes the endpoint, since
+// the configuration may spell it differently from how the api answers.
+func existingSiemCredentials(d *schema.ResourceData, block, attr string, keyOf func(map[string]any) string) map[string]webhookCredential {
 	out := map[string]webhookCredential{}
 	configs, ok := d.Get(block).([]any)
 	if !ok {
@@ -729,7 +780,7 @@ func existingSiemCredentials(d *schema.ResourceData, block, attr string, normali
 		}
 		secret, _ := configMap[attr].(string)
 		version, _ := configMap[attr+"_wo_version"].(string)
-		out[normalize(urlOf(configMap))] = webhookCredential{secret, version}
+		out[keyOf(configMap)] = webhookCredential{secret, version}
 	}
 	return out
 }
@@ -737,8 +788,9 @@ func existingSiemCredentials(d *schema.ResourceData, block, attr string, normali
 func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.NotificationChannel) error {
 	// Captured before the clear below, since that is what holds them.
 	configuredCredentials := existingWebhookCredentials(d)
-	configuredTokens := existingSiemCredentials(d, "splunk_config", "token", splunkCollectorURL)
-	configuredKeys := existingSiemCredentials(d, "elastic_config", "api_key", elasticClusterURL)
+	configuredTokens := existingSiemCredentials(d, "splunk_config", "token", splunkKey)
+	configuredKeys := existingSiemCredentials(d, "elastic_config", "api_key", elasticKey)
+	configuredDatadogKeys := existingSiemCredentials(d, "datadog_config", "api_key", datadogKey)
 
 	if err := d.Set("email_config", nil); err != nil {
 		return fmt.Errorf("failed to clear email_config: %w", err)
@@ -754,6 +806,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	}
 	if err := d.Set("elastic_config", nil); err != nil {
 		return fmt.Errorf("failed to clear elastic_config: %w", err)
+	}
+	if err := d.Set("datadog_config", nil); err != nil {
+		return fmt.Errorf("failed to clear datadog_config: %w", err)
 	}
 
 	switch channel.Type {
@@ -838,7 +893,7 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 				}
 				// Never returned, so carried across like a webhook credential.
 				// Absent keys are left out: the data source has none to set.
-				if token, ok := configuredTokens[splunkCollectorURL(urlOf(config))]; ok {
+				if token, ok := configuredTokens[splunkKey(config)]; ok {
 					if token.credential != "" {
 						splunkConfigs[i]["token"] = token.credential
 					}
@@ -862,7 +917,7 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 					"tls_verify":           valueOr(config["tls_verify"], true),
 					"verified":             config["verified"],
 				}
-				if key, ok := configuredKeys[elasticClusterURL(urlOf(config))]; ok {
+				if key, ok := configuredKeys[elasticKey(config)]; ok {
 					if key.credential != "" {
 						elasticConfigs[i]["api_key"] = key.credential
 					}
@@ -873,6 +928,27 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 			}
 			if err := d.Set("elastic_config", elasticConfigs); err != nil {
 				return fmt.Errorf("failed to set elastic_config: %w", err)
+			}
+		}
+	case client.NotificationChannelTypeDatadog:
+		if len(channel.Config) > 0 {
+			datadogConfigs := make([]map[string]any, len(channel.Config))
+			for i, config := range channel.Config {
+				datadogConfigs[i] = map[string]any{
+					"site": valueOr(config["site"], datadogDefaultSite),
+				}
+				// keyed by site: a Datadog destination has no url
+				if key, ok := configuredDatadogKeys[datadogKey(config)]; ok {
+					if key.credential != "" {
+						datadogConfigs[i]["api_key"] = key.credential
+					}
+					if key.version != "" {
+						datadogConfigs[i]["api_key_wo_version"] = key.version
+					}
+				}
+			}
+			if err := d.Set("datadog_config", datadogConfigs); err != nil {
+				return fmt.Errorf("failed to set datadog_config: %w", err)
 			}
 		}
 	}
@@ -889,6 +965,20 @@ func ValidateSplunkToken(_ context.Context, diff *schema.ResourceDiff, _ any) er
 
 func ValidateElasticApiKey(_ context.Context, diff *schema.ResourceDiff, _ any) error {
 	return validateSiemCredential(diff, "elastic_config", "api_key")
+}
+
+func ValidateDatadogApiKey(_ context.Context, diff *schema.ResourceDiff, _ any) error {
+	return validateSiemCredential(diff, "datadog_config", "api_key")
+}
+
+func splunkKey(config map[string]any) string  { return splunkCollectorURL(urlOf(config)) }
+func elasticKey(config map[string]any) string { return elasticClusterURL(urlOf(config)) }
+func datadogKey(config map[string]any) string {
+	site, _ := config["site"].(string)
+	if site == "" {
+		return datadogDefaultSite
+	}
+	return site
 }
 
 func validateSiemCredential(diff *schema.ResourceDiff, block, attr string) error {
@@ -1134,5 +1224,28 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 		}
 	}
 
-	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, splunk_config, or elastic_config must be specified")
+	if datadogConfigs, ok := d.GetOk("datadog_config"); ok {
+		configList := datadogConfigs.([]any)
+		if len(configList) > 0 {
+			result := make([]map[string]any, len(configList))
+			for i, configInterface := range configList {
+				configMap := configInterface.(map[string]any)
+				key, _ := configMap["api_key"].(string)
+				if key == "" {
+					key = writeonly.GetNestedString(d, "datadog_config", i, "api_key_wo")
+				}
+				if key == "" {
+					return "", nil, fmt.Errorf("datadog_config[%d]: one of api_key or api_key_wo is required", i)
+				}
+				result[i] = map[string]any{
+					"type":    string(client.NotificationChannelTypeDatadog),
+					"api_key": key,
+					"site":    configMap["site"],
+				}
+			}
+			return client.NotificationChannelTypeDatadog, result, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, splunk_config, elastic_config, or datadog_config must be specified")
 }
