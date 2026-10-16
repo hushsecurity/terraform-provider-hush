@@ -17,6 +17,7 @@ const (
 	NotificationChannelTypeSlack   NotificationChannelType = "slack"
 	NotificationChannelTypeSplunk  NotificationChannelType = "splunk"
 	NotificationChannelTypeElastic NotificationChannelType = "elastic"
+	NotificationChannelTypeDatadog NotificationChannelType = "datadog"
 )
 
 type ConfigBase interface {
@@ -37,7 +38,6 @@ type WebhookMethod string
 
 const (
 	WebhookMethodPOST WebhookMethod = "POST"
-	WebhookMethodGET  WebhookMethod = "GET"
 )
 
 type WebhookPayloadFormat string

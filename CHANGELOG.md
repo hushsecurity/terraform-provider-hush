@@ -20,9 +20,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
   The vault must **not** have purge protection enabled, and the identity needs `get`, `set`, `delete` and `purge` on its secrets. The access manager deletes a secret by purging it so the name can be reused; a vault that forbids purging leaves every deleted name unusable for its retention period.
 
+* **Datadog notification channels**: `hush_notification_channel` takes a `datadog_config` block, with `site` and `api_key` / `api_key_wo`.
+
+* **Creating notification configurations**: without `config_id`, `hush_notification_configuration` creates one from `name` and `trigger` (`new_nhi_security_issue`, `new_ai_agent_security_issue`, `certificate_expiring` or `agw_activity`), with `dispatch_filters`, and deletes it on destroy. `agw_activity` is an activity stream to a Splunk, Elastic, Datadog or json webhook channel.
+
+* **`dispatch_filters`, `status` and `status_message`** on notification configurations, and in the data source.
+
 ### Changed
 
+* **Breaking: `webhook_config.method` takes `POST` only**, which is all the API accepts. A configuration with `method = "GET"` no longer plans; drop the line or set `POST`.
+
+* **Breaking: `hush_notification_configuration.id` is computed**, no longer settable on the resource; manage a predefined configuration with `config_id`.
+
+* **Breaking: trigger `new_nhi_at_risk` is `new_nhi_security_issue`**, as the API has named it. A data source looking it up by the old name fails to read.
+
 * **Prefix maximums are checked at plan time** for every kind -- `aws_sm`, `aws_ssm`, `gcp_sm`, `k8s_secrets`, `hc_vault` and `az_key_vault`. The maximum was previously documented as enforced by the API, so an over-long prefix planned cleanly and failed on apply.
+
+### Fixed
+
+* **A predefined notification configuration is configured on create**: `enabled` and `channel_ids` were overwritten by the stored values before they were sent.
 
 ## [1.29.0] - 2026-10-14
 

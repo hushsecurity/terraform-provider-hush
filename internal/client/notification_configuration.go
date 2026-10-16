@@ -12,17 +12,30 @@ const notificationConfigurationsEndpoint = "/v1/notification_configurations"
 type AggregationDuration string
 
 const (
-	AggregationDurationShort AggregationDuration = "short"
-	AggregationDurationWeek  AggregationDuration = "week"
-	AggregationDurationMonth AggregationDuration = "month"
+	AggregationDurationShort  AggregationDuration = "short"
+	AggregationDurationDay    AggregationDuration = "day"
+	AggregationDurationWeek   AggregationDuration = "week"
+	AggregationDurationMonth  AggregationDuration = "month"
+	AggregationDurationStream AggregationDuration = "stream"
 )
 
 type Trigger string
 
 const (
-	TriggerNewNHIAtRisk Trigger = "new_nhi_at_risk"
-	TriggerNHIDigest    Trigger = "nhi_digest"
+	TriggerNewNHISecurityIssue     Trigger = "new_nhi_security_issue"
+	TriggerNewAIAgentSecurityIssue Trigger = "new_ai_agent_security_issue"
+	TriggerNHIDigest               Trigger = "nhi_digest"
+	TriggerCertificateExpiring     Trigger = "certificate_expiring"
+	TriggerAGWActivity             Trigger = "agw_activity"
 )
+
+// DispatchFilter narrows what a configuration sends. Values are numbers for
+// expires_in_days and strings otherwise.
+type DispatchFilter struct {
+	Name   string `json:"name"`
+	Op     string `json:"op"`
+	Values []any  `json:"values"`
+}
 
 type NotificationConfiguration struct {
 	ID              string              `json:"id,omitempty"`
@@ -33,25 +46,29 @@ type NotificationConfiguration struct {
 	ChannelIDs      []string            `json:"channel_ids"`
 	Aggregation     AggregationDuration `json:"aggregation"`
 	Trigger         Trigger             `json:"trigger"`
+	DispatchFilters []DispatchFilter    `json:"dispatch_filters"`
+	Status          string              `json:"status"`
+	StatusMessage   *string             `json:"status_message"`
 	LastTriggeredAt *string             `json:"last_triggered_at,omitempty"`
 }
 
 type CreateNotificationConfigurationInput struct {
-	Name        string              `json:"name"`
-	Description *string             `json:"description,omitempty"`
-	Enabled     bool                `json:"enabled"`
-	ChannelIDs  []string            `json:"channel_ids"`
-	Aggregation AggregationDuration `json:"aggregation"`
-	Trigger     Trigger             `json:"trigger"`
+	Name            string               `json:"name"`
+	Description     *string              `json:"description,omitempty"`
+	Enabled         bool                 `json:"enabled"`
+	ChannelIDs      []string             `json:"channel_ids"`
+	Aggregation     *AggregationDuration `json:"aggregation,omitempty"`
+	Trigger         Trigger              `json:"trigger"`
+	DispatchFilters []DispatchFilter     `json:"dispatch_filters"`
 }
 
 type UpdateNotificationConfigurationInput struct {
-	Name        *string              `json:"name,omitempty"`
-	Description *string              `json:"description,omitempty"`
-	Enabled     *bool                `json:"enabled,omitempty"`
-	ChannelIDs  *[]string            `json:"channel_ids,omitempty"`
-	Aggregation *AggregationDuration `json:"aggregation,omitempty"`
-	Trigger     *Trigger             `json:"trigger,omitempty"`
+	Name            *string              `json:"name,omitempty"`
+	Description     *string              `json:"description,omitempty"`
+	Enabled         *bool                `json:"enabled,omitempty"`
+	ChannelIDs      *[]string            `json:"channel_ids,omitempty"`
+	Aggregation     *AggregationDuration `json:"aggregation,omitempty"`
+	DispatchFilters *[]DispatchFilter    `json:"dispatch_filters,omitempty"`
 }
 
 func CreateNotificationConfiguration(ctx context.Context, c *Client, input *CreateNotificationConfigurationInput) (*NotificationConfiguration, error) {

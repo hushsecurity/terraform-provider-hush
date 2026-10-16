@@ -91,8 +91,7 @@ resource "hush_notification_configuration" "immediate_alerts" {
   enabled     = true
   
   channel_ids = [hush_notification_channel.email_alerts.id]
-  aggregation = "short"
-  trigger     = "new_nhi_at_risk"
+  trigger     = "new_nhi_security_issue"
 }
 
 # Look up deployment by name
