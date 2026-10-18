@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.31.0] - 2026-10-18
+
+### Added
+
+* **Tool-call rate limits on MCP applications**: `hush_mcp_application` takes `rate_limit` blocks, each capping how many calls one caller (a user, or a service agent) may make through the gateway -- to any of the application's tools (`target_type = "app"`), to its tools of one class (`"group"`, with `target` 'read', 'write' or 'destructive'), or to one tool (`"tool"`, with the tool's name). `max_calls` calls are allowed at once and come back one by one over `window` seconds (60 to 86400). `mode` is `block` (the default), refusing calls past the limit, or `warn`, letting them through and flagging them in the activity log.
+
+  One block per target, checked at plan time, as are the target's fit to its type and, on create, the tool's name. Like `tool_operation`, the blocks are authoritative: a limit set elsewhere, such as in the console, is removed on the next apply. The data source shows the limits too.
+
 ## [1.30.0] - 2026-10-16
 
 ### Added
