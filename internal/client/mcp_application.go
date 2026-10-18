@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 )
 
@@ -19,6 +20,25 @@ var (
 
 // The operations the gateway can apply to a tool call.
 var ToolOperations = []string{"allow", "block", "user_consent"}
+
+var (
+	RateLimitTargetTypes = []string{"app", "group", "tool"}
+	RateLimitModes       = []string{"block", "warn"}
+)
+
+type RateLimit struct {
+	TargetType string  `json:"target_type"`
+	Target     *string `json:"target"`
+	MaxCalls   int     `json:"max_calls"`
+	Window     int     `json:"window"`
+	Mode       string  `json:"mode"`
+}
+
+type RateLimitIn struct {
+	MaxCalls int    `json:"max_calls"`
+	Window   int    `json:"window"`
+	Mode     string `json:"mode"`
+}
 
 // The agent types an application can be limited to.
 var AgentTypes = []string{"claude-code", "claude", "cursor", "windsurf", "vscode", "openclaw"}
@@ -46,6 +66,7 @@ type MCPApplication struct {
 	Scopes             []string     `json:"scopes"`
 	ToolGroups         []ToolGroup  `json:"tool_groups"`
 	Tools              []MCPTool    `json:"tools"`
+	RateLimits         []RateLimit  `json:"rate_limits"`
 	ClientID           *string      `json:"client_id"`
 	OAuthRelay         bool         `json:"oauth_relay"`
 
@@ -224,4 +245,16 @@ func ListMCPApplications(ctx context.Context, c *Client) ([]MCPApplication, erro
 		}
 		return resp.Items, resp.NextPage, nil
 	})
+}
+
+// SetMCPRateLimit sets the limit on one target, or removes it when limit is nil.
+func SetMCPRateLimit(ctx context.Context, c *Client, id, targetType, target string, limit *RateLimitIn) error {
+	path := fmt.Sprintf("/v1/applications/%s/mcp/rate_limits/%s", id, targetType)
+	if target != "" {
+		path += "/" + url.PathEscape(target)
+	}
+	if limit == nil {
+		return c.doRequest(ctx, http.MethodDelete, path, nil, nil)
+	}
+	return c.doRequest(ctx, http.MethodPut, path, limit, nil)
 }

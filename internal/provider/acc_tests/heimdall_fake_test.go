@@ -109,6 +109,10 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("PATCH /v1/applications/{id}/mcp", h.patchApp)
 	ms.Handle("POST /v1/applications/{id}/mcp/tool_operations", h.toolOperations)
 	ms.Handle("POST /v1/applications/{id}/mcp/tool_group_operations", h.toolGroupOperations)
+	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
+	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}/{target}", h.rateLimit)
+	ms.Handle("DELETE /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
+	ms.Handle("DELETE /v1/applications/{id}/mcp/rate_limits/{type}/{target}", h.rateLimit)
 	// The catalog, custom app and per-entry routes all have four segments
 	// under /v1/applications, and ServeMux refuses patterns that overlap
 	// without one being more specific, so they share one dispatcher.
@@ -758,6 +762,52 @@ func (h *fakeHeimdall) toolGroupOperations(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	app["tool_groups"] = groups
+	testutil.WriteJSON(w, http.StatusOK, h.appOut(app, ""))
+}
+
+// rateLimit sets or removes the one limit on a target; a tool the
+// application lacks is a 404 on PUT, as heimdall answers.
+func (h *fakeHeimdall) rateLimit(w http.ResponseWriter, r *http.Request) {
+	var body map[string]any
+	if r.Method == http.MethodPut && !decodeBody(w, r, &body) {
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.apps[r.PathValue("id")]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
+		return
+	}
+	targetType, target := r.PathValue("type"), r.PathValue("target")
+	if r.Method == http.MethodPut && targetType == "tool" {
+		known := false
+		for _, tool := range cloneTools(app["tools"]) {
+			known = known || tool.(map[string]any)["name"] == target
+		}
+		if !known {
+			testutil.WriteError(w, http.StatusNotFound, target+" not found")
+			return
+		}
+	}
+	var limits []any
+	for _, v := range cloneTools(app["rate_limits"]) {
+		limit := v.(map[string]any)
+		existing, _ := limit["target"].(string)
+		if limit["target_type"] != targetType || existing != target {
+			limits = append(limits, limit)
+		}
+	}
+	if body != nil {
+		limit := maps.Clone(body)
+		limit["target_type"] = targetType
+		limit["target"] = nil
+		if target != "" {
+			limit["target"] = target
+		}
+		limits = append(limits, limit)
+	}
+	app["rate_limits"] = limits
 	testutil.WriteJSON(w, http.StatusOK, h.appOut(app, ""))
 }
 

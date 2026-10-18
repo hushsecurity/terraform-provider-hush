@@ -190,5 +190,6 @@ func ResourceSchema() map[string]*schema.Schema {
 	}
 	maps.Copy(s, assignmentSchema())
 	maps.Copy(s, toolOperationsSchema())
+	maps.Copy(s, rateLimitSchema())
 	return s
 }
