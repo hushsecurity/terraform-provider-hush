@@ -110,6 +110,9 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	if err := applyToolOperations(ctx, c, d, true); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := applyRateLimits(ctx, c, d); err != nil {
+		return diag.FromErr(err)
+	}
 	return applicationRead(ctx, d, m)
 }
 
@@ -253,6 +256,9 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		}
 	}
 	if err := applyToolOperations(ctx, c, d, false); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := applyRateLimits(ctx, c, d); err != nil {
 		return diag.FromErr(err)
 	}
 	return applicationRead(ctx, d, m)
@@ -414,6 +420,7 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
 		"tools":                tools,
 		"tool_defaults":        flattenToolDefaults(app.ToolGroups),
 		"tool_operation":       flattenToolOperations(app.Tools),
+		"rate_limit":           flattenRateLimits(app.RateLimits),
 	}
 	for key, value := range values {
 		if err := d.Set(key, value); err != nil {

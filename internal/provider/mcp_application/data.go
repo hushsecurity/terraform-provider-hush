@@ -33,6 +33,7 @@ func DataSource() *schema.Resource {
 			"assignment":        "The rules granting the application: it is granted by any rule that matches, and a rule matches when all of its conditions do.",
 			"tool_defaults":     "What the gateway does with a call to a tool of each class, unless the tool has an operation of its own.",
 			"tool_operation":    "The tools with an operation of their own, overriding their class default.",
+			"rate_limit":        "The caps on how many calls each caller may make to the application, its tools of one class, or one tool.",
 		},
 	})
 	s["id"] = &schema.Schema{Type: schema.TypeString, Computed: true}

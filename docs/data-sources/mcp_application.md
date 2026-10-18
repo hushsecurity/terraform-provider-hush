@@ -48,6 +48,7 @@ output "github_blocked_tools" {
 - `name` (String) The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked.
 - `oauth_relay` (Boolean) Whether the server's OAuth flow goes through Hush's relay.
 - `quickbooks` (List of Object) The QuickBooks company, for the 'quickbooks' entry. (see [below for nested schema](#nestedatt--quickbooks))
+- `rate_limit` (Set of Object) The caps on how many calls each caller may make to the application, its tools of one class, or one tool. (see [below for nested schema](#nestedatt--rate_limit))
 - `scopes` (List of String) The OAuth scopes the application requests from the server.
 - `tool_defaults` (List of Object) What the gateway does with a call to a tool of each class, unless the tool has an operation of its own. (see [below for nested schema](#nestedatt--tool_defaults))
 - `tool_operation` (Set of Object) The tools with an operation of their own, overriding their class default. (see [below for nested schema](#nestedatt--tool_operation))
@@ -90,6 +91,18 @@ Read-Only:
 
 - `company_id` (String)
 - `sandbox` (Boolean)
+
+
+<a id="nestedatt--rate_limit"></a>
+### Nested Schema for `rate_limit`
+
+Read-Only:
+
+- `max_calls` (Number)
+- `mode` (String)
+- `target` (String)
+- `target_type` (String)
+- `window` (Number)
 
 
 <a id="nestedatt--tool_defaults"></a>

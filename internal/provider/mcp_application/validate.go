@@ -22,6 +22,9 @@ func customizeDiff(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	if err := validateToolOperations(d); err != nil {
 		return err
 	}
+	if err := validateRateLimits(d); err != nil {
+		return err
+	}
 	if err := planToolsRecompute(d); err != nil {
 		return err
 	}
@@ -125,6 +128,9 @@ func validateAgainstEntry(ctx context.Context, d *schema.ResourceDiff, c *client
 	if err := validateURLLabel(d, appCatalogID, shape.labels); err != nil {
 		return err
 	}
+	if err := validateRateLimitToolNames(d, appCatalogID, shape.tools); err != nil {
+		return err
+	}
 	if err := validateToolNames(d, appCatalogID, shape.tools); err != nil {
 		return err
 	}
@@ -179,6 +185,22 @@ func validateToolNames(d *schema.ResourceDiff, appCatalogID string, tools []stri
 		name, _ := v.(map[string]any)["name"].(string)
 		if name != "" && !slices.Contains(tools, name) {
 			return fmt.Errorf("tool_operation: %q has no tool %q (see the hush_mcp_catalog_entry "+
+				"data source for its tools)", appCatalogID, name)
+		}
+	}
+	return nil
+}
+
+// validateRateLimitToolNames is validateToolNames for a 'tool' rate_limit.
+func validateRateLimitToolNames(d *schema.ResourceDiff, appCatalogID string, tools []string) error {
+	if !d.NewValueKnown("rate_limit") {
+		return nil
+	}
+	for _, v := range d.Get("rate_limit").(*schema.Set).List() {
+		block := v.(map[string]any)
+		name, _ := block["target"].(string)
+		if block["target_type"] == "tool" && name != "" && !slices.Contains(tools, name) {
+			return fmt.Errorf("rate_limit: %q has no tool %q (see the hush_mcp_catalog_entry "+
 				"data source for its tools)", appCatalogID, name)
 		}
 	}

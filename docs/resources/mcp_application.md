@@ -34,6 +34,12 @@ resource "hush_mcp_application" "datadog" {
     name      = "delete_datadog_dashboard"
     operation = "user_consent"
   }
+  rate_limit {
+    target_type = "group"
+    target      = "write"
+    max_calls   = 30
+    window      = 300
+  }
 
   lifecycle {
     precondition {
@@ -135,6 +141,7 @@ resource "hush_mcp_application" "internal_tools_eu" {
 - `enabled` (Boolean) Whether the gateways serve the application. A disabled application keeps its configuration.
 - `google_project_id` (String) The Google Cloud project the server bills its quota to. Required, and only allowed, for the Google Workspace entries: gcalendar, gdocs, gdrive, gmail, gpeople, gsheets and gslides.
 - `quickbooks` (Block List, Max: 1) The QuickBooks company the server works on. Required, and only allowed, for the 'quickbooks' entry. (see [below for nested schema](#nestedblock--quickbooks))
+- `rate_limit` (Block Set) A cap on how many calls each caller (a user, or a service agent) may make through the gateway: to any of the application's tools, to its tools of one class, or to one tool. A call must fit every limit it matches. One block per target; a limit without a block is removed, including one set elsewhere, such as in the console. (see [below for nested schema](#nestedblock--rate_limit))
 - `scopes` (List of String) The OAuth scopes to request from the server. Left unset, an application starts with the catalog entry's; removing the attribute later keeps the scopes the application has. An application of a custom app is rewritten whenever the custom app's scopes change, so set scopes on one of the two, not both.
 - `tool_defaults` (Block List, Max: 1) What the gateway does with a call to a tool of each class, unless `tool_operation` sets the tool's own. Each is 'allow', 'block' or 'user_consent' (ask the user, through the deployment's `hush_agw_consent_methods`). A class left unset keeps what the application has, which starts as allow for read, user_consent for write and block for destructive; removing the block changes nothing. (see [below for nested schema](#nestedblock--tool_defaults))
 - `tool_operation` (Block Set) The operation for one tool, overriding its class default. The tool must be one of the application's (see `tools`). A tool without a block takes its class default, so removing a block returns the tool to it, and an override set elsewhere, such as in the console, is removed on the next apply. On create the name is checked at plan time against the tools of the entry or custom app as they stand, so a tool added to a custom app in the same apply is refused: apply the custom app first. (see [below for nested schema](#nestedblock--tool_operation))
@@ -191,6 +198,21 @@ Required:
 Optional:
 
 - `sandbox` (Boolean) Whether the company is a sandbox one, reached with the Intuit app's development keys.
+
+
+<a id="nestedblock--rate_limit"></a>
+### Nested Schema for `rate_limit`
+
+Required:
+
+- `max_calls` (Number) The calls allowed at once; they come back one by one over `window`.
+- `target_type` (String) 'app', 'group' or 'tool'.
+- `window` (Number) Seconds, from 60 to 86400.
+
+Optional:
+
+- `mode` (String) 'block' refuses calls past the limit; 'warn' lets them through and flags them in the activity log.
+- `target` (String) For 'group', the class: 'read', 'write' or 'destructive'. For 'tool', the tool's name (see `tools`). Unset for 'app'.
 
 
 <a id="nestedblock--tool_defaults"></a>

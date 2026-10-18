@@ -19,6 +19,12 @@ resource "hush_mcp_application" "datadog" {
     name      = "delete_datadog_dashboard"
     operation = "user_consent"
   }
+  rate_limit {
+    target_type = "group"
+    target      = "write"
+    max_calls   = 30
+    window      = 300
+  }
 
   lifecycle {
     precondition {
