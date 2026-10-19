@@ -99,6 +99,7 @@ type ServiceAgent struct {
 	ID           string            `json:"id"`
 	SubjectType  string            `json:"subject_type"`
 	Name         string            `json:"name"`
+	Description  string            `json:"description"`
 	Enabled      bool              `json:"enabled"`
 	ActsForUsers bool              `json:"acts_for_users"`
 	Resource     string            `json:"resource"`
@@ -107,6 +108,7 @@ type ServiceAgent struct {
 
 type ServiceAgentInput struct {
 	Name         string `json:"name"`
+	Description  string `json:"description,omitempty"`
 	Enabled      bool   `json:"enabled"`
 	ActsForUsers bool   `json:"acts_for_users"`
 }
@@ -114,6 +116,7 @@ type ServiceAgentInput struct {
 // ServiceAgentUpdate is a patch: a nil field is left as it is.
 type ServiceAgentUpdate struct {
 	Name         *string `json:"name,omitempty"`
+	Description  *string `json:"description,omitempty"`
 	Enabled      *bool   `json:"enabled,omitempty"`
 	ActsForUsers *bool   `json:"acts_for_users,omitempty"`
 }

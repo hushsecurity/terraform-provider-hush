@@ -42,7 +42,8 @@ func agentsDestroyed(*terraform.State) error {
 
 const serviceAgentStep1 = `
 resource "hush_service_agent" "test" {
-  name = "acc-summarizer"
+  name        = "acc-summarizer"
+  description = "Summarizes tickets"
 
   aws_iam_role {
     issuer   = "` + agentAWSIssuer + `"
@@ -114,6 +115,7 @@ func TestAccServiceAgent(t *testing.T) {
 			{
 				Config: serviceAgentStep1,
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_service_agent.test", "description", "Summarizes tickets"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "enabled", "true"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "acts_for_users", "false"),
 					resource.TestMatchResourceAttr("hush_service_agent.test", "resource",
@@ -132,6 +134,7 @@ func TestAccServiceAgent(t *testing.T) {
 				Config: serviceAgentStep2,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("hush_service_agent.test", "name", "acc-summarizer-2"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "description", ""),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "acts_for_users", "true"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "aws_iam_role.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "kubernetes.#", "1"),

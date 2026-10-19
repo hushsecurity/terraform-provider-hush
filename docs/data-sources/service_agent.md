@@ -35,6 +35,7 @@ output "summarizer_id" {
 - `acts_for_users` (Boolean) Whether the agent can act for a signed-in user, by exchanging the user's token (RFC 8693 token exchange).
 - `aws_iam_role` (Set of Object) An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is the deployment's issuer. (see [below for nested schema](#nestedatt--aws_iam_role))
 - `azure` (Set of Object) An Azure / Entra service principal: a managed identity, an app registration or an Entra agent identity (e.g. a Foundry agent). It signs in with an app-only Entra token for `audience`, so it also sends `resource` (the gateway) when it signs in. The app registration must issue v2 tokens and be dedicated to Hush: anything that receives tokens for it could replay them. (see [below for nested schema](#nestedatt--azure))
+- `description` (String) What the agent does.
 - `enabled` (Boolean) Whether the agent can sign in.
 - `kubernetes` (Set of Object) A Kubernetes service account, signing in with a projected token whose audience is the deployment's issuer. (see [below for nested schema](#nestedatt--kubernetes))
 - `oidc` (Set of Object) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience. (see [below for nested schema](#nestedatt--oidc))
