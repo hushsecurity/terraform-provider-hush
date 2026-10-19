@@ -32,6 +32,7 @@ func agentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 
 	agent, err := client.CreateServiceAgent(ctx, c, &client.ServiceAgentInput{
 		Name:         d.Get("name").(string),
+		Description:  d.Get("description").(string),
 		Enabled:      d.Get("enabled").(bool),
 		ActsForUsers: d.Get("acts_for_users").(bool),
 	})
@@ -72,6 +73,11 @@ func agentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 	if d.HasChange("name") {
 		name := d.Get("name").(string)
 		patch.Name = &name
+		changed = true
+	}
+	if d.HasChange("description") {
+		description := d.Get("description").(string)
+		patch.Description = &description
 		changed = true
 	}
 	if d.HasChange("enabled") {

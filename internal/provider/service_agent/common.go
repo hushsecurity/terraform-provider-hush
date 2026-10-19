@@ -20,6 +20,7 @@ const (
 		"to one agent at a time: to move it to another agent, remove it from the first in one apply " +
 		"and add it to the second in the next."
 	nameDesc         = "The agent's name."
+	descriptionDesc  = "What the agent does."
 	enabledDesc      = "Whether the agent can sign in."
 	actsForUsersDesc = "Whether the agent can act for a signed-in user, by exchanging the user's token " +
 		"(RFC 8693 token exchange)."
@@ -135,6 +136,12 @@ func ResourceSchema() map[string]*schema.Schema {
 			Type:         schema.TypeString,
 			Required:     true,
 			ValidateFunc: validation.StringLenBetween(1, 128),
+		},
+		"description": {
+			Description:  descriptionDesc,
+			Type:         schema.TypeString,
+			Optional:     true,
+			ValidateFunc: validation.StringLenBetween(0, 200),
 		},
 		"enabled":        {Description: enabledDesc, Type: schema.TypeBool, Optional: true, Default: true},
 		"acts_for_users": {Description: actsForUsersDesc, Type: schema.TypeBool, Optional: true, Default: false},
@@ -351,6 +358,7 @@ func flatten(d *schema.ResourceData, agent *client.ServiceAgent) error {
 
 	values := map[string]any{
 		"name":           agent.Name,
+		"description":    agent.Description,
 		"enabled":        agent.Enabled,
 		"acts_for_users": agent.ActsForUsers,
 		"resource":       agent.Resource,
