@@ -71,6 +71,7 @@ type MongoDBGrant struct {
 	Privileges    []string `json:"privileges"`
 	ResourceType  string   `json:"resource_type"`
 	ResourceNames []string `json:"resource_names,omitempty"`
+	AllDatabases  bool     `json:"all_databases,omitempty"`
 }
 
 type MongoDBAccessPrivilege struct {

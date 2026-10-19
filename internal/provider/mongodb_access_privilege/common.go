@@ -7,11 +7,13 @@ import (
 )
 
 const (
-	idDesc          = "The unique identifier of the MongoDB access privilege"
-	nameDesc        = "The name of the MongoDB access privilege"
-	descriptionDesc = "The description of the MongoDB access privilege"
-	grantsDesc      = "The list of privilege grants"
-	typeDesc        = "The type of access privilege"
+	idDesc           = "The unique identifier of the MongoDB access privilege"
+	nameDesc         = "The name of the MongoDB access privilege"
+	descriptionDesc  = "The description of the MongoDB access privilege"
+	grantsDesc       = "The list of privilege grants"
+	allDatabasesDesc = "Apply the grant to every database instead of the access " +
+		"credential's db_name. Requires an access credential whose auth_source is admin."
+	typeDesc = "The type of access privilege"
 )
 
 func ResourceSchema() map[string]*schema.Schema {
@@ -64,6 +66,12 @@ func ResourceSchema() map[string]*schema.Schema {
 					},
 					Description: "The names of the resources",
 				},
+				"all_databases": {
+					Type:        schema.TypeBool,
+					Optional:    true,
+					Default:     false,
+					Description: allDatabasesDesc,
+				},
 			},
 		},
 	}
@@ -115,6 +123,11 @@ func DataSourceSchema() map[string]*schema.Schema {
 						},
 						Description: "The names of the resources",
 					},
+					"all_databases": {
+						Type:        schema.TypeBool,
+						Computed:    true,
+						Description: allDatabasesDesc,
+					},
 				},
 			},
 		},
@@ -145,6 +158,9 @@ func expandGrants(list []any) []client.MongoDBGrant {
 				grant.ResourceNames[j] = n.(string)
 			}
 		}
+		if v, ok := m["all_databases"].(bool); ok {
+			grant.AllDatabases = v
+		}
 		grants[i] = grant
 	}
 	return grants
@@ -165,6 +181,7 @@ func flattenGrants(grants []client.MongoDBGrant) []any {
 			"privileges":     privileges,
 			"resource_type":  g.ResourceType,
 			"resource_names": resourceNames,
+			"all_databases":  g.AllDatabases,
 		}
 		result[i] = m
 	}
