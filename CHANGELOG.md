@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.32.0] - 2026-10-19
+
+### Added
+
+* **Service agents: description**: `hush_service_agent` takes an optional `description` (up to 200 characters), also shown by the data source.
+
 ## [1.31.0] - 2026-10-18
 
 ### Added
@@ -744,6 +750,8 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.32.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.31.0...v1.32.0
+[1.31.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.30.0...v1.31.0
 [1.30.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.29.0...v1.30.0
 [1.29.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.28.0...v1.29.0
 [1.28.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.27.0...v1.28.0
