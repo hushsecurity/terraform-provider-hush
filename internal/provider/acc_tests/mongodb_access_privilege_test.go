@@ -1,6 +1,7 @@
 package acc_tests
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -33,6 +34,9 @@ func TestAccResourceMongoDBAccessPrivilege(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_mongodb_access_privilege.test", "grants.0.privileges.1", "collStats",
 					),
+					resource.TestCheckResourceAttr(
+						"hush_mongodb_access_privilege.test", "grants.0.all_databases", "false",
+					),
 				),
 			},
 			{
@@ -47,6 +51,23 @@ func TestAccResourceMongoDBAccessPrivilege(t *testing.T) {
 					resource.TestCheckResourceAttr(
 						"hush_mongodb_access_privilege.test", "description", "updated mongodb privilege",
 					),
+				),
+			},
+			{
+				Config: mongodbAccessPrivilegeAllDatabases(true),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_mongodb_access_privilege.test", "grants.0.all_databases", "true",
+					),
+					resource.TestCheckResourceAttr(
+						"hush_mongodb_access_privilege.test", "grants.1.all_databases", "false",
+					),
+				),
+			},
+			{
+				Config: mongodbAccessPrivilegeAllDatabases(false),
+				Check: resource.TestCheckResourceAttr(
+					"hush_mongodb_access_privilege.test", "grants.0.all_databases", "false",
 				),
 			},
 		},
@@ -69,6 +90,20 @@ func TestAccDataSourceMongoDBAccessPrivilege(t *testing.T) {
 					),
 					resource.TestCheckResourceAttr(
 						"data.hush_mongodb_access_privilege.test", "grants.0.resource_type", "database",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_access_privilege.test", "grants.0.all_databases", "false",
+					),
+				),
+			},
+			{
+				Config: mongodbAccessPrivilegeAllDatabases(true) + mongodbAccessPrivilegeDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_access_privilege.test", "grants.0.all_databases", "true",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_access_privilege.test", "grants.1.all_databases", "false",
 					),
 				),
 			},
@@ -102,6 +137,28 @@ resource "hush_mongodb_access_privilege" "test" {
   }
 }
 `
+}
+
+func mongodbAccessPrivilegeAllDatabases(allDatabases bool) string {
+	return fmt.Sprintf(`
+resource "hush_mongodb_access_privilege" "test" {
+  name        = "test-mongo-priv-updated"
+  description = "updated mongodb privilege"
+
+  grants {
+    privileges     = ["find"]
+    resource_type  = "collection"
+    resource_names = ["incidents"]
+    all_databases  = %t
+  }
+
+  grants {
+    privileges     = ["find", "insert"]
+    resource_type  = "collection"
+    resource_names = ["reports"]
+  }
+}
+`, allDatabases)
 }
 
 const mongodbAccessPrivilegeDataSource = `

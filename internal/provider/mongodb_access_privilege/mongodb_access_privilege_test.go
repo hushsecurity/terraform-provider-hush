@@ -17,6 +17,7 @@ func TestExpandGrants(t *testing.T) {
 			"privileges":     []any{"find"},
 			"resource_type":  "collection",
 			"resource_names": []any{"users"},
+			"all_databases":  true,
 		},
 	}
 
@@ -36,6 +37,9 @@ func TestExpandGrants(t *testing.T) {
 	if len(result[0].ResourceNames) != 2 || result[0].ResourceNames[0] != "mydb" || result[0].ResourceNames[1] != "testdb" {
 		t.Errorf("unexpected resource_names: %v", result[0].ResourceNames)
 	}
+	if result[0].AllDatabases {
+		t.Errorf("expected all_databases false by default")
+	}
 
 	// Second grant
 	if result[1].ResourceType != "collection" {
@@ -46,6 +50,9 @@ func TestExpandGrants(t *testing.T) {
 	}
 	if len(result[1].ResourceNames) != 1 || result[1].ResourceNames[0] != "users" {
 		t.Errorf("unexpected resource_names: %v", result[1].ResourceNames)
+	}
+	if !result[1].AllDatabases {
+		t.Errorf("expected all_databases true")
 	}
 }
 
@@ -60,6 +67,7 @@ func TestFlattenGrants(t *testing.T) {
 			Privileges:    []string{"find"},
 			ResourceType:  "collection",
 			ResourceNames: []string{"users"},
+			AllDatabases:  true,
 		},
 	}
 
@@ -81,10 +89,16 @@ func TestFlattenGrants(t *testing.T) {
 	if len(names0) != 2 || names0[0] != "mydb" || names0[1] != "testdb" {
 		t.Errorf("unexpected resource_names: %v", names0)
 	}
+	if m0["all_databases"] != false {
+		t.Errorf("expected all_databases false, got '%v'", m0["all_databases"])
+	}
 
 	m1 := result[1].(map[string]any)
 	if m1["resource_type"] != "collection" {
 		t.Errorf("expected resource_type 'collection', got '%v'", m1["resource_type"])
+	}
+	if m1["all_databases"] != true {
+		t.Errorf("expected all_databases true, got '%v'", m1["all_databases"])
 	}
 }
 
@@ -104,6 +118,7 @@ func terraformizeGrants(grants []client.MongoDBGrant) []any {
 			"privileges":     privs,
 			"resource_type":  g.ResourceType,
 			"resource_names": resNames,
+			"all_databases":  g.AllDatabases,
 		}
 	}
 	return result
@@ -120,6 +135,7 @@ func TestExpandFlattenRoundTrip(t *testing.T) {
 			Privileges:    []string{"find"},
 			ResourceType:  "collection",
 			ResourceNames: []string{"users", "orders"},
+			AllDatabases:  true,
 		},
 	}
 
@@ -141,6 +157,9 @@ func TestExpandFlattenRoundTrip(t *testing.T) {
 	for i, g := range expanded {
 		if g.ResourceType != original[i].ResourceType {
 			t.Errorf("grant %d: expected resource_type '%s', got '%s'", i, original[i].ResourceType, g.ResourceType)
+		}
+		if g.AllDatabases != original[i].AllDatabases {
+			t.Errorf("grant %d: expected all_databases %t, got %t", i, original[i].AllDatabases, g.AllDatabases)
 		}
 		if len(g.Privileges) != len(original[i].Privileges) {
 			t.Errorf("grant %d: expected %d privileges, got %d", i, len(original[i].Privileges), len(g.Privileges))

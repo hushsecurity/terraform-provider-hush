@@ -45,6 +45,7 @@ output "grants" {
 
 Read-Only:
 
+- `all_databases` (Boolean)
 - `privileges` (List of String)
 - `resource_names` (List of String)
 - `resource_type` (String)

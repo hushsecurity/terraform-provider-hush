@@ -53,4 +53,5 @@ Required:
 
 Optional:
 
+- `all_databases` (Boolean) Apply the grant to every database instead of the access credential's db_name. Requires an access credential whose auth_source is admin.
 - `resource_names` (List of String) The names of the resources
