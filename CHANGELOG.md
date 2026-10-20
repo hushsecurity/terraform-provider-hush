@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.33.0] - 2026-10-20
+
+### Added
+
+* **MongoDB grants on all databases**: each `grants` block of `hush_mongodb_access_privilege` takes an optional `all_databases` (default `false`). With it the grant applies to every database instead of the access credential's `db_name`, so one grant can reach the same collection in every tenant's database. Such a privilege works only with an access credential whose `auth_source` is `admin`; `terraform apply` fails on any change that would put it under one access policy with a credential whose `auth_source` is something else. The data source shows the attribute too.
+
 ## [1.32.0] - 2026-10-19
 
 ### Added
@@ -750,6 +756,7 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.33.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.32.0...v1.33.0
 [1.32.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.31.0...v1.32.0
 [1.31.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.30.0...v1.31.0
 [1.30.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.29.0...v1.30.0
