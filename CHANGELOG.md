@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.33.1] - 2026-10-26
+
+### Fixed
+
+* **MCP applications on Hush's Entra app**: an `m365` or `azuredevops` application with no `client_id` uses Hush's Entra app. The next plan no longer shows that `client_id` changing to null, so an apply no longer strips the application's credentials.
+
 ## [1.33.0] - 2026-10-20
 
 ### Added
