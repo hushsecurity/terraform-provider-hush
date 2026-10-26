@@ -151,7 +151,10 @@ var customAppKeys = map[string]bool{
 	"client_secret": true, "auth": true,
 }
 
-var authSecretKey = map[string]string{"bearer": "token", "basic": "password", "header": "value"}
+var authSecretKey = map[string]string{
+	"bearer": "token", "basic": "password", "header": "value",
+	"client_credentials": "client_secret",
+}
 
 // setCustomAppFields applies a create or patch body. The secrets are split
 // off, as heimdall keeps them apart, and auth is masked the way it is shown.
@@ -185,6 +188,14 @@ func (h *fakeHeimdall) setCustomAppFields(name string, app, body map[string]any)
 			}
 			secrets["auth"] = auth[field]
 			auth[field] = "****"
+			if auth["type"] == "client_credentials" {
+				if auth["scopes"] == nil {
+					auth["scopes"] = []any{}
+				}
+				if auth["auth_method"] == nil {
+					auth["auth_method"] = "basic"
+				}
+			}
 			app["auth"] = auth
 		case "headers":
 			if value == nil {

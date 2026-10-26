@@ -49,7 +49,11 @@ output "internal_tools_app_catalog_id" {
 
 Read-Only:
 
+- `auth_method` (String)
+- `client_id` (String)
 - `name` (String)
+- `scopes` (List of String)
+- `token_url` (String)
 - `type` (String)
 - `username` (String)
 

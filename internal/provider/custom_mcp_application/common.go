@@ -42,11 +42,15 @@ const (
 	clientSecretWODesc    = "The client secret, kept out of Terraform state. Sent when client_secret_wo_version changes."
 	clientSecretWOVerDesc = "Change to re-send client_secret_wo. Required with it: a write-only value is not in state, so without a version a rotated secret would never be sent."
 	authDesc              = "A fixed credential the gateway presents to the server instead of, or next to, OAuth."
-	authTypeDesc          = "'bearer' (sent as 'Authorization: Bearer <secret>'), 'basic' (sent as basic auth with `username`) or 'header' (sent as header `name`). 'bearer' and 'basic' use the Authorization header, which OAuth also needs, so they cannot be combined with `client_id`."
+	authTypeDesc          = "'bearer' (sent as 'Authorization: Bearer <secret>'), 'basic' (sent as basic auth with `username`), 'header' (sent as header `name`) or 'client_credentials' (an OAuth client, `client_id` with the secret, that the gateway exchanges at `token_url` for access tokens it sends as bearer tokens). All but 'header' use the Authorization header, which OAuth also needs, so they cannot be combined with `client_id`."
+	authClientIDDesc      = "The OAuth client id, for type 'client_credentials' only."
+	authTokenURLDesc      = "The token endpoint, for type 'client_credentials' only."
+	authScopesDesc        = "The scopes to request, for type 'client_credentials' only."
+	authMethodDesc        = "How the client authenticates at the token endpoint, for type 'client_credentials' only: 'basic' (the default, HTTP basic auth) or 'post' (in the form body)."
 	authUsernameDesc      = "The user name, for type 'basic' only."
 	authNameDesc          = "The header name, for type 'header' only. It cannot be 'Authorization' (use 'bearer' or 'basic') or a name `headers` already sets."
-	authSecretDesc        = "The token, password or header value. Stored in Terraform state; prefer secret_wo. The API never returns it."
-	authSecretWODesc      = "The token, password or header value, kept out of Terraform state. Sent when secret_wo_version changes."
+	authSecretDesc        = "The token, password, header value or client secret. Stored in Terraform state; prefer secret_wo. The API never returns it."
+	authSecretWODesc      = "The token, password, header value or client secret, kept out of Terraform state. Sent when secret_wo_version changes."
 	authSecretWOVerDesc   = "Change to re-send secret_wo. Required with it."
 )
 
@@ -176,8 +180,24 @@ func ResourceSchema() map[string]*schema.Schema {
 					Required:     true,
 					ValidateFunc: validation.StringInSlice(client.MCPAuthTypes, false),
 				},
-				"username": {Description: authUsernameDesc, Type: schema.TypeString, Optional: true},
-				"name":     {Description: authNameDesc, Type: schema.TypeString, Optional: true},
+				"username":  {Description: authUsernameDesc, Type: schema.TypeString, Optional: true},
+				"name":      {Description: authNameDesc, Type: schema.TypeString, Optional: true},
+				"client_id": {Description: authClientIDDesc, Type: schema.TypeString, Optional: true},
+				"token_url": {Description: authTokenURLDesc, Type: schema.TypeString, Optional: true},
+				"scopes": {
+					Description: authScopesDesc,
+					Type:        schema.TypeList,
+					Optional:    true,
+					Computed:    true,
+					Elem:        &schema.Schema{Type: schema.TypeString},
+				},
+				"auth_method": {
+					Description:  authMethodDesc,
+					Type:         schema.TypeString,
+					Optional:     true,
+					Computed:     true,
+					ValidateFunc: validation.StringInSlice(client.MCPAuthMethods, false),
+				},
 				"secret": {
 					Description: authSecretDesc,
 					Type:        schema.TypeString,

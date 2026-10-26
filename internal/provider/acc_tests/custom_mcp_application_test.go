@@ -163,6 +163,51 @@ func TestAccResourceCustomMCPApplication(t *testing.T) {
 	})
 }
 
+// An OAuth client the gateway exchanges for tokens; heimdall's defaults for
+// scopes and auth_method read back without a diff.
+func TestAccResourceCustomMCPApplication_clientCredentials(t *testing.T) {
+	const addr = "hush_custom_mcp_application.cc"
+	destroyed := func(*terraform.State) error {
+		heimdall.mu.Lock()
+		defer heimdall.mu.Unlock()
+		if _, ok := heimdall.customApps["acc-custom-cc"]; ok {
+			return fmt.Errorf("custom app acc-custom-cc still exists")
+		}
+		return nil
+	}
+	config := `
+resource "hush_custom_mcp_application" "cc" {
+  name         = "acc-custom-cc"
+  display_name = "Acc custom cc"
+  url {
+    url = "https://mcp.example.com/mcp"
+  }
+  auth {
+    type      = "client_credentials"
+    client_id = "svc"
+    token_url = "https://as.example.com/oauth/token"
+    secret    = "s3cret"
+  }
+}
+`
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      destroyed,
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(addr, "auth.0.type", "client_credentials"),
+					resource.TestCheckResourceAttr(addr, "auth.0.client_id", "svc"),
+					resource.TestCheckResourceAttr(addr, "auth.0.auth_method", "basic"),
+					customAppSent("acc-custom-cc", "auth", "s3cret"),
+				),
+			},
+			{Config: config, PlanOnly: true},
+		},
+	})
+}
+
 // What heimdall refuses and the schema alone cannot, refused at plan time.
 func TestAccResourceCustomMCPApplication_planChecks(t *testing.T) {
 	const url = `
@@ -203,6 +248,24 @@ func TestAccResourceCustomMCPApplication_planChecks(t *testing.T) {
   }
 `,
 			expect: `auth: "X-Hush-Token" is reserved`,
+		},
+		"client credentials without a token url": {
+			body: url + `  auth {
+    type      = "client_credentials"
+    client_id = "c"
+    secret    = "s"
+  }
+`,
+			expect: `auth: client_id and token_url are required with type "client_credentials"`,
+		},
+		"token url on bearer": {
+			body: url + `  auth {
+    type      = "bearer"
+    token_url = "https://as.example.com/token"
+    secret    = "t"
+  }
+`,
+			expect: `auth: client_id, token_url, scopes and auth_method are only valid`,
 		},
 		"basic without a username": {
 			body: url + `  auth {
