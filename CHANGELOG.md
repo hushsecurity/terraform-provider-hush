@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 * **Coralogix notification channels**: `hush_notification_channel` takes a `coralogix_config` block, with `region`, `application` (default `hush`) and a Send-Your-Data `api_key` / `api_key_wo`. Alerts and the agent gateway activity stream are sent to the region as logs; the key is validated when it is saved and never returned.
+* **Client credentials on custom MCP apps**: the `auth` block of `hush_custom_mcp_application` takes `type = "client_credentials"`, with `client_id`, `token_url`, optional `scopes` and `auth_method` (`basic`, the default, or `post`), and the client secret in `secret` / `secret_wo`. The gateway exchanges the client for access tokens and refreshes them itself, for servers that hand out a client id and secret rather than a fixed key. The data source shows the new attributes too.
 
 ## [1.33.1] - 2026-10-26
 
