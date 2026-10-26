@@ -24,6 +24,7 @@ func DataSource() *schema.Resource {
 			"app_catalog_id":    "The catalog entry the application was created from, or 'custom-<name>' for a custom app.",
 			"deployment_ids":    "The deployments whose gateways serve the application.",
 			"url_label":         "The label of the entry's address the application uses, lowercased, or empty when the entry has one address.",
+			"alias":             "The suffix that names the application's connection (shared by applications with the same one), or empty when it has none.",
 			"allowed_agents":    "The agent types the application is limited to; empty when any agent may use it.",
 			"scopes":            "The OAuth scopes the application requests from the server.",
 			"client_id":         "The client id of the OAuth app registered with the server, or empty when there is none.",

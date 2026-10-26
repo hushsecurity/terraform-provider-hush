@@ -130,6 +130,7 @@ resource "hush_mcp_application" "internal_tools_eu" {
 
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
+- `alias` (String) Makes the application its own connection, for another account of the same server: named with this suffix, with its own sign-in per user. Applications without it, or with the same one, share a connection. Lowercase letters, digits and '-'. Fixed at creation.
 - `allowed_agents` (Set of String) Limit the application to these agent types: 'claude-code', 'claude', 'cursor', 'windsurf', 'vscode' and 'openclaw'. Leave unset, or empty, to allow any agent.
 - `assign_all` (Boolean) Grant the application to every user of the organization, whatever `assignment` says.
 - `assignment` (Block List) A rule granting the application to the users and agents it matches. An agent may use the application when any of the rules matches it; a rule matches when all of its `condition` blocks do. With neither this nor `assign_all`, the application is granted to no one, and users can only request access to it. (see [below for nested schema](#nestedblock--assignment))
@@ -152,7 +153,7 @@ resource "hush_mcp_application" "internal_tools_eu" {
 - `catalog_display_name` (String) The name the catalog shows for the entry.
 - `hosted` (Boolean) Whether Hush hosts the server.
 - `id` (String) The ID of this resource.
-- `name` (String) The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked.
+- `name` (String) The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked, then with `alias` when set.
 - `oauth_relay` (Boolean) Whether the server's OAuth flow goes through Hush's relay.
 - `tools` (List of Object) The tools the application offers, as copied from its catalog entry or custom app. (see [below for nested schema](#nestedatt--tools))
 - `url` (String) The address the gateway reaches the server at. Empty for a server Hush hosts.

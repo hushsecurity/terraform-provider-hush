@@ -114,6 +114,44 @@ func TestAccResourceMCPApplication(t *testing.T) {
 	})
 }
 
+// An alias suffixes the name; an import still recovers url_label from it.
+func TestAccResourceMCPApplication_alias(t *testing.T) {
+	const addr = "hush_mcp_application.datadog"
+	config := `
+resource "hush_mcp_application" "datadog" {
+  app_catalog_id = "datadog"
+  display_name   = "acc-datadog-alias"
+  url_label      = "EU"
+  alias          = "acme"
+  deployment_ids = ["` + mockDeploymentID + `"]
+}
+`
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      mcpAppsDestroyed("acc-datadog-alias"),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(addr, "name", "datadog-eu-acme"),
+					resource.TestCheckResourceAttr(addr, "alias", "acme"),
+				),
+			},
+			{Config: config, PlanOnly: true},
+			{
+				ResourceName: addr,
+				ImportState:  true,
+				ImportStateCheck: func(states []*terraform.InstanceState) error {
+					if got := states[0].Attributes["url_label"]; got != "eu" {
+						return fmt.Errorf("imported url_label = %q, want \"eu\"", got)
+					}
+					return nil
+				},
+			},
+		},
+	})
+}
+
 // The client secret is never returned; it is sent at creation, re-sent when
 // its version changes, and cleared along with the client id.
 func TestAccResourceMCPApplication_clientCredentials(t *testing.T) {
