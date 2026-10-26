@@ -72,6 +72,7 @@ type MCPApplication struct {
 	RateLimits         []RateLimit  `json:"rate_limits"`
 	ClientID           *string      `json:"client_id"`
 	OAuthRelay         bool         `json:"oauth_relay"`
+	Alias              *string      `json:"alias"`
 
 	// Returned by the Google and QuickBooks routes only.
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
@@ -118,6 +119,7 @@ type MCPApplicationInput struct {
 	ClientID      *string  `json:"client_id,omitempty"`
 	ClientSecret  *string  `json:"client_secret,omitempty"`
 	URLLabel      *string  `json:"url_label,omitempty"`
+	Alias         *string  `json:"alias,omitempty"`
 
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
 	QuickBooksCompanyID *string `json:"quickbooks_company_id,omitempty"`

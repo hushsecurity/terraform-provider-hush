@@ -56,6 +56,10 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		label := v.(string)
 		input.URLLabel = &label
 	}
+	if v, ok := d.GetOk("alias"); ok {
+		alias := v.(string)
+		input.Alias = &alias
+	}
 	if v, ok := d.GetOk("client_id"); ok {
 		clientID := v.(string)
 		input.ClientID = &clientID
@@ -366,12 +370,19 @@ func deref[T any](p *T) T {
 // so that and its version are left as the configuration last set them.
 //
 // url_label is not returned either. It survives in the name, lowercased, as
-// its suffix, which is all an import has to go on; the schema compares labels
-// without regard to case, so that is enough to keep a configured label from
-// planning a replacement.
+// its suffix (before the alias), which is all an import has to go on; the
+// schema compares labels without regard to case, so that is enough to keep a
+// configured label from planning a replacement.
 func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
+	if err := d.Set("alias", deref(app.Alias)); err != nil {
+		return err
+	}
 	if d.Get("url_label").(string) == "" {
-		if label, ok := strings.CutPrefix(app.Name, app.AppCatalogID+"-"); ok {
+		name := app.Name
+		if app.Alias != nil {
+			name = strings.TrimSuffix(name, "-"+*app.Alias)
+		}
+		if label, ok := strings.CutPrefix(name, app.AppCatalogID+"-"); ok {
 			if err := d.Set("url_label", label); err != nil {
 				return err
 			}

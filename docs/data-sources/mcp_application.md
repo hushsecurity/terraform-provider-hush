@@ -34,6 +34,7 @@ output "github_blocked_tools" {
 
 ### Read-Only
 
+- `alias` (String) The suffix that names the application's connection (shared by applications with the same one), or empty when it has none.
 - `allowed_agents` (Set of String) The agent types the application is limited to; empty when any agent may use it.
 - `app_catalog_id` (String) The catalog entry the application was created from, or 'custom-<name>' for a custom app.
 - `assign_all` (Boolean) Whether the application is granted to every user of the organization.
@@ -45,7 +46,7 @@ output "github_blocked_tools" {
 - `enabled` (Boolean) Whether the gateways serve the application. A disabled application keeps its configuration.
 - `google_project_id` (String) The Google Cloud project a Google Workspace server bills its quota to; empty for other entries.
 - `hosted` (Boolean) Whether Hush hosts the server.
-- `name` (String) The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked.
+- `name` (String) The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked, then with `alias` when set.
 - `oauth_relay` (Boolean) Whether the server's OAuth flow goes through Hush's relay.
 - `quickbooks` (List of Object) The QuickBooks company, for the 'quickbooks' entry. (see [below for nested schema](#nestedatt--quickbooks))
 - `rate_limit` (Set of Object) The caps on how many calls each caller may make to the application, its tools of one class, or one tool. (see [below for nested schema](#nestedatt--rate_limit))

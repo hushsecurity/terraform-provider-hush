@@ -18,7 +18,7 @@ const (
 		"`hush_custom_mcp_application`."
 	appCatalogIDDesc = "The catalog entry the application is created from, such as 'github', or " +
 		"a custom app's `app_catalog_id` ('custom-<name>'). Fixed at creation."
-	nameDesc          = "The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked."
+	nameDesc          = "The name agents see the application under: the catalog id, suffixed with the lowercased `url_label` when one was picked, then with `alias` when set."
 	catalogNameDesc   = "The name the catalog shows for the entry."
 	displayNameDesc   = "The name the application is shown under. Unique within the organization."
 	descriptionDesc   = "A description of the application."
@@ -29,6 +29,9 @@ const (
 		"checked at plan time against the custom app as it stands, so an address added to a " +
 		"custom app in the same apply that creates this application is refused: apply the " +
 		"custom app first."
+	aliasDesc = "Makes the application its own connection, for another account of the same server: " +
+		"named with this suffix, with its own sign-in per user. Applications without it, or with " +
+		"the same one, share a connection. Lowercase letters, digits and '-'. Fixed at creation."
 	enabledDesc       = "Whether the gateways serve the application. A disabled application keeps its configuration."
 	allowedAgentsDesc = "Limit the application to these agent types: 'claude-code', 'claude', 'cursor', 'windsurf', 'vscode' and 'openclaw'. Leave unset, or empty, to allow any agent."
 	scopesDesc        = "The OAuth scopes to request from the server. Left unset, an application starts with the catalog entry's; removing the attribute later keeps the scopes the application has. An application of a custom app is rewritten whenever the custom app's scopes change, so set scopes on one of the two, not both."
@@ -87,6 +90,13 @@ func ResourceSchema() map[string]*schema.Schema {
 				Type:         schema.TypeString,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^dep-`), "deployment_id must start with 'dep-'"),
 			},
+		},
+		"alias": {
+			Description:  aliasDesc,
+			Type:         schema.TypeString,
+			Optional:     true,
+			ForceNew:     true,
+			ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`), "must be lowercase letters, digits and '-'"),
 		},
 		"url_label": {
 			Description: urlLabelDesc,

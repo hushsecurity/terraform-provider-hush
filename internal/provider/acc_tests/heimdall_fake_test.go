@@ -336,6 +336,7 @@ func appKeys(kind string, creating bool) map[string]bool {
 	}
 	if creating {
 		keys["url_label"] = true
+		keys["alias"] = true
 	} else {
 		keys["scopes"] = true
 		keys["assignments"] = true
@@ -464,6 +465,10 @@ func (h *fakeHeimdall) createApp(w http.ResponseWriter, r *http.Request) {
 	if entry["hosted"] == true {
 		url = nil
 	}
+	alias, _ := body["alias"].(string)
+	if alias != "" {
+		name += "-" + alias
+	}
 
 	h.nextAppID++
 	id := "app-acc" + strconv.Itoa(h.nextAppID)
@@ -473,7 +478,7 @@ func (h *fakeHeimdall) createApp(w http.ResponseWriter, r *http.Request) {
 		"description":          nil, "allowed_agents": nil, "enabled": true,
 		"assignments": []any{}, "assign_all": false,
 		"url": url, "hosted": entry["hosted"], "scopes": entry["scopes"],
-		"oauth_relay": entry["oauth_relay"], "client_id": nil,
+		"oauth_relay": entry["oauth_relay"], "client_id": nil, "alias": body["alias"],
 		"tool_groups": []any{
 			map[string]any{"type": "read", "operation": "allow"},
 			map[string]any{"type": "write", "operation": "user_consent"},
@@ -482,6 +487,7 @@ func (h *fakeHeimdall) createApp(w http.ResponseWriter, r *http.Request) {
 		"tools": cloneTools(entry["tools"]),
 	}
 	delete(body, "url_label")
+	delete(body, "alias")
 	// An application of a custom app that names no OAuth client takes the
 	// custom app's (catalog_resolver.get_manual_credentials).
 	if name, custom := strings.CutPrefix(appCatalogID, "custom-"); custom && body["client_id"] == nil {
