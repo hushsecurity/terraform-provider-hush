@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
@@ -479,6 +480,11 @@ func (h *fakeHeimdall) createApp(w http.ResponseWriter, r *http.Request) {
 				h.appSecrets[id] = secret
 			}
 		}
+	}
+	// Hush's Entra app (entra.use_hush_client)
+	if slices.Contains(client.EntraMCPCatalogIDs, appCatalogID) && body["client_id"] == nil {
+		app["client_id"] = "hush-entra"
+		h.appSecrets[id] = "hush-entra-secret"
 	}
 	if problem := h.setAppFields(id, app, body); problem != "" {
 		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)

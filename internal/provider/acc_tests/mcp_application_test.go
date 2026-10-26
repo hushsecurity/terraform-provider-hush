@@ -664,3 +664,31 @@ resource "hush_mcp_application" "inherits" {
 		},
 	})
 }
+
+// Heimdall gives an Entra app with no client Hush's own; reading it back
+// must not plan a null that strips it.
+func TestAccResourceMCPApplication_hushEntraClient(t *testing.T) {
+	registerFakeCatalogEntry("m365", false)
+	const addr = "hush_mcp_application.m365"
+	config := `
+resource "hush_mcp_application" "m365" {
+  app_catalog_id = "m365"
+  display_name   = "acc-m365"
+  deployment_ids = ["` + mockDeploymentID + `"]
+}
+`
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      mcpAppsDestroyed("acc-m365"),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(addr, "client_id", "hush-entra"),
+					mcpAppSent(addr, "hush-entra-secret"),
+				),
+			},
+			{Config: config, PlanOnly: true},
+		},
+	})
+}

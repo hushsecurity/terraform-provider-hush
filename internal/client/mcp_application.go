@@ -18,6 +18,9 @@ var (
 	QuickBooksMCPCatalogID = "quickbooks"
 )
 
+// Entries that get Hush's Entra app when the application names no client.
+var EntraMCPCatalogIDs = []string{"m365", "azuredevops"}
+
 // The operations the gateway can apply to a tool call.
 var ToolOperations = []string{"allow", "block", "user_consent"}
 
