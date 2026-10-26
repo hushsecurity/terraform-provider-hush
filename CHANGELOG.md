@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.34.0] - 2026-10-26
+
+### Added
+
+* **Coralogix notification channels**: `hush_notification_channel` takes a `coralogix_config` block, with `region`, `application` (default `hush`) and a Send-Your-Data `api_key` / `api_key_wo`. Alerts and the agent gateway activity stream are sent to the region as logs; the key is validated when it is saved and never returned.
+
 ## [1.33.1] - 2026-10-26
 
 ### Fixed
@@ -762,6 +768,8 @@ resource "hush_deployment" "k8s" {
 * **Enhanced HTTP Client**: Proper error handling, token lifecycle management, and response body closure
 * **Go 1.24 Support**: Built with latest Go toolchain for optimal performance and security
 
+[1.34.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.33.1...v1.34.0
+[1.33.1]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.33.0...v1.33.1
 [1.33.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.32.0...v1.33.0
 [1.32.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.31.0...v1.32.0
 [1.31.0]: https://github.com/hushsecurity/terraform-provider-hush/compare/v1.30.0...v1.31.0
