@@ -3,6 +3,7 @@ package mcp_application
 import (
 	"maps"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -35,7 +36,8 @@ const (
 		"entry with `manual_registration`. An application of a custom app left without one " +
 		"inherits the custom app's client id and secret, and follows the custom app when they " +
 		"change. Removing it removes the client secret too, except on an application of a " +
-		"custom app, where removing it leaves the credentials the application has."
+		"custom app, where removing it leaves the credentials the application has. An application " +
+		"of `m365` or `azuredevops` left without one uses Hush's Entra app."
 	clientSecretDesc      = "The client secret of that OAuth app. Stored in Terraform state; prefer client_secret_wo. The API never returns it."
 	clientSecretWODesc    = "The client secret, kept out of Terraform state. Sent when client_secret_wo_version changes."
 	clientSecretWOVerDesc = "Change to re-send client_secret_wo. Required with it: a write-only value is not in state, so without a version a rotated secret would never be sent."
@@ -122,11 +124,13 @@ func ResourceSchema() map[string]*schema.Schema {
 			Optional:    true,
 			// An application of a custom app takes the custom app's OAuth
 			// client when it names none, and heimdall copies the custom app's
-			// later changes to it. What a read finds then is inherited, not
-			// drift, and "correcting" it to empty would send a null that
-			// strips the credentials the application was given.
+			// later changes to it; an Entra entry takes Hush's Entra app.
+			// What a read finds then is inherited, not drift, and
+			// "correcting" it to empty would send a null that strips the
+			// credentials the application was given.
 			DiffSuppressFunc: func(_, _, new string, d *schema.ResourceData) bool {
-				return new == "" && strings.HasPrefix(d.Get("app_catalog_id").(string), client.CustomAppCatalogPrefix)
+				id := d.Get("app_catalog_id").(string)
+				return new == "" && (strings.HasPrefix(id, client.CustomAppCatalogPrefix) || slices.Contains(client.EntraMCPCatalogIDs, id))
 			},
 		},
 		"client_secret": {
