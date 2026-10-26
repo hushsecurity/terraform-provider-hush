@@ -24,7 +24,7 @@ func Resource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema:        NotificationChannelResourceSchema(),
-		CustomizeDiff: customdiff.All(ValidateWebhookAuth, ValidateSplunkToken, ValidateElasticApiKey, ValidateDatadogApiKey),
+		CustomizeDiff: customdiff.All(ValidateWebhookAuth, ValidateSplunkToken, ValidateElasticApiKey, ValidateDatadogApiKey, ValidateCoralogixApiKey),
 	}
 }
 
@@ -77,7 +77,7 @@ func notificationChannelUpdate(ctx context.Context, d *schema.ResourceData, m an
 		input.Enabled = &enabled
 		hasChanges = true
 	}
-	if d.HasChanges("email_config", "webhook_config", "slack_config", "splunk_config", "elastic_config", "datadog_config") {
+	if d.HasChanges("email_config", "webhook_config", "slack_config", "splunk_config", "elastic_config", "datadog_config", "coralogix_config") {
 		_, config, err := getNotificationChannelTypeAndConfig(d)
 		if err != nil {
 			return diag.FromErr(err)
