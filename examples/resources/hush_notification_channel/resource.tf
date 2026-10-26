@@ -76,3 +76,17 @@ resource "hush_notification_channel" "elastic" {
     api_key_wo_version = "1"
   }
 }
+
+# Coralogix. Alerts and an activity stream go to the region's ingress as logs,
+# under the application (hush by default). The key is a Send-Your-Data api key,
+# proven when it is saved.
+resource "hush_notification_channel" "coralogix" {
+  name    = "coralogix"
+  enabled = true
+
+  coralogix_config {
+    region             = "eu1"
+    api_key_wo         = var.coralogix_api_key
+    api_key_wo_version = "1"
+  }
+}

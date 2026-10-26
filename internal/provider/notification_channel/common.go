@@ -52,7 +52,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config", "elastic_config", "datadog_config"},
+		ConflictsWith: []string{"webhook_config", "slack_config", "splunk_config", "elastic_config", "datadog_config", "coralogix_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"address": {
@@ -75,7 +75,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "slack_config", "splunk_config", "elastic_config", "datadog_config"},
+		ConflictsWith: []string{"email_config", "slack_config", "splunk_config", "elastic_config", "datadog_config", "coralogix_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -176,7 +176,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100, // API limit as confirmed in analysis
-		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config", "elastic_config", "datadog_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "splunk_config", "elastic_config", "datadog_config", "coralogix_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"integration_id": {
@@ -204,7 +204,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "elastic_config", "datadog_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "elastic_config", "datadog_config", "coralogix_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -268,7 +268,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "datadog_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "datadog_config", "coralogix_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"url": {
@@ -327,7 +327,7 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		Optional:      true,
 		MinItems:      1,
 		MaxItems:      100,
-		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "elastic_config"},
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "elastic_config", "coralogix_config"},
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"site": {
@@ -358,15 +358,58 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 		},
 	}
 
+	s["coralogix_config"] = &schema.Schema{
+		Description:   "Coralogix destination: alerts and an activity stream go to the region's ingress as logs. The api key is validated against Coralogix when it is saved.",
+		Type:          schema.TypeList,
+		Optional:      true,
+		MinItems:      1,
+		MaxItems:      100,
+		ConflictsWith: []string{"email_config", "webhook_config", "slack_config", "splunk_config", "elastic_config", "datadog_config"},
+		Elem: &schema.Resource{
+			Schema: map[string]*schema.Schema{
+				"region": {
+					Description: "The Coralogix region, e.g. `eu1`, `us1` or `ap1`.",
+					Type:        schema.TypeString,
+					Required:    true,
+				},
+				"application": {
+					Description: "The Coralogix application name the logs are sent under.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Default:     coralogixDefaultApplication,
+				},
+				"api_key": {
+					Description: "A Coralogix Send-Your-Data api key. Stored in Terraform state; prefer api_key_wo. The API never returns it.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+				},
+				"api_key_wo": {
+					Description: "A Coralogix Send-Your-Data api key, kept out of Terraform state. Changing it takes effect when api_key_wo_version changes.",
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					WriteOnly:   true,
+				},
+				"api_key_wo_version": {
+					Description: "Bump to re-send api_key_wo. Required with it: a write-only value is not in state, so without a version a rotated key would never be sent.",
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
+			},
+		},
+	}
+
 	return s
 }
 
 const (
-	datadogDefaultSite      = "datadoghq.com"
-	splunkCollectorPath     = "/services/collector"
-	splunkDefaultSourcetype = "hush:notification"
-	elasticBulkPath         = "/_bulk"
-	elasticDefaultIndex     = "hush-notifications"
+	coralogixDefaultApplication = "hush"
+	datadogDefaultSite          = "datadoghq.com"
+	splunkCollectorPath         = "/services/collector"
+	splunkDefaultSourcetype     = "hush:notification"
+	elasticBulkPath             = "/_bulk"
+	elasticDefaultIndex         = "hush-notifications"
 )
 
 // elasticClusterURL is the url the API stores for a cluster: the bare cluster,
@@ -624,6 +667,25 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"coralogix_config": {
+			Description: "Coralogix destination. The api key is never returned.",
+			Type:        schema.TypeList,
+			Computed:    true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"region": {
+						Description: "The Coralogix region",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+					"application": {
+						Description: "The Coralogix application name",
+						Type:        schema.TypeString,
+						Computed:    true,
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -791,6 +853,7 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	configuredTokens := existingSiemCredentials(d, "splunk_config", "token", splunkKey)
 	configuredKeys := existingSiemCredentials(d, "elastic_config", "api_key", elasticKey)
 	configuredDatadogKeys := existingSiemCredentials(d, "datadog_config", "api_key", datadogKey)
+	configuredCoralogixKeys := existingSiemCredentials(d, "coralogix_config", "api_key", coralogixKey)
 
 	if err := d.Set("email_config", nil); err != nil {
 		return fmt.Errorf("failed to clear email_config: %w", err)
@@ -809,6 +872,9 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 	}
 	if err := d.Set("datadog_config", nil); err != nil {
 		return fmt.Errorf("failed to clear datadog_config: %w", err)
+	}
+	if err := d.Set("coralogix_config", nil); err != nil {
+		return fmt.Errorf("failed to clear coralogix_config: %w", err)
 	}
 
 	switch channel.Type {
@@ -951,6 +1017,27 @@ func setNotificationChannelConfigFields(d *schema.ResourceData, channel *client.
 				return fmt.Errorf("failed to set datadog_config: %w", err)
 			}
 		}
+	case client.NotificationChannelTypeCoralogix:
+		if len(channel.Config) > 0 {
+			coralogixConfigs := make([]map[string]any, len(channel.Config))
+			for i, config := range channel.Config {
+				coralogixConfigs[i] = map[string]any{
+					"region":      config["region"],
+					"application": valueOr(config["application"], coralogixDefaultApplication),
+				}
+				if key, ok := configuredCoralogixKeys[coralogixKey(config)]; ok {
+					if key.credential != "" {
+						coralogixConfigs[i]["api_key"] = key.credential
+					}
+					if key.version != "" {
+						coralogixConfigs[i]["api_key_wo_version"] = key.version
+					}
+				}
+			}
+			if err := d.Set("coralogix_config", coralogixConfigs); err != nil {
+				return fmt.Errorf("failed to set coralogix_config: %w", err)
+			}
+		}
 	}
 
 	return nil
@@ -971,6 +1058,10 @@ func ValidateDatadogApiKey(_ context.Context, diff *schema.ResourceDiff, _ any) 
 	return validateSiemCredential(diff, "datadog_config", "api_key")
 }
 
+func ValidateCoralogixApiKey(_ context.Context, diff *schema.ResourceDiff, _ any) error {
+	return validateSiemCredential(diff, "coralogix_config", "api_key")
+}
+
 func splunkKey(config map[string]any) string  { return splunkCollectorURL(urlOf(config)) }
 func elasticKey(config map[string]any) string { return elasticClusterURL(urlOf(config)) }
 func datadogKey(config map[string]any) string {
@@ -979,6 +1070,12 @@ func datadogKey(config map[string]any) string {
 		return datadogDefaultSite
 	}
 	return site
+}
+
+// keyed by region: one destination per region
+func coralogixKey(config map[string]any) string {
+	region, _ := config["region"].(string)
+	return region
 }
 
 func validateSiemCredential(diff *schema.ResourceDiff, block, attr string) error {
@@ -1247,5 +1344,29 @@ func getNotificationChannelTypeAndConfig(d *schema.ResourceData) (client.Notific
 		}
 	}
 
-	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, splunk_config, elastic_config, or datadog_config must be specified")
+	if coralogixConfigs, ok := d.GetOk("coralogix_config"); ok {
+		configList := coralogixConfigs.([]any)
+		if len(configList) > 0 {
+			result := make([]map[string]any, len(configList))
+			for i, configInterface := range configList {
+				configMap := configInterface.(map[string]any)
+				key, _ := configMap["api_key"].(string)
+				if key == "" {
+					key = writeonly.GetNestedString(d, "coralogix_config", i, "api_key_wo")
+				}
+				if key == "" {
+					return "", nil, fmt.Errorf("coralogix_config[%d]: one of api_key or api_key_wo is required", i)
+				}
+				result[i] = map[string]any{
+					"type":        string(client.NotificationChannelTypeCoralogix),
+					"api_key":     key,
+					"region":      configMap["region"],
+					"application": configMap["application"],
+				}
+			}
+			return client.NotificationChannelTypeCoralogix, result, nil
+		}
+	}
+
+	return "", nil, fmt.Errorf("exactly one of email_config, webhook_config, slack_config, splunk_config, elastic_config, datadog_config, or coralogix_config must be specified")
 }

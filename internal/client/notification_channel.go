@@ -12,12 +12,13 @@ const notificationChannelsEndpoint = "/v1/notification_channels"
 type NotificationChannelType string
 
 const (
-	NotificationChannelTypeEmail   NotificationChannelType = "email"
-	NotificationChannelTypeWebhook NotificationChannelType = "webhook"
-	NotificationChannelTypeSlack   NotificationChannelType = "slack"
-	NotificationChannelTypeSplunk  NotificationChannelType = "splunk"
-	NotificationChannelTypeElastic NotificationChannelType = "elastic"
-	NotificationChannelTypeDatadog NotificationChannelType = "datadog"
+	NotificationChannelTypeEmail     NotificationChannelType = "email"
+	NotificationChannelTypeWebhook   NotificationChannelType = "webhook"
+	NotificationChannelTypeSlack     NotificationChannelType = "slack"
+	NotificationChannelTypeSplunk    NotificationChannelType = "splunk"
+	NotificationChannelTypeElastic   NotificationChannelType = "elastic"
+	NotificationChannelTypeDatadog   NotificationChannelType = "datadog"
+	NotificationChannelTypeCoralogix NotificationChannelType = "coralogix"
 )
 
 type ConfigBase interface {
