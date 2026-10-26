@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.35.0] - 2026-10-26
+
+### Added
+
+* **MCP application alias**: `hush_mcp_application` takes an optional `alias` (fixed at creation). It suffixes the application's `name` (e.g. `coralogix-us1-acme`), making it its own connection with its own sign-in, for another account of the same server. Applications without it, or with the same one, share a connection as before. The data source shows it too.
+
 ## [1.34.0] - 2026-10-26
 
 ### Added
