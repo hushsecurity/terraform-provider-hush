@@ -116,16 +116,20 @@ Optional:
 
 Required:
 
-- `type` (String) 'bearer' (sent as 'Authorization: Bearer <secret>'), 'basic' (sent as basic auth with `username`) or 'header' (sent as header `name`). 'bearer' and 'basic' use the Authorization header, which OAuth also needs, so they cannot be combined with `client_id`.
+- `type` (String) 'bearer' (sent as 'Authorization: Bearer <secret>'), 'basic' (sent as basic auth with `username`), 'header' (sent as header `name`) or 'client_credentials' (an OAuth client, `client_id` with the secret, that the gateway exchanges at `token_url` for access tokens it sends as bearer tokens). All but 'header' use the Authorization header, which OAuth also needs, so they cannot be combined with `client_id`.
 
 Optional:
 
 > **NOTE**: [Write-only arguments](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments) are supported in Terraform 1.11 and later.
 
+- `auth_method` (String) How the client authenticates at the token endpoint, for type 'client_credentials' only: 'basic' (the default, HTTP basic auth) or 'post' (in the form body).
+- `client_id` (String) The OAuth client id, for type 'client_credentials' only.
 - `name` (String) The header name, for type 'header' only. It cannot be 'Authorization' (use 'bearer' or 'basic') or a name `headers` already sets.
-- `secret` (String, Sensitive) The token, password or header value. Stored in Terraform state; prefer secret_wo. The API never returns it.
-- `secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The token, password or header value, kept out of Terraform state. Sent when secret_wo_version changes.
+- `scopes` (List of String) The scopes to request, for type 'client_credentials' only.
+- `secret` (String, Sensitive) The token, password, header value or client secret. Stored in Terraform state; prefer secret_wo. The API never returns it.
+- `secret_wo` (String, Sensitive, [Write-only](https://developer.hashicorp.com/terraform/language/resources/ephemeral#write-only-arguments)) The token, password, header value or client secret, kept out of Terraform state. Sent when secret_wo_version changes.
 - `secret_wo_version` (String) Change to re-send secret_wo. Required with it.
+- `token_url` (String) The token endpoint, for type 'client_credentials' only.
 - `username` (String) The user name, for type 'basic' only.
 
 

@@ -224,7 +224,7 @@ func expandHeaders(d *schema.ResourceData) map[string]string {
 
 // expandAuth returns nil when no block is written, which an update sends as
 // null to remove the credential.
-func expandAuth(d *schema.ResourceData) map[string]string {
+func expandAuth(d *schema.ResourceData) map[string]any {
 	blocks := d.Get("auth").([]any)
 	if len(blocks) == 0 || blocks[0] == nil {
 		return nil
@@ -234,10 +234,18 @@ func expandAuth(d *schema.ResourceData) map[string]string {
 	if secret == "" {
 		secret = writeonly.GetNestedString(d, "auth", 0, "secret_wo")
 	}
+	var scopes []string
+	for _, scope := range block["scopes"].([]any) {
+		scopes = append(scopes, scope.(string))
+	}
 	return client.MCPAuthInput(client.MCPAuth{
-		Type:     block["type"].(string),
-		Username: block["username"].(string),
-		Name:     block["name"].(string),
+		Type:       block["type"].(string),
+		Username:   block["username"].(string),
+		Name:       block["name"].(string),
+		ClientID:   block["client_id"].(string),
+		TokenURL:   block["token_url"].(string),
+		Scopes:     scopes,
+		AuthMethod: block["auth_method"].(string),
 	}, secret)
 }
 
@@ -277,9 +285,13 @@ func flatten(d *schema.ResourceData, app *client.CustomMCPApplication, managed b
 	var auth []any
 	if app.Auth != nil {
 		block := map[string]any{
-			"type":     app.Auth.Type,
-			"username": app.Auth.Username,
-			"name":     app.Auth.Name,
+			"type":        app.Auth.Type,
+			"username":    app.Auth.Username,
+			"name":        app.Auth.Name,
+			"client_id":   app.Auth.ClientID,
+			"token_url":   app.Auth.TokenURL,
+			"scopes":      app.Auth.Scopes,
+			"auth_method": app.Auth.AuthMethod,
 		}
 		if managed {
 			block["secret"] = d.Get("auth.0.secret")

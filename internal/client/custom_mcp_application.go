@@ -13,18 +13,25 @@ const CustomAppCatalogPrefix = "custom-"
 
 // The kinds of fixed credential an MCP server can take in place of OAuth.
 const (
-	MCPAuthTypeBearer = "bearer"
-	MCPAuthTypeBasic  = "basic"
-	MCPAuthTypeHeader = "header"
+	MCPAuthTypeBearer            = "bearer"
+	MCPAuthTypeBasic             = "basic"
+	MCPAuthTypeHeader            = "header"
+	MCPAuthTypeClientCredentials = "client_credentials"
 )
 
-var MCPAuthTypes = []string{MCPAuthTypeBearer, MCPAuthTypeBasic, MCPAuthTypeHeader}
+var MCPAuthTypes = []string{
+	MCPAuthTypeBearer, MCPAuthTypeBasic, MCPAuthTypeHeader, MCPAuthTypeClientCredentials,
+}
+
+var MCPAuthMethods = []string{"basic", "post"}
 
 // MCPAuthSecretField names, per auth type, the member that carries the secret.
 var MCPAuthSecretField = map[string]string{
 	MCPAuthTypeBearer: "token",
 	MCPAuthTypeBasic:  "password",
 	MCPAuthTypeHeader: "value",
+
+	MCPAuthTypeClientCredentials: "client_secret",
 }
 
 // MCPAuth is the non-secret part of a fixed credential, which is what the API
@@ -33,6 +40,12 @@ type MCPAuth struct {
 	Type     string `json:"type"`
 	Username string `json:"username,omitempty"` // basic only
 	Name     string `json:"name,omitempty"`     // header only
+
+	// client_credentials only
+	ClientID   string   `json:"client_id,omitempty"`
+	TokenURL   string   `json:"token_url,omitempty"`
+	Scopes     []string `json:"scopes,omitempty"`
+	AuthMethod string   `json:"auth_method,omitempty"`
 }
 
 // CustomMCPTool is a tool as a custom app describes it. The operation the
@@ -71,17 +84,25 @@ type CustomMCPApplicationInput struct {
 	Headers      map[string]string `json:"headers"`
 	ClientID     *string           `json:"client_id,omitempty"`
 	ClientSecret *string           `json:"client_secret,omitempty"`
-	Auth         map[string]string `json:"auth,omitempty"`
+	Auth         map[string]any    `json:"auth,omitempty"`
 }
 
 // MCPAuthInput builds the credential a create or update sends.
-func MCPAuthInput(auth MCPAuth, secret string) map[string]string {
-	out := map[string]string{"type": auth.Type, MCPAuthSecretField[auth.Type]: secret}
-	if auth.Username != "" {
-		out["username"] = auth.Username
+func MCPAuthInput(auth MCPAuth, secret string) map[string]any {
+	out := map[string]any{"type": auth.Type, MCPAuthSecretField[auth.Type]: secret}
+	for key, value := range map[string]string{
+		"username":    auth.Username,
+		"name":        auth.Name,
+		"client_id":   auth.ClientID,
+		"token_url":   auth.TokenURL,
+		"auth_method": auth.AuthMethod,
+	} {
+		if value != "" {
+			out[key] = value
+		}
 	}
-	if auth.Name != "" {
-		out["name"] = auth.Name
+	if len(auth.Scopes) > 0 {
+		out["scopes"] = auth.Scopes
 	}
 	return out
 }
@@ -101,7 +122,7 @@ type CustomMCPApplicationUpdate struct {
 	Headers      *map[string]string `json:"headers,omitempty"`
 	ClientID     **string           `json:"client_id,omitempty"`
 	ClientSecret **string           `json:"client_secret,omitempty"`
-	Auth         *map[string]string `json:"auth,omitempty"`
+	Auth         *map[string]any    `json:"auth,omitempty"`
 }
 
 const customMCPApplicationsEndpoint = "/v1/applications/custom"

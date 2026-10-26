@@ -115,6 +115,15 @@ func validateAuth(d *schema.ResourceDiff) error {
 	} else if set("name") {
 		return fmt.Errorf("auth: name is only valid with type %q", client.MCPAuthTypeHeader)
 	}
+	cc := authType == client.MCPAuthTypeClientCredentials
+	if cc && (!set("client_id") || !set("token_url")) {
+		return fmt.Errorf("auth: client_id and token_url are required with type %q", authType)
+	}
+	if !cc && (set("client_id") || set("token_url") || set("auth_method") ||
+		len(d.Get("auth.0.scopes").([]any)) > 0) {
+		return fmt.Errorf("auth: client_id, token_url, scopes and auth_method are only "+
+			"valid with type %q", client.MCPAuthTypeClientCredentials)
+	}
 
 	// OAuth sends its token in Authorization too, so only one of them can.
 	if authType != client.MCPAuthTypeHeader && writeonly.IsSet(d, "client_id") {
