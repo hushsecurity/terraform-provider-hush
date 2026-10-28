@@ -249,7 +249,7 @@ Optional:
 - `auth` (Block List, Max: 1) Credential the endpoint requires. The API never returns it, so it is only ever sent. (see [below for nested schema](#nestedblock--webhook_config--auth))
 - `method` (String) HTTP method for webhook requests. POST is the only one the API takes.
 - `onprem_deployment_id` (String) Deliver through this on-prem deployment's access bridge instead of directly over the internet. Bridge-bound urls may use http or https on any port and may name an internal host; direct ones must be https on 443 with a public TLD.
-- `payload_format` (String) text is the human-readable blob; json is a structured envelope for SIEM/SOAR consumers.
+- `payload_format` (String) json: one event per issue. text (deprecated): one summary per cycle listing a capped number of issues; the rest are never delivered. Unset, a new endpoint takes json and an existing one keeps its format.
 - `tls_verify` (Boolean) Whether to validate the endpoint's TLS certificate. Only bridge-bound endpoints may turn this off, for an internal endpoint served from a private CA.
 
 Read-Only:

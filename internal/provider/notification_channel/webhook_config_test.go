@@ -3,6 +3,7 @@ package notification_channel
 import (
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 )
@@ -54,6 +55,25 @@ func TestWebhookConfigSendsTheNewFields(t *testing.T) {
 	}
 	if payload["tls_verify"] != false {
 		t.Errorf("tls_verify not sent: %v", payload["tls_verify"])
+	}
+}
+
+func TestTextFormatWarns(t *testing.T) {
+	if d := validatePayloadFormat("text", nil); len(d) != 1 || d[0].Severity != diag.Warning {
+		t.Errorf("text: got %v, want one warning", d)
+	}
+	if d := validatePayloadFormat("json", nil); len(d) != 0 {
+		t.Errorf("json: got %v", d)
+	}
+	if d := validatePayloadFormat("xml", nil); !d.HasError() {
+		t.Errorf("xml: got %v, want an error", d)
+	}
+}
+
+// Unset, the api picks the format: json for a new endpoint.
+func TestWebhookConfigOmitsAnUnsetFormat(t *testing.T) {
+	if payload := webhookPayload(t, map[string]any{"payload_format": ""}); payload["payload_format"] != nil {
+		t.Errorf("format sent: %v", payload["payload_format"])
 	}
 }
 
