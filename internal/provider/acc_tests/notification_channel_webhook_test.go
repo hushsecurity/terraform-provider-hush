@@ -94,8 +94,7 @@ func TestAccResourceNotificationChannelWebhook_bridgeAndAuth(t *testing.T) {
 	})
 }
 
-// A direct endpoint keeps the defaults it always had, so an existing
-// configuration is unaffected by the new fields.
+// A new direct endpoint takes the api's defaults; the format is the api's to pick.
 func TestAccResourceNotificationChannelWebhook_defaults(t *testing.T) {
 	resource.ParallelTest(t, resource.TestCase{
 		ProviderFactories: providerFactories,
@@ -104,9 +103,6 @@ func TestAccResourceNotificationChannelWebhook_defaults(t *testing.T) {
 			{
 				Config: webhookDefaultsStep,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(
-						"hush_notification_channel.plain", "webhook_config.0.payload_format", "text",
-					),
 					resource.TestCheckResourceAttr(
 						"hush_notification_channel.plain", "webhook_config.0.tls_verify", "true",
 					),
@@ -118,6 +114,21 @@ func TestAccResourceNotificationChannelWebhook_defaults(t *testing.T) {
 					),
 				),
 			},
+		},
+	})
+}
+
+// Dropping the format from the config keeps a text endpoint text, with no diff.
+func TestAccResourceNotificationChannelWebhook_unsetKeepsText(t *testing.T) {
+	check := resource.TestCheckResourceAttr(
+		"hush_notification_channel.plain", "webhook_config.0.payload_format", "text",
+	)
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("notification_channel", "v1/notification_channels"),
+		Steps: []resource.TestStep{
+			{Config: webhookTextStep, Check: check},
+			{Config: webhookDefaultsStep, Check: check},
 		},
 	})
 }
@@ -262,6 +273,16 @@ resource "hush_notification_channel" "bridged" {
       credential_wo         = "Splunk rotated-456"
       credential_wo_version = "2"
     }
+  }
+}
+`
+	webhookTextStep = `
+resource "hush_notification_channel" "plain" {
+  name        = "plain-webhook"
+  description = "unchanged by the new fields"
+  webhook_config {
+    url            = "https://example.com/webhook"
+    payload_format = "text"
   }
 }
 `

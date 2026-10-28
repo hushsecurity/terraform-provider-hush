@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
@@ -98,14 +99,12 @@ func NotificationChannelResourceSchema() map[string]*schema.Schema {
 					Optional:    true,
 				},
 				"payload_format": {
-					Description: "text is the human-readable blob; json is a structured envelope for SIEM/SOAR consumers.",
+					Description: "json: one event per issue. text (deprecated): one summary per cycle listing a capped number of issues; the rest are never delivered. Unset, a new endpoint takes json and an existing one keeps its format.",
 					Type:        schema.TypeString,
 					Optional:    true,
-					Default:     string(client.WebhookPayloadFormatText),
-					ValidateFunc: validation.StringInSlice([]string{
-						string(client.WebhookPayloadFormatText),
-						string(client.WebhookPayloadFormatJSON),
-					}, false),
+					// unset: the api's default for a new endpoint, the state for an existing one
+					Computed:         true,
+					ValidateDiagFunc: validatePayloadFormat,
 				},
 				"tls_verify": {
 					Description: "Whether to validate the endpoint's TLS certificate. Only bridge-bound endpoints may turn this off, for an internal endpoint served from a private CA.",
@@ -527,7 +526,7 @@ func NotificationChannelDataSourceSchema() map[string]*schema.Schema {
 						Computed:    true,
 					},
 					"payload_format": {
-						Description: "text or json",
+						Description: "json, or text (deprecated)",
 						Type:        schema.TypeString,
 						Computed:    true,
 					},
@@ -789,6 +788,23 @@ func urlOf(config map[string]any) string {
 
 // valueOr keeps a field the api omitted at its schema default, rather than
 // letting d.Set store a zero that plans as drift.
+// Only a configured value is validated, so relying on the default stays quiet.
+func validatePayloadFormat(v any, path cty.Path) diag.Diagnostics {
+	diags := validation.ToDiagFunc(validation.StringInSlice([]string{
+		string(client.WebhookPayloadFormatText),
+		string(client.WebhookPayloadFormatJSON),
+	}, false))(v, path)
+	if v == string(client.WebhookPayloadFormatText) {
+		diags = append(diags, diag.Diagnostic{
+			Severity:      diag.Warning,
+			Summary:       `payload_format "text" is deprecated`,
+			Detail:        "It lists a capped number of issues per cycle and the rest are never delivered. Use json, one event per issue.",
+			AttributePath: path,
+		})
+	}
+	return diags
+}
+
 func valueOr[T any](value any, fallback T) any {
 	if value == nil {
 		return fallback
