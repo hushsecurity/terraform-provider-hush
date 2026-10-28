@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.36.0] - 2026-10-28
+
+### Deprecated
+
+* **Text webhook payloads**: `payload_format = "text"` on a `webhook_config` is deprecated, and setting it warns at plan time: it sends one summary per cycle listing a capped number of issues and the rest are never delivered, while `json` sends one event per issue.
+
+### Changed
+
+* **`payload_format` default**: unset, a new webhook endpoint gets `json`. An existing endpoint keeps its format, so there is no plan diff.
+
 ## [1.35.0] - 2026-10-26
 
 ### Added
