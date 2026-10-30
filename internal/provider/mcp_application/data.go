@@ -19,7 +19,10 @@ const (
 
 func DataSource() *schema.Resource {
 	s := dsschema.FromResource(ResourceSchema(), dsschema.Options{
-		Drop: []string{"client_secret", "client_secret_wo", "client_secret_wo_version"},
+		Drop: []string{
+			"client_secret", "client_secret_wo", "client_secret_wo_version",
+			"auth.secret", "auth.secret_wo", "auth.secret_wo_version",
+		},
 		Descriptions: map[string]string{
 			"app_catalog_id":    "The catalog entry the application was created from, or 'custom-<name>' for a custom app.",
 			"deployment_ids":    "The deployments whose gateways serve the application.",
@@ -28,6 +31,7 @@ func DataSource() *schema.Resource {
 			"allowed_agents":    "The agent types the application is limited to; empty when any agent may use it.",
 			"scopes":            "The OAuth scopes the application requests from the server.",
 			"client_id":         "The client id of the OAuth app registered with the server, or empty when there is none.",
+			"auth":              "The fixed credential the gateway presents to the server, without its secret; empty when there is none. An application of a custom app shows the custom app's.",
 			"google_project_id": "The Google Cloud project a Google Workspace server bills its quota to; empty for other entries.",
 			"quickbooks":        "The QuickBooks company, for the 'quickbooks' entry.",
 			"assign_all":        "Whether the application is granted to every user of the organization.",
@@ -87,7 +91,7 @@ func applicationDataRead(ctx context.Context, d *schema.ResourceData, m any) dia
 		return diag.FromErr(err)
 	}
 	d.SetId(app.ID)
-	if err := flatten(d, app); err != nil {
+	if err := flatten(d, app, false); err != nil {
 		return diag.FromErr(err)
 	}
 	return nil

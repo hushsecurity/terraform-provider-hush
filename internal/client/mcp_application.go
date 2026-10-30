@@ -73,6 +73,7 @@ type MCPApplication struct {
 	ClientID           *string      `json:"client_id"`
 	OAuthRelay         bool         `json:"oauth_relay"`
 	Alias              *string      `json:"alias"`
+	Auth               *MCPAuth     `json:"auth"`
 
 	// Returned by the Google and QuickBooks routes only.
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
@@ -120,6 +121,8 @@ type MCPApplicationInput struct {
 	ClientSecret  *string  `json:"client_secret,omitempty"`
 	URLLabel      *string  `json:"url_label,omitempty"`
 	Alias         *string  `json:"alias,omitempty"`
+	// Built with MCPAuthInput
+	Auth map[string]any `json:"auth,omitempty"`
 
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
 	QuickBooksCompanyID *string `json:"quickbooks_company_id,omitempty"`
@@ -139,6 +142,8 @@ type MCPApplicationUpdate struct {
 	Enabled       *bool         `json:"enabled,omitempty"`
 	ClientID      **string      `json:"client_id,omitempty"`
 	ClientSecret  **string      `json:"client_secret,omitempty"`
+	// Replaces the credential, which can't be removed
+	Auth map[string]any `json:"auth,omitempty"`
 
 	GoogleProjectID     *string `json:"google_project_id,omitempty"`
 	QuickBooksCompanyID *string `json:"quickbooks_company_id,omitempty"`

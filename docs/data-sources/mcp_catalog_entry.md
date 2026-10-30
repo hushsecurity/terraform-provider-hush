@@ -37,6 +37,8 @@ output "datadog_destructive_tools" {
 
 ### Read-Only
 
+- `auth_required` (Boolean) Whether the server has no OAuth, so an application of it requires `auth`.
+- `auth_types` (List of String) The fixed credentials an application of the entry can take in `auth` instead of per-user OAuth: 'bearer', 'basic', 'header' or 'client_credentials'.
 - `category` (String) The catalog category the server is listed under.
 - `display_name` (String) The name the catalog shows for the server.
 - `hosted` (Boolean) Whether Hush hosts the server itself. A hosted server is reachable only from gateways Hush runs, so an application made from it can only be placed on deployments of kind 'hosted'.
@@ -45,7 +47,7 @@ output "datadog_destructive_tools" {
 - `oauth_relay` (Boolean) Whether the server's OAuth flow goes through Hush's relay.
 - `scopes` (List of String) The OAuth scopes an application made from the entry requests by default.
 - `tools` (List of Object) The tools the server offers, which an application copies when it is created. (see [below for nested schema](#nestedatt--tools))
-- `urls` (List of Object) The addresses the server is reachable at. When there is more than one, an application picks one by its label through `url_label`. Empty for a hosted server, whose address is Hush's to choose. (see [below for nested schema](#nestedatt--urls))
+- `urls` (List of Object) The addresses the server is reachable at. When there is more than one, an application picks one by its label through `url_label`. A hosted server's addresses are Hush's own, so only their labels are listed, with an empty url; one with a single address lists none. (see [below for nested schema](#nestedatt--urls))
 
 <a id="nestedatt--tools"></a>
 ### Nested Schema for `tools`

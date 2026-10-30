@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.37.0] - 2026-10-30
+
+### Added
+
+* **Auth on catalog MCP applications**: `hush_mcp_application` takes an `auth` block for an entry that accepts a fixed credential (see the entry's new `auth_types`): `bearer`, `basic`, `header`, or `client_credentials` with `client_id` and the secret in `secret` / `secret_wo`. For `client_credentials` the entry sets the token URL from `url_label`. An entry with `auth_required`, such as CrowdStrike Falcon, needs the block. A new secret or client id is sent in place; removing the block replaces the application.
+* **`hush_mcp_catalog_entry`**: `auth_types` and `auth_required`.
+
+### Fixed
+
+* **`url_label` on hosted entries with several regions**: it was refused at plan time; a hosted entry's `urls` now lists its labels, with an empty `url`.
+
 ## [1.36.0] - 2026-10-28
 
 ### Deprecated

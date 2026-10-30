@@ -20,8 +20,10 @@ const (
 	hostedDesc             = "Whether Hush hosts the server itself. A hosted server is reachable only from gateways Hush runs, so an application made from it can only be placed on deployments of kind 'hosted'."
 	manualRegistrationDesc = "Whether the server does not register OAuth clients on its own, so an application made from it needs `client_id` and `client_secret` from an OAuth app you registered with the provider."
 	oauthRelayDesc         = "Whether the server's OAuth flow goes through Hush's relay."
+	authTypesDesc          = "The fixed credentials an application of the entry can take in `auth` instead of per-user OAuth: 'bearer', 'basic', 'header' or 'client_credentials'."
+	authRequiredDesc       = "Whether the server has no OAuth, so an application of it requires `auth`."
 	scopesDesc             = "The OAuth scopes an application made from the entry requests by default."
-	urlsDesc               = "The addresses the server is reachable at. When there is more than one, an application picks one by its label through `url_label`. Empty for a hosted server, whose address is Hush's to choose."
+	urlsDesc               = "The addresses the server is reachable at. When there is more than one, an application picks one by its label through `url_label`. A hosted server's addresses are Hush's own, so only their labels are listed, with an empty url; one with a single address lists none."
 	urlLabelDesc           = "The label that names the address, or empty when the entry has a single one."
 	urlURLDesc             = "The address of the server's MCP endpoint."
 	toolsDesc              = "The tools the server offers, which an application copies when it is created."
@@ -45,6 +47,13 @@ func DataSource() *schema.Resource {
 			"hosted":              {Description: hostedDesc, Type: schema.TypeBool, Computed: true},
 			"manual_registration": {Description: manualRegistrationDesc, Type: schema.TypeBool, Computed: true},
 			"oauth_relay":         {Description: oauthRelayDesc, Type: schema.TypeBool, Computed: true},
+			"auth_required":       {Description: authRequiredDesc, Type: schema.TypeBool, Computed: true},
+			"auth_types": {
+				Description: authTypesDesc,
+				Type:        schema.TypeList,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
 			"scopes": {
 				Description: scopesDesc,
 				Type:        schema.TypeList,
@@ -104,6 +113,8 @@ func catalogEntryRead(ctx context.Context, d *schema.ResourceData, m any) diag.D
 		"hosted":              entry.Hosted,
 		"manual_registration": entry.ManualRegistration,
 		"oauth_relay":         entry.OAuthRelay,
+		"auth_types":          entry.AuthTypes,
+		"auth_required":       entry.AuthRequired,
 		"scopes":              entry.Scopes,
 		"urls":                urls,
 		"tools":               tools,

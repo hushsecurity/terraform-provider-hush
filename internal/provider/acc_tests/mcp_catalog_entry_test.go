@@ -22,6 +22,9 @@ data "hush_mcp_catalog_entry" "quickbooks" {
 data "hush_mcp_catalog_entry" "slack" {
   app_catalog_id = "slack"
 }
+data "hush_mcp_catalog_entry" "crowdstrike" {
+  app_catalog_id = "crowdstrike"
+}
 `,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.datadog", "id", "datadog"),
@@ -38,6 +41,13 @@ data "hush_mcp_catalog_entry" "slack" {
 					// A single address carries no label, which reads as empty.
 					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.slack", "urls.0.label", ""),
 					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.slack", "scopes.#", "2"),
+					// A hosted entry with several addresses lists their labels only.
+					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.crowdstrike", "urls.#", "2"),
+					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.crowdstrike", "urls.1.label", "EU-1"),
+					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.crowdstrike", "urls.1.url", ""),
+					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.crowdstrike", "auth_types.0", "client_credentials"),
+					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.crowdstrike", "auth_required", "true"),
+					resource.TestCheckResourceAttr("data.hush_mcp_catalog_entry.datadog", "auth_required", "false"),
 				),
 			},
 		},
