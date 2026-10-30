@@ -38,6 +38,8 @@ type MCPCatalogEntry struct {
 	Tools              []MCPTool   `json:"tools"`
 	ManualRegistration bool        `json:"manual_registration"`
 	OAuthRelay         bool        `json:"oauth_relay"`
+	AuthTypes          []string    `json:"auth_types"`
+	AuthRequired       bool        `json:"auth_required"`
 }
 
 // GetMCPCatalogEntry reads one entry of the built-in catalog. A custom app's

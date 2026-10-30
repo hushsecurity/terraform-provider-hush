@@ -48,6 +48,16 @@ const (
 	quickbooksDesc        = "The QuickBooks company the server works on. Required, and only allowed, for the 'quickbooks' entry."
 	qbCompanyIDDesc       = "The QuickBooks company (realm) id."
 	qbSandboxDesc         = "Whether the company is a sandbox one, reached with the Intuit app's development keys."
+	authDesc              = "A fixed credential the gateway presents to the server instead of per-user OAuth, for an entry that takes one (the catalog entry's `auth_types`). Required for an entry with `auth_required`. Removing it replaces the application."
+	authTypeDesc          = "One of the entry's `auth_types`: 'bearer', 'basic', 'header' or 'client_credentials'."
+	authUsernameDesc      = "The user name, for type 'basic'."
+	authNameDesc          = "The header the secret is sent in, for type 'header'."
+	authClientIDDesc      = "The client id, for type 'client_credentials'."
+	authTokenURLDesc      = "The token endpoint the gateway gets access tokens from, for type 'client_credentials'. Set by the entry, from `url_label`."
+	authMethodDesc        = "How the client authenticates to the token endpoint, 'basic' or 'post', for type 'client_credentials'. Set by the entry."
+	authSecretDesc        = "The token, password, header value or client secret. Stored in Terraform state; prefer secret_wo. The API never returns it."
+	authSecretWODesc      = "The secret, kept out of Terraform state."
+	authSecretWOVerDesc   = "Change to send a new secret_wo. Required with it: a write-only value is not in state, so without a version a new secret would never be sent."
 	urlDesc               = "The address the gateway reaches the server at. Empty for a server Hush hosts."
 	hostedDesc            = "Whether Hush hosts the server."
 	oauthRelayDesc        = "Whether the server's OAuth flow goes through Hush's relay."
@@ -185,6 +195,43 @@ func ResourceSchema() map[string]*schema.Schema {
 					ValidateFunc: validation.StringMatch(qbCompanyID, "must be up to 20 digits"),
 				},
 				"sandbox": {Description: qbSandboxDesc, Type: schema.TypeBool, Optional: true, Default: false},
+			}},
+		},
+		"auth": {
+			Description: authDesc,
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{Schema: map[string]*schema.Schema{
+				"type": {
+					Description:  authTypeDesc,
+					Type:         schema.TypeString,
+					Required:     true,
+					ValidateFunc: validation.StringInSlice(client.MCPAuthTypes, false),
+				},
+				"username":    {Description: authUsernameDesc, Type: schema.TypeString, Optional: true},
+				"name":        {Description: authNameDesc, Type: schema.TypeString, Optional: true},
+				"client_id":   {Description: authClientIDDesc, Type: schema.TypeString, Optional: true},
+				"token_url":   {Description: authTokenURLDesc, Type: schema.TypeString, Computed: true},
+				"auth_method": {Description: authMethodDesc, Type: schema.TypeString, Computed: true},
+				"secret": {
+					Description: authSecretDesc,
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+				},
+				"secret_wo": {
+					Description: authSecretWODesc,
+					Type:        schema.TypeString,
+					Optional:    true,
+					Sensitive:   true,
+					WriteOnly:   true,
+				},
+				"secret_wo_version": {
+					Description: authSecretWOVerDesc,
+					Type:        schema.TypeString,
+					Optional:    true,
+				},
 			}},
 		},
 		"url":         {Description: urlDesc, Type: schema.TypeString, Computed: true},

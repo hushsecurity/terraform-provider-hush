@@ -100,3 +100,19 @@ resource "hush_mcp_application" "internal_tools_eu" {
   deployment_ids = [hush_deployment.gateway.id]
   url_label      = "eu"
 }
+
+# CrowdStrike Falcon takes only client credentials: pick the region, and the
+# entry sets the token URL.
+resource "hush_mcp_application" "falcon" {
+  app_catalog_id = "crowdstrike"
+  display_name   = "CrowdStrike Falcon"
+  deployment_ids = [hush_deployment.hosted_gateway.id]
+  url_label      = "EU-1"
+
+  auth {
+    type              = "client_credentials"
+    client_id         = "0123456789abcdef0123456789abcdef"
+    secret_wo         = var.falcon_client_secret
+    secret_wo_version = "1"
+  }
+}

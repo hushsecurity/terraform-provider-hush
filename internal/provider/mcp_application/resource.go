@@ -67,6 +67,7 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 			input.ClientSecret = &secret
 		}
 	}
+	input.Auth = expandAuth(d)
 	if v, ok := d.GetOk("google_project_id"); ok {
 		project := v.(string)
 		input.GoogleProjectID = &project
@@ -136,7 +137,7 @@ func applicationRead(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 		}
 		return diag.FromErr(err)
 	}
-	if err := flatten(d, app); err != nil {
+	if err := flatten(d, app, true); err != nil {
 		return diag.FromErr(err)
 	}
 	return nil
@@ -239,6 +240,12 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		}
 		input.ClientSecret = &secret
 		changed = true
+	}
+	if d.HasChange("auth") {
+		if auth := expandAuth(d); auth != nil {
+			input.Auth = auth
+			changed = true
+		}
 	}
 	if d.HasChange("google_project_id") {
 		project := d.Get("google_project_id").(string)
@@ -344,6 +351,24 @@ func quickbooks(d *schema.ResourceData) (company string, sandbox bool, ok bool) 
 	return block["company_id"].(string), block["sandbox"].(bool), true
 }
 
+func expandAuth(d *schema.ResourceData) map[string]any {
+	blocks := d.Get("auth").([]any)
+	if len(blocks) == 0 || blocks[0] == nil {
+		return nil
+	}
+	block := blocks[0].(map[string]any)
+	secret, _ := block["secret"].(string)
+	if secret == "" {
+		secret = writeonly.GetNestedString(d, "auth", 0, "secret_wo")
+	}
+	return client.MCPAuthInput(client.MCPAuth{
+		Type:     block["type"].(string),
+		Username: block["username"].(string),
+		Name:     block["name"].(string),
+		ClientID: block["client_id"].(string),
+	}, secret)
+}
+
 func clientSecret(d *schema.ResourceData) string {
 	return writeonly.GetString(d, "client_secret", "client_secret_wo")
 }
@@ -366,14 +391,15 @@ func deref[T any](p *T) T {
 	return *p
 }
 
-// flatten writes what heimdall returns. It never returns the client secret,
-// so that and its version are left as the configuration last set them.
+// flatten writes what heimdall returns. It never returns the client secret or
+// the auth secret, so a managed resource leaves those and their versions as the
+// configuration last set them.
 //
 // url_label is not returned either. It survives in the name, lowercased, as
 // its suffix (before the alias), which is all an import has to go on; the
 // schema compares labels without regard to case, so that is enough to keep a
 // configured label from planning a replacement.
-func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
+func flatten(d *schema.ResourceData, app *client.MCPApplication, managed bool) error {
 	if err := d.Set("alias", deref(app.Alias)); err != nil {
 		return err
 	}
@@ -410,6 +436,26 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
 		}}
 	}
 
+	var auth []any
+	// An application of a custom app inherits the custom app's auth, which
+	// its configuration doesn't write.
+	inherited := managed && strings.HasPrefix(app.AppCatalogID, client.CustomAppCatalogPrefix)
+	if app.Auth != nil && !inherited {
+		block := map[string]any{
+			"type":        app.Auth.Type,
+			"username":    app.Auth.Username,
+			"name":        app.Auth.Name,
+			"client_id":   app.Auth.ClientID,
+			"token_url":   app.Auth.TokenURL,
+			"auth_method": app.Auth.AuthMethod,
+		}
+		if managed {
+			block["secret"] = d.Get("auth.0.secret")
+			block["secret_wo_version"] = d.Get("auth.0.secret_wo_version")
+		}
+		auth = []any{block}
+	}
+
 	values := map[string]any{
 		"app_catalog_id":       app.AppCatalogID,
 		"name":                 app.Name,
@@ -425,6 +471,7 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication) error {
 		"client_id":            deref(app.ClientID),
 		"google_project_id":    deref(app.GoogleProjectID),
 		"quickbooks":           qb,
+		"auth":                 auth,
 		"url":                  deref(app.URL),
 		"hosted":               app.Hosted,
 		"oauth_relay":          app.OAuthRelay,

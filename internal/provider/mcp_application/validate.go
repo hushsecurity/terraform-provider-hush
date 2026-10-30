@@ -28,6 +28,12 @@ func customizeDiff(ctx context.Context, d *schema.ResourceDiff, m any) error {
 	if err := planToolsRecompute(d); err != nil {
 		return err
 	}
+	if err := validateAuth(d); err != nil {
+		return err
+	}
+	if err := forceNewOnAuthRemoval(d); err != nil {
+		return err
+	}
 	if !d.NewValueKnown("app_catalog_id") {
 		return nil
 	}
@@ -36,9 +42,10 @@ func customizeDiff(ctx context.Context, d *schema.ResourceDiff, m any) error {
 		return err
 	}
 	// url_label and the credentials are only judged against the entry at
-	// creation: url_label cannot change afterwards, and a credential the entry
-	// needs was already given or the application would not exist.
-	if d.Id() != "" || m == nil {
+	// creation or when auth changes: url_label cannot change afterwards, and
+	// a credential the entry needs was already given or the application would
+	// not exist.
+	if (d.Id() != "" && !d.HasChange("auth")) || m == nil {
 		return nil
 	}
 	return validateAgainstEntry(ctx, d, m.(*client.Client), appCatalogID)
@@ -76,6 +83,8 @@ type entryShape struct {
 	labels             []string // one per address; empty strings for unlabelled ones
 	manualRegistration bool
 	tools              []string // the tools an application of it starts with
+	authTypes          []string
+	authRequired       bool
 }
 
 // validateAgainstEntry reads the entry the application is created from. An
@@ -110,16 +119,16 @@ func validateAgainstEntry(ctx context.Context, d *schema.ResourceDiff, c *client
 			// again at apply.
 			return nil
 		}
-		// A hosted entry has exactly one address, Hush's own, which the API
-		// leaves out; whatever it does list is not what url_label picks from.
-		if entry.Hosted {
+		for _, option := range entry.URLs {
+			shape.labels = append(shape.labels, labelOf(option))
+		}
+		// A hosted entry lists only labelled addresses, so none means one.
+		if len(shape.labels) == 0 {
 			shape.labels = []string{""}
-		} else {
-			for _, option := range entry.URLs {
-				shape.labels = append(shape.labels, labelOf(option))
-			}
 		}
 		shape.manualRegistration = entry.ManualRegistration
+		shape.authTypes = entry.AuthTypes
+		shape.authRequired = entry.AuthRequired
 		for _, tool := range entry.Tools {
 			shape.tools = append(shape.tools, tool.Name)
 		}
@@ -134,9 +143,13 @@ func validateAgainstEntry(ctx context.Context, d *schema.ResourceDiff, c *client
 	if err := validateToolNames(d, appCatalogID, shape.tools); err != nil {
 		return err
 	}
-	// heimdall refuses the create unless it gets both halves.
+	if err := validateAuthType(d, appCatalogID, shape); err != nil {
+		return err
+	}
+	// heimdall refuses the create unless it gets both halves, or auth.
 	hasSecret := writeonly.IsSet(d, "client_secret") || writeonly.IsSet(d, "client_secret_wo")
-	if shape.manualRegistration && (!writeonly.IsSet(d, "client_id") || !hasSecret) {
+	hasAuth := !d.NewValueKnown("auth") || len(d.Get("auth").([]any)) > 0
+	if shape.manualRegistration && !hasAuth && (!writeonly.IsSet(d, "client_id") || !hasSecret) {
 		return fmt.Errorf("client_id: %q needs an OAuth app you registered with it; "+
 			"set client_id and client_secret or client_secret_wo", appCatalogID)
 	}
@@ -203,6 +216,80 @@ func validateRateLimitToolNames(d *schema.ResourceDiff, appCatalogID string, too
 			return fmt.Errorf("rate_limit: %q has no tool %q (see the hush_mcp_catalog_entry "+
 				"data source for its tools)", appCatalogID, name)
 		}
+	}
+	return nil
+}
+
+// validateAuth checks the auth block on its own; validateAuthType checks it
+// against the entry.
+func validateAuth(d *schema.ResourceDiff) error {
+	if !d.NewValueKnown("auth") || len(d.Get("auth").([]any)) == 0 {
+		return nil
+	}
+	set := func(name string) bool { return writeonly.IsSetNested(d, "auth", 0, name) }
+	switch {
+	case set("secret") && set("secret_wo"):
+		return fmt.Errorf("auth: secret and secret_wo are mutually exclusive")
+	case !set("secret") && !set("secret_wo"):
+		return fmt.Errorf("auth: one of secret or secret_wo is required")
+	case set("secret_wo") && !set("secret_wo_version"):
+		return fmt.Errorf("auth: secret_wo requires secret_wo_version")
+	}
+	if !d.NewValueKnown("auth.0.type") {
+		return nil
+	}
+	authType := d.Get("auth.0.type").(string)
+	for _, rule := range [][2]string{
+		{"username", client.MCPAuthTypeBasic},
+		{"name", client.MCPAuthTypeHeader},
+		{"client_id", client.MCPAuthTypeClientCredentials},
+	} {
+		field, wantType := rule[0], rule[1]
+		if authType == wantType && !set(field) {
+			return fmt.Errorf("auth: %s is required with type %q", field, authType)
+		}
+		if authType != wantType && set(field) {
+			return fmt.Errorf("auth: %s is only valid with type %q", field, wantType)
+		}
+	}
+	// OAuth sends its token in Authorization too, so only one of them can.
+	if authType != client.MCPAuthTypeHeader && writeonly.IsSet(d, "client_id") {
+		return fmt.Errorf("auth: type %q sets the Authorization header, which OAuth needs "+
+			"for client_id; use type %q instead", authType, client.MCPAuthTypeHeader)
+	}
+	return nil
+}
+
+func validateAuthType(d *schema.ResourceDiff, appCatalogID string, shape entryShape) error {
+	if !d.NewValueKnown("auth") {
+		return nil
+	}
+	if len(d.Get("auth").([]any)) == 0 {
+		if shape.authRequired {
+			return fmt.Errorf("auth: %q takes no OAuth, so an auth block is required (type %s)",
+				appCatalogID, strings.Join(shape.authTypes, " or "))
+		}
+		return nil
+	}
+	if !d.NewValueKnown("auth.0.type") {
+		return nil
+	}
+	authType := d.Get("auth.0.type").(string)
+	if !slices.Contains(shape.authTypes, authType) {
+		if len(shape.authTypes) == 0 {
+			return fmt.Errorf("auth: %q takes no auth block", appCatalogID)
+		}
+		return fmt.Errorf("auth: %q takes type %s, not %q",
+			appCatalogID, strings.Join(shape.authTypes, " or "), authType)
+	}
+	return nil
+}
+
+// heimdall replaces an application's auth but can't remove it.
+func forceNewOnAuthRemoval(d *schema.ResourceDiff) error {
+	old, new := d.GetChange("auth")
+	if d.Id() != "" && len(old.([]any)) > 0 && len(new.([]any)) == 0 {
+		return d.ForceNew("auth")
 	}
 	return nil
 }

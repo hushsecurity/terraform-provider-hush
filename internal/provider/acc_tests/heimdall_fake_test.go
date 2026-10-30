@@ -61,7 +61,8 @@ func registerFakeCatalogEntry(id string, manualRegistration bool) {
 
 // fakeCatalog holds one entry of each shape an application treats
 // differently: several labelled addresses, a single unlabelled one that needs
-// manually registered OAuth credentials, and a server Hush hosts.
+// manually registered OAuth credentials, a server Hush hosts, and a hosted one
+// per region that takes only client credentials.
 func fakeCatalog() map[string]map[string]any {
 	tools := []map[string]any{
 		{"name": "search", "type": "read", "description": "Search", "operation": nil},
@@ -89,6 +90,20 @@ func fakeCatalog() map[string]map[string]any {
 			"urls":   []map[string]any{{"label": nil, "url": "https://quickbooks.hosted.internal/mcp"}},
 			"hosted": true, "scopes": []string{"com.intuit.quickbooks.accounting"}, "tools": tools,
 			"manual_registration": true, "oauth_relay": true,
+		},
+		"crowdstrike": {
+			"display_name": "CrowdStrike Falcon", "category": "Security",
+			"urls": []map[string]any{
+				{"label": label("US-1"), "url": "http://falcon-mcp.internal/us-1/mcp"},
+				{"label": label("EU-1"), "url": "http://falcon-mcp.internal/eu-1/mcp"},
+			},
+			"hosted": true, "scopes": []string{}, "tools": tools,
+			"manual_registration": false, "oauth_relay": false,
+			"auth_types": []string{"client_credentials"}, "auth_required": true,
+			"token_urls": map[string]string{
+				"US-1": "https://api.crowdstrike.com/oauth2/token",
+				"EU-1": "https://api.eu-1.crowdstrike.com/oauth2/token",
+			},
 		},
 	}
 }
@@ -337,10 +352,12 @@ func appKeys(kind string, creating bool) map[string]bool {
 	if creating {
 		keys["url_label"] = true
 		keys["alias"] = true
+		keys["auth"] = true
 	} else {
 		keys["scopes"] = true
 		keys["assignments"] = true
 		keys["assign_all"] = true
+		keys["auth"] = true
 	}
 	switch {
 	case slices.Contains(googleKinds, kind):
@@ -485,6 +502,16 @@ func (h *fakeHeimdall) createApp(w http.ResponseWriter, r *http.Request) {
 			map[string]any{"type": "destructive", "operation": "block"},
 		},
 		"tools": cloneTools(entry["tools"]),
+	}
+	if problem := fakeCatalogAuth(entry, label, body); problem != "" {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
+		return
+	}
+	if secret, ok := body["auth_secret"]; ok {
+		app["auth"] = body["auth"]
+		h.appSecrets[id] = secret
+		delete(body, "auth")
+		delete(body, "auth_secret")
 	}
 	delete(body, "url_label")
 	delete(body, "alias")
@@ -641,6 +668,12 @@ func (h *fakeHeimdall) patchApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	updated := maps.Clone(app)
+	if _, ok := body["auth"]; ok {
+		if problem := h.patchAuth(r.PathValue("id"), updated, body); problem != "" {
+			testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
+			return
+		}
+	}
 	if problem := h.setAppFields(r.PathValue("id"), updated, body); problem != "" {
 		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
 		return
@@ -678,8 +711,15 @@ func (h *fakeHeimdall) getCatalogEntry(w http.ResponseWriter, r *http.Request) {
 	out := maps.Clone(entry)
 	out["app_catalog_id"] = id
 	out["type"] = "mcp"
+	delete(out, "token_urls")
 	if out["hosted"] == true {
-		out["urls"] = []any{}
+		labels := []any{}
+		for _, option := range urlOptions(entry["urls"]) {
+			if option["label"] != nil {
+				labels = append(labels, map[string]any{"label": option["label"], "url": nil})
+			}
+		}
+		out["urls"] = labels
 	}
 	testutil.WriteJSON(w, http.StatusOK, out)
 }
@@ -860,4 +900,62 @@ func (h *fakeHeimdall) listApps(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	testutil.WriteJSON(w, http.StatusOK, map[string]any{"items": items, "next_page": next})
+}
+
+// fakeCatalogAuth checks a create's auth against the entry and masks it the
+// way heimdall shows it, moving the secret to body["auth_secret"].
+func fakeCatalogAuth(entry map[string]any, label string, body map[string]any) string {
+	auth, _ := body["auth"].(map[string]any)
+	types, _ := entry["auth_types"].([]string)
+	if auth == nil {
+		if entry["auth_required"] == true {
+			return "auth is required"
+		}
+		return ""
+	}
+	authType, _ := auth["type"].(string)
+	if !slices.Contains(types, authType) {
+		return "auth type " + authType + " not supported"
+	}
+	field := authSecretKey[authType]
+	if auth[field] == nil || auth[field] == "" {
+		return "auth requires its secret"
+	}
+	body["auth_secret"] = auth[field]
+	out := maps.Clone(auth)
+	out[field] = "****"
+	if authType == "client_credentials" {
+		if _, ok := auth["token_url"]; ok {
+			return "token_url: extra inputs are not permitted"
+		}
+		out["token_url"] = entry["token_urls"].(map[string]string)[label]
+		out["auth_method"] = "post"
+		out["scopes"] = []any{}
+	}
+	body["auth"] = out
+	return ""
+}
+
+// patchAuth replaces an application's auth, which heimdall can't remove.
+func (h *fakeHeimdall) patchAuth(id string, app, body map[string]any) string {
+	if body["auth"] == nil {
+		return "auth can't be null"
+	}
+	appCatalogID, _ := app["app_catalog_id"].(string)
+	entry, _ := h.entryFor(appCatalogID)
+	label := ""
+	for _, option := range urlOptions(entry["urls"]) {
+		l := labelString(option["label"])
+		if l != "" && strings.HasPrefix(app["name"].(string), appCatalogID+"-"+strings.ToLower(l)) {
+			label = l
+		}
+	}
+	if problem := fakeCatalogAuth(entry, label, body); problem != "" {
+		return problem
+	}
+	app["auth"] = body["auth"]
+	h.appSecrets[id] = body["auth_secret"]
+	delete(body, "auth")
+	delete(body, "auth_secret")
+	return ""
 }

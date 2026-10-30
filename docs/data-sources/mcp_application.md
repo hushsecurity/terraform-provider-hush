@@ -39,6 +39,7 @@ output "github_blocked_tools" {
 - `app_catalog_id` (String) The catalog entry the application was created from, or 'custom-<name>' for a custom app.
 - `assign_all` (Boolean) Whether the application is granted to every user of the organization.
 - `assignment` (List of Object) The rules granting the application: it is granted by any rule that matches, and a rule matches when all of its conditions do. (see [below for nested schema](#nestedatt--assignment))
+- `auth` (List of Object) The fixed credential the gateway presents to the server, without its secret; empty when there is none. An application of a custom app shows the custom app's. (see [below for nested schema](#nestedatt--auth))
 - `catalog_display_name` (String) The name the catalog shows for the entry.
 - `client_id` (String) The client id of the OAuth app registered with the server, or empty when there is none.
 - `deployment_ids` (Set of String) The deployments whose gateways serve the application.
@@ -83,6 +84,19 @@ Read-Only:
 - `values` (List of String)
 
 
+
+
+<a id="nestedatt--auth"></a>
+### Nested Schema for `auth`
+
+Read-Only:
+
+- `auth_method` (String)
+- `client_id` (String)
+- `name` (String)
+- `token_url` (String)
+- `type` (String)
+- `username` (String)
 
 
 <a id="nestedatt--quickbooks"></a>
