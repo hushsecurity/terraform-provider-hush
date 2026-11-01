@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 * **`systemd` deployments**: `hush_deployment` accepts `kind = "systemd"`, the kind of a Linux VM the sensor or the connector is installed on with Hush's install script. Such deployments, created in the console or the API so far, can now be declared, or imported with `terraform import`, and the `hush_deployment` data source reads them as before. Like every kind, it is fixed at creation. A systemd deployment does not take an `agw` block yet; the plan refuses one, as on `ecs` and `serverless`.
+* **GitHub App credentials**: `hush_github_app_access_credential` holds a GitHub App's `client_id`, `installation_id` and private key (`private_key` / `private_key_wo`); `hush_github_app_access_privilege` narrows the installation tokens to `repositories` and `permissions`. `hush_access_policy` takes a `github_app_delivery_config` block, the only delivery the credential supports: the access manager mints the tokens and keeps them fresh in the pod, and `git_credential_helper` (default `true`) configures git to use them. Creating the credential needs `hush-am` 0.34.0 or later on its deployment; on an older one the apply fails.
 
 ### Changed
 
