@@ -430,3 +430,58 @@ func TestFlattenGcpWifDeliveryConfig(t *testing.T) {
 		t.Errorf("expected service_account_token_lifetime %d, got %v", 7200, configMap["service_account_token_lifetime"])
 	}
 }
+
+func TestExpandGithubAppDeliveryConfig(t *testing.T) {
+	input := []any{
+		map[string]any{
+			"git_credential_helper": false,
+		},
+	}
+
+	result := expandGithubAppDeliveryConfig(input)
+
+	if result.Type != client.DeliveryTypeGithubApp {
+		t.Errorf("expected type %q, got %q", client.DeliveryTypeGithubApp, result.Type)
+	}
+	if result.GitCredentialHelper {
+		t.Error("expected git_credential_helper false")
+	}
+}
+
+// An empty block arrives as a nil element and takes the default.
+func TestExpandGithubAppDeliveryConfig_nilElement(t *testing.T) {
+	result := expandGithubAppDeliveryConfig([]any{nil})
+
+	if result.Type != client.DeliveryTypeGithubApp {
+		t.Errorf("expected type %q, got %q", client.DeliveryTypeGithubApp, result.Type)
+	}
+	if !result.GitCredentialHelper {
+		t.Error("expected git_credential_helper to default to true")
+	}
+}
+
+func TestFlattenGithubAppDeliveryConfig(t *testing.T) {
+	result := flattenGithubAppDeliveryConfig(map[string]any{
+		"type":                  "github_app",
+		"git_credential_helper": false,
+	})
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 element, got %d", len(result))
+	}
+	if helper := result[0].(map[string]any)["git_credential_helper"]; helper != false {
+		t.Errorf("expected git_credential_helper false, got %v", helper)
+	}
+}
+
+// An API that omits git_credential_helper means the default, true.
+func TestFlattenGithubAppDeliveryConfig_omitted(t *testing.T) {
+	result := flattenGithubAppDeliveryConfig(map[string]any{"type": "github_app"})
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 element, got %d", len(result))
+	}
+	if helper := result[0].(map[string]any)["git_credential_helper"]; helper != true {
+		t.Errorf("expected git_credential_helper true, got %v", helper)
+	}
+}
