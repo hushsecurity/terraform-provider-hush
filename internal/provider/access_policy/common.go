@@ -12,28 +12,39 @@ import (
 )
 
 const (
-	idDesc                     = "The ID of the access policy"
-	nameDesc                   = "The name of the access policy"
-	descriptionDesc            = "The description of the access policy"
-	enabledDesc                = "Whether the access policy is enabled"
-	priorityDesc               = "The priority of the access policy, from 0 to 1000. When several policies deliver the same environment variable, file or cloud identity to a workload, the one with the higher priority wins"
-	accessCredentialIDDesc     = "The ID of the access credential"
-	accessPrivilegeIDsDesc     = "The list of access privilege IDs"
-	deploymentIDsDesc          = "The list of deployment IDs. Currently limited to a single deployment"
-	attestationCriteriaDesc    = "The attestation criteria for the access policy"
-	envDeliveryConfigDesc      = "Environment variable delivery configuration for the access policy"
-	volumeDeliveryConfigDesc   = "Volume mount delivery configuration for the access policy"
-	awsWifDeliveryConfigDesc   = "AWS WIF delivery configuration for the access policy"
-	gcpWifDeliveryConfigDesc   = "GCP WIF delivery configuration for the access policy"
-	azureWifDeliveryConfigDesc = "Azure WIF delivery configuration for the access policy"
-	sdkDeliveryConfigDesc      = "SDK delivery configuration for the access policy"
-	statusDesc                 = "The status of the access policy (syncing, ok, warning, error, disabled)"
-	statusDetailDesc           = "The status detail of the access policy"
+	idDesc                      = "The ID of the access policy"
+	nameDesc                    = "The name of the access policy"
+	descriptionDesc             = "The description of the access policy"
+	enabledDesc                 = "Whether the access policy is enabled"
+	priorityDesc                = "The priority of the access policy, from 0 to 1000. When several policies deliver the same environment variable, file or cloud identity to a workload, the one with the higher priority wins"
+	accessCredentialIDDesc      = "The ID of the access credential"
+	accessPrivilegeIDsDesc      = "The list of access privilege IDs"
+	deploymentIDsDesc           = "The list of deployment IDs. Currently limited to a single deployment"
+	attestationCriteriaDesc     = "The attestation criteria for the access policy"
+	envDeliveryConfigDesc       = "Environment variable delivery configuration for the access policy"
+	volumeDeliveryConfigDesc    = "Volume mount delivery configuration for the access policy"
+	awsWifDeliveryConfigDesc    = "AWS WIF delivery configuration for the access policy"
+	gcpWifDeliveryConfigDesc    = "GCP WIF delivery configuration for the access policy"
+	azureWifDeliveryConfigDesc  = "Azure WIF delivery configuration for the access policy"
+	sdkDeliveryConfigDesc       = "SDK delivery configuration for the access policy"
+	githubAppDeliveryConfigDesc = "GitHub App delivery configuration for the access policy. " +
+		"The access manager mints a GitHub App installation token for the pod, writes it to the " +
+		"file named by `HUSH_GITHUB_TOKEN_FILE`, configures `gh` through `GH_CONFIG_DIR` and " +
+		"refreshes both before the token expires. Only valid with a `github_app` access credential. " +
+		"The API refuses a `k8s:container-name` attestation criterion on such a policy at apply, " +
+		"since the token reaches every container of the pod"
+	gitCredentialHelperDesc = "Configure git (2.31+) to authenticate to GitHub with the delivered " +
+		"token, through `GIT_CONFIG_*` environment variables (default: true). It is skipped, with " +
+		"only a warning in the access manager's log, for a container that has an `envFrom` source " +
+		"or sets `GIT_CONFIG_COUNT` from `valueFrom` or to a non-number; the token file and `gh` " +
+		"still work there"
+	statusDesc       = "The status of the access policy (syncing, ok, warning, error, disabled)"
+	statusDetailDesc = "The status detail of the access policy"
 )
 
 var sdkNameRegex = regexp.MustCompile(`^[a-zA-Z0-9/_+=.@-]+$`)
 
-var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config", "azure_wif_delivery_config", "sdk_delivery_config"}
+var deliveryConfigExactlyOneOf = []string{"env_delivery_config", "volume_delivery_config", "aws_wif_delivery_config", "gcp_wif_delivery_config", "azure_wif_delivery_config", "sdk_delivery_config", "github_app_delivery_config"}
 
 func AccessPolicyResourceSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
@@ -253,6 +264,23 @@ func AccessPolicyResourceSchema() map[string]*schema.Schema {
 					},
 					"subject_kind": wifSubjectKindResourceSchema(),
 					"subject":      wifSubjectResourceSchema(),
+				},
+			},
+		},
+		"github_app_delivery_config": {
+			Type:         schema.TypeList,
+			Optional:     true,
+			MaxItems:     1,
+			Description:  githubAppDeliveryConfigDesc,
+			ExactlyOneOf: deliveryConfigExactlyOneOf,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"git_credential_helper": {
+						Type:        schema.TypeBool,
+						Optional:    true,
+						Default:     true,
+						Description: gitCredentialHelperDesc,
+					},
 				},
 			},
 		},
@@ -511,6 +539,20 @@ func AccessPolicyDataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"github_app_delivery_config": {
+			Type:        schema.TypeList,
+			Computed:    true,
+			Description: githubAppDeliveryConfigDesc,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"git_credential_helper": {
+						Type:        schema.TypeBool,
+						Computed:    true,
+						Description: gitCredentialHelperDesc,
+					},
+				},
+			},
+		},
 		"sdk_delivery_config": {
 			Type:        schema.TypeList,
 			Computed:    true,
@@ -661,6 +703,9 @@ func expandDeliveryConfig(d *schema.ResourceData) any {
 	}
 	if v, ok := d.GetOk("sdk_delivery_config"); ok {
 		return expandSdkDeliveryConfig(v.([]any))
+	}
+	if v, ok := d.GetOk("github_app_delivery_config"); ok {
+		return expandGithubAppDeliveryConfig(v.([]any))
 	}
 
 	return nil
@@ -819,6 +864,19 @@ func expandSdkDeliveryConfig(list []any) *client.SdkDeliveryConfig {
 	}
 }
 
+func expandGithubAppDeliveryConfig(list []any) *client.GithubAppDeliveryConfig {
+	config := &client.GithubAppDeliveryConfig{
+		Type:                client.DeliveryTypeGithubApp,
+		GitCredentialHelper: true,
+	}
+	// An empty block arrives as a nil element.
+	if len(list) > 0 && list[0] != nil {
+		configMap := list[0].(map[string]any)
+		config.GitCredentialHelper = configMap["git_credential_helper"].(bool)
+	}
+	return config
+}
+
 func expandAzureWifDeliveryConfig(list []any) *client.AzureWifDeliveryConfig {
 	if len(list) == 0 || list[0] == nil {
 		return nil
@@ -906,6 +964,10 @@ func flattenDeliveryConfig(d *schema.ResourceData, config any) diag.Diagnostics 
 		if err := d.Set("sdk_delivery_config", flattenSdkDeliveryConfig(configMap)); err != nil {
 			return diag.FromErr(fmt.Errorf("failed to set sdk_delivery_config: %w", err))
 		}
+	case client.DeliveryTypeGithubApp:
+		if err := d.Set("github_app_delivery_config", flattenGithubAppDeliveryConfig(configMap)); err != nil {
+			return diag.FromErr(fmt.Errorf("failed to set github_app_delivery_config: %w", err))
+		}
 	}
 
 	return nil
@@ -929,6 +991,14 @@ func flattenVolumeDeliveryConfig(configMap map[string]any) []any {
 			"item":        items,
 		},
 	}
+}
+
+func flattenGithubAppDeliveryConfig(configMap map[string]any) []any {
+	helper, ok := configMap["git_credential_helper"].(bool)
+	if !ok {
+		helper = true
+	}
+	return []any{map[string]any{"git_credential_helper": helper}}
 }
 
 func flattenAwsWifDeliveryConfig(configMap map[string]any) []any {

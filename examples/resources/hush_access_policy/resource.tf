@@ -359,3 +359,24 @@ resource "hush_access_policy" "api_key_canary_example" {
     name = "API_KEY"
   }
 }
+
+# Create an access policy delivering GitHub App installation tokens. The pod
+# gets the token in the file named by HUSH_GITHUB_TOKEN_FILE, gh configured
+# through GH_CONFIG_DIR, and git configured to use the token for github.com.
+resource "hush_access_policy" "github_app_example" {
+  name                 = "prod-github-app-policy"
+  description          = "Access policy with GitHub App delivery"
+  enabled              = true
+  access_credential_id = hush_github_app_access_credential.example.id
+  access_privilege_ids = [hush_github_app_access_privilege.example.id]
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  github_app_delivery_config {
+    git_credential_helper = true
+  }
+}

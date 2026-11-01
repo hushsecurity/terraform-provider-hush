@@ -27,12 +27,13 @@ type AttestationCriterion struct {
 type DeliveryType string
 
 const (
-	DeliveryTypeEnv      DeliveryType = "env"
-	DeliveryTypeVolume   DeliveryType = "volume"
-	DeliveryTypeAwsWif   DeliveryType = "aws_wif"
-	DeliveryTypeGcpWif   DeliveryType = "gcp_wif"
-	DeliveryTypeAzureWif DeliveryType = "azure_wif"
-	DeliveryTypeSdk      DeliveryType = "sdk"
+	DeliveryTypeEnv       DeliveryType = "env"
+	DeliveryTypeVolume    DeliveryType = "volume"
+	DeliveryTypeAwsWif    DeliveryType = "aws_wif"
+	DeliveryTypeGcpWif    DeliveryType = "gcp_wif"
+	DeliveryTypeAzureWif  DeliveryType = "azure_wif"
+	DeliveryTypeSdk       DeliveryType = "sdk"
+	DeliveryTypeGithubApp DeliveryType = "github_app"
 )
 
 type WifSubjectKind string
@@ -85,6 +86,11 @@ type GcpWifDeliveryConfig struct {
 	Subject                     string         `json:"subject,omitempty"`
 	ServiceAccount              string         `json:"service_account,omitempty"`
 	ServiceAccountTokenLifetime int            `json:"service_account_token_lifetime,omitempty"`
+}
+
+type GithubAppDeliveryConfig struct {
+	Type                DeliveryType `json:"type"`
+	GitCredentialHelper bool         `json:"git_credential_helper"`
 }
 
 type AzureWifDeliveryConfig struct {
