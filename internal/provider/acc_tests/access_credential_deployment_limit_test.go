@@ -32,6 +32,7 @@ func TestAccResourceAccessCredentials_RejectMultipleDeployments(t *testing.T) {
 		"hush_gcp_sa_access_credential":         gcpSAAccessCredentialStep1(),
 		"hush_gcp_wif_access_credential":        gcpWifAccessCredentialStep1(),
 		"hush_gemini_access_credential":         geminiAccessCredentialStep1(),
+		"hush_github_app_access_credential":     githubAppAccessCredentialStep1(),
 		"hush_kafka_access_credential":          kafkaAccessCredentialNativeStep1(),
 		"hush_mariadb_access_credential":        mariadbAccessCredentialStep1(),
 		"hush_mongodb_access_credential":        mongodbAccessCredentialStep1(),

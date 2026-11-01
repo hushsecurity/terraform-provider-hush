@@ -36,6 +36,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gcp_sa_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gcp_wif_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gemini_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/github_app_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gitlab_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gitlab_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/gitlab_integration"
@@ -165,6 +166,7 @@ func New(version string) func() *schema.Provider {
 				"hush_aws_wif_access_credential":        aws_wif_access_credential.Resource(),
 				"hush_azure_wif_access_credential":      azure_wif_access_credential.Resource(),
 				"hush_gcp_wif_access_credential":        gcp_wif_access_credential.Resource(),
+				"hush_github_app_access_credential":     github_app_access_credential.Resource(),
 				"hush_gitlab_access_credential":         gitlab_access_credential.Resource(),
 				"hush_gitlab_access_privilege":          gitlab_access_privilege.Resource(),
 				"hush_gitlab_integration":               gitlab_integration.Resource(),
@@ -239,6 +241,7 @@ func New(version string) func() *schema.Provider {
 				"hush_aws_wif_access_credential":        aws_wif_access_credential.DataSource(),
 				"hush_azure_wif_access_credential":      azure_wif_access_credential.DataSource(),
 				"hush_gcp_wif_access_credential":        gcp_wif_access_credential.DataSource(),
+				"hush_github_app_access_credential":     github_app_access_credential.DataSource(),
 				"hush_gitlab_access_credential":         gitlab_access_credential.DataSource(),
 				"hush_gitlab_access_privilege":          gitlab_access_privilege.DataSource(),
 				"hush_gitlab_integration":               gitlab_integration.DataSource(),

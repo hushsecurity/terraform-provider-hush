@@ -222,6 +222,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetGcpWifAccessCredential(context.Background(), c, resourceId)
 			case "azure_wif_access_credential":
 				_, err = client.GetAzureWifAccessCredential(context.Background(), c, resourceId)
+			case "github_app_access_credential":
+				_, err = client.GetGithubAppAccessCredential(context.Background(), c, resourceId)
 			case "gitlab_access_credential":
 				_, err = client.GetGitlabAccessCredential(context.Background(), c, resourceId)
 			case "gitlab_access_privilege":
