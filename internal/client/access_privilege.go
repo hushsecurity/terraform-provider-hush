@@ -1244,3 +1244,55 @@ func UpdatePinotAccessPrivilege(ctx context.Context, c *Client, id string, input
 	}
 	return &resp, nil
 }
+
+// GitHub App
+
+type GithubAppAccessPrivilege struct {
+	ID           string            `json:"id,omitempty"`
+	Name         string            `json:"name"`
+	Description  string            `json:"description,omitempty"`
+	Type         string            `json:"type,omitempty"`
+	Repositories []string          `json:"repositories"`
+	Permissions  map[string]string `json:"permissions"`
+}
+
+type CreateGithubAppAccessPrivilegeInput struct {
+	Name         string            `json:"name"`
+	Description  string            `json:"description,omitempty"`
+	Repositories []string          `json:"repositories"`
+	Permissions  map[string]string `json:"permissions"`
+}
+
+type UpdateGithubAppAccessPrivilegeInput struct {
+	Name         *string            `json:"name,omitempty"`
+	Description  *string            `json:"description,omitempty"`
+	Repositories *[]string          `json:"repositories,omitempty"`
+	Permissions  *map[string]string `json:"permissions,omitempty"`
+}
+
+func CreateGithubAppAccessPrivilege(ctx context.Context, c *Client, input *CreateGithubAppAccessPrivilegeInput) (*GithubAppAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/github_app"
+	var resp GithubAppAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGithubAppAccessPrivilege(ctx context.Context, c *Client, id string) (*GithubAppAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/github_app/%s", accessPrivilegesEndpoint, id)
+	var resp GithubAppAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGithubAppAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateGithubAppAccessPrivilegeInput) (*GithubAppAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/github_app/%s", accessPrivilegesEndpoint, id)
+	var resp GithubAppAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
