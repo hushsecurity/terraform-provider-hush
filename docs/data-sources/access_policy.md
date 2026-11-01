@@ -57,6 +57,7 @@ output "status" {
 - `enabled` (Boolean) Whether the access policy is enabled
 - `env_delivery_config` (List of Object) Environment variable delivery configuration for the access policy (see [below for nested schema](#nestedatt--env_delivery_config))
 - `gcp_wif_delivery_config` (List of Object) GCP WIF delivery configuration for the access policy (see [below for nested schema](#nestedatt--gcp_wif_delivery_config))
+- `github_app_delivery_config` (List of Object) GitHub App delivery configuration for the access policy. The access manager mints a GitHub App installation token for the pod, writes it to the file named by `HUSH_GITHUB_TOKEN_FILE`, configures `gh` through `GH_CONFIG_DIR` and refreshes both before the token expires. Only valid with a `github_app` access credential. The API refuses a `k8s:container-name` attestation criterion on such a policy at apply, since the token reaches every container of the pod (see [below for nested schema](#nestedatt--github_app_delivery_config))
 - `name` (String) The name of the access policy
 - `priority` (Number) The priority of the access policy, from 0 to 1000. When several policies deliver the same environment variable, file or cloud identity to a workload, the one with the higher priority wins
 - `sdk_delivery_config` (List of Object) SDK delivery configuration for the access policy (see [below for nested schema](#nestedatt--sdk_delivery_config))
@@ -114,6 +115,14 @@ Read-Only:
 - `service_account_token_lifetime` (Number)
 - `subject` (String)
 - `subject_kind` (String)
+
+
+<a id="nestedatt--github_app_delivery_config"></a>
+### Nested Schema for `github_app_delivery_config`
+
+Read-Only:
+
+- `git_credential_helper` (Boolean)
 
 
 <a id="nestedatt--sdk_delivery_config"></a>
