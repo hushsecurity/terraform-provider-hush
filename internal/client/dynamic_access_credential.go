@@ -34,6 +34,7 @@ const (
 	AccessCredentialTypeTemporalCloud AccessCredentialType = "temporal_cloud"
 	AccessCredentialTypeKafka         AccessCredentialType = "kafka"
 	AccessCredentialTypePinot         AccessCredentialType = "pinot"
+	AccessCredentialTypeGithubApp     AccessCredentialType = "github_app"
 )
 
 // Postgres
@@ -2231,4 +2232,76 @@ func UpdatePinotAccessCredential(ctx context.Context, c *Client, id string, inpu
 
 func (p PinotAccessCredential) statusFields() (string, string) {
 	return p.Status, p.StatusDetail
+}
+
+// GitHub App
+
+type GithubAppAccessCredential struct {
+	ID             string               `json:"id,omitempty"`
+	Name           string               `json:"name"`
+	Description    string               `json:"description,omitempty"`
+	Type           AccessCredentialType `json:"type"`
+	Kind           string               `json:"kind,omitempty"`
+	DeploymentIDs  []string             `json:"deployment_ids"`
+	SecretStoreID  string               `json:"secret_store_id,omitempty"`
+	ClientID       string               `json:"client_id"`
+	InstallationID string               `json:"installation_id"`
+	Status         string               `json:"status,omitempty"`
+	StatusDetail   string               `json:"status_detail,omitempty"`
+}
+
+type CreateGithubAppAccessCredentialInput struct {
+	Name           string   `json:"name"`
+	Description    string   `json:"description,omitempty"`
+	DeploymentIDs  []string `json:"deployment_ids"`
+	SecretStoreID  string   `json:"secret_store_id,omitempty"`
+	ClientID       string   `json:"client_id"`
+	InstallationID string   `json:"installation_id"`
+	PrivateKey     string   `json:"private_key"`
+}
+
+type UpdateGithubAppAccessCredentialInput struct {
+	Name           *string              `json:"name,omitempty"`
+	Description    *string              `json:"description,omitempty"`
+	SecretStoreID  *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	ClientID       *string              `json:"client_id,omitempty"`
+	InstallationID *string              `json:"installation_id,omitempty"`
+	PrivateKey     *string              `json:"private_key,omitempty"`
+}
+
+func CreateGithubAppAccessCredential(ctx context.Context, c *Client, input *CreateGithubAppAccessCredentialInput) (*GithubAppAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/github_app"
+	var resp GithubAppAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetGithubAppAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetGithubAppAccessCredential(ctx context.Context, c *Client, id string) (*GithubAppAccessCredential, error) {
+	path := fmt.Sprintf("%s/github_app/%s", accessCredentialsEndpoint, id)
+	var resp GithubAppAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateGithubAppAccessCredential(ctx context.Context, c *Client, id string, input *UpdateGithubAppAccessCredentialInput) (*GithubAppAccessCredential, error) {
+	path := fmt.Sprintf("%s/github_app/%s", accessCredentialsEndpoint, id)
+	var resp GithubAppAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetGithubAppAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (g GithubAppAccessCredential) statusFields() (string, string) {
+	return g.Status, g.StatusDetail
 }
