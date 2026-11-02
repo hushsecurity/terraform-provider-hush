@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Custom StackSet role names**: `role_name` on `hush_aws_integration` names the StackSet's role in every account when the customer chose one instead of `hush-security-<unique_suffix>` (set `role_name` or `unique_suffix` with `cf_stackset_arn`). It's read back for every StackSet integration, the default name included, so leaving it out plans no change; changing it replaces the integration. Needs a mixer that supports `role_name`; an older one rejects it. The `hush_aws_integration` data source reads it too.
+
+### Changed
+
+* **`unique_suffix` is computed**: removing it from the configuration no longer replaces the integration, so you can switch from `unique_suffix = "<suffix>"` to the equivalent `role_name = "hush-security-<suffix>"` without a change. Setting a different suffix still replaces the integration.
+
 ## [1.40.0] - 2026-11-14
 
 ### Added

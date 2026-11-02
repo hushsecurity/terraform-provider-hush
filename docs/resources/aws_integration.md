@@ -46,7 +46,8 @@ module "hush_aws_onboard" {
 - `cf_stackset_arn` (String) The CloudFormation StackSet ARN. Mutually exclusive with `role_arn`.
 - `description` (String) The description of the AWS integration
 - `role_arn` (String) The IAM role ARN for Hush to assume. Mutually exclusive with `cf_stackset_arn`.
-- `unique_suffix` (String) A unique suffix for CloudFormation resources. Required when using `cf_stackset_arn`.
+- `role_name` (String) The name of the StackSet's role in every account, `hush-security-<unique_suffix>` unless chosen. Changing it replaces the integration. Only valid with `cf_stackset_arn`.
+- `unique_suffix` (String) The StackSet role's suffix: the role is `hush-security-<suffix>` unless `role_name` names it. With `cf_stackset_arn`, set this or `role_name`.
 
 ### Read-Only
 

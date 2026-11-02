@@ -31,6 +31,7 @@ type AWSIntegration struct {
 	CfStacksetArn         string       `json:"cf_stackset_arn,omitempty"`
 	CfStackID             string       `json:"cf_stack_id,omitempty"`
 	UniqueSuffix          string       `json:"unique_suffix,omitempty"`
+	RoleName              string       `json:"role_name,omitempty"`
 	AccountIDs            []string     `json:"account_ids,omitempty"`
 	CreatedBy             string       `json:"created_by,omitempty"`
 	Features              []AWSFeature `json:"features,omitempty"`
@@ -49,6 +50,7 @@ type CreateAWSIntegrationInput struct {
 	RoleArn       string `json:"role_arn,omitempty"`
 	CfStacksetArn string `json:"cf_stackset_arn,omitempty"`
 	UniqueSuffix  string `json:"unique_suffix,omitempty"`
+	RoleName      string `json:"role_name,omitempty"`
 }
 
 type UpdateAWSIntegrationInput struct {

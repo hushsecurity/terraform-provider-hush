@@ -18,7 +18,9 @@ const (
 	descriptionDesc           = "The description of the AWS integration"
 	roleArnDesc               = "The IAM role ARN for Hush to assume. Mutually exclusive with `cf_stackset_arn`."
 	cfStacksetArnDesc         = "The CloudFormation StackSet ARN. Mutually exclusive with `role_arn`."
-	uniqueSuffixDesc          = "A unique suffix for CloudFormation resources. Required when using `cf_stackset_arn`."
+	uniqueSuffixDesc          = "The StackSet role's suffix: the role is `hush-security-<suffix>` unless `role_name` names it. With `cf_stackset_arn`, set this or `role_name`."
+	roleNameDataDesc          = "The name of the StackSet's role in every account."
+	roleNameDesc              = "The name of the StackSet's role in every account, `hush-security-<unique_suffix>` unless chosen. Changing it replaces the integration. Only valid with `cf_stackset_arn`."
 	accountIDsDesc            = "The list of AWS account IDs discovered via this integration"
 	cfStackIDDesc             = "The CloudFormation stack ID (if applicable)"
 	statusDesc                = "The current status of the integration"
@@ -64,11 +66,26 @@ func AWSIntegrationResourceSchema() map[string]*schema.Schema {
 		ForceNew:     true,
 		ExactlyOneOf: []string{"role_arn", "cf_stackset_arn"},
 	}
+	// Computed so removing it from the config keeps the stored suffix instead
+	// of replacing the integration, e.g. when switching to the equivalent
+	// role_name = "hush-security-<suffix>"
 	s["unique_suffix"] = &schema.Schema{
 		Description:  uniqueSuffixDesc,
 		Type:         schema.TypeString,
 		Optional:     true,
+		Computed:     true,
 		ForceNew:     true,
+		RequiredWith: []string{"cf_stackset_arn"},
+	}
+	// Computed because the API always returns a StackSet's role name, the
+	// template's default when none was set, so leaving it out plans no diff
+	s["role_name"] = &schema.Schema{
+		Description:  roleNameDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		Computed:     true,
+		ForceNew:     true,
+		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[A-Za-z0-9_+=,.@-]{1,64}$`), "must be a valid IAM role name"),
 		RequiredWith: []string{"cf_stackset_arn"},
 	}
 
@@ -113,6 +130,11 @@ func AWSIntegrationDataSourceSchema() map[string]*schema.Schema {
 		},
 		"unique_suffix": {
 			Description: uniqueSuffixDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"role_name": {
+			Description: roleNameDataDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -216,6 +238,7 @@ func awsIntegrationRead(ctx context.Context, d *schema.ResourceData, m any) diag
 		"cf_stackset_arn": integration.CfStacksetArn,
 		"cf_stack_id":     integration.CfStackID,
 		"unique_suffix":   integration.UniqueSuffix,
+		"role_name":       integration.RoleName,
 		"account_ids":     integration.AccountIDs,
 		"status":          integration.Status,
 	}

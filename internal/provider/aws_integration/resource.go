@@ -45,6 +45,9 @@ func awsIntegrationCreate(ctx context.Context, d *schema.ResourceData, m any) di
 	if suffix := d.Get("unique_suffix").(string); suffix != "" {
 		input.UniqueSuffix = suffix
 	}
+	if roleName := d.Get("role_name").(string); roleName != "" {
+		input.RoleName = roleName
+	}
 
 	resp, err := client.CreateAWSIntegration(ctx, c, input)
 	if err != nil {
