@@ -34,8 +34,9 @@ data "hush_aws_integration" "example" {
 - `description` (String) The description of the AWS integration
 - `features` (List of Object) List of AWS features and their states (see [below for nested schema](#nestedatt--features))
 - `role_arn` (String) The IAM role ARN for Hush to assume. Mutually exclusive with `cf_stackset_arn`.
+- `role_name` (String) The name of the StackSet's role in every account, when chosen instead of `hush-security-<unique_suffix>`. Only valid with `cf_stackset_arn`.
 - `status` (String) The current status of the integration
-- `unique_suffix` (String) A unique suffix for CloudFormation resources. Required when using `cf_stackset_arn`.
+- `unique_suffix` (String) The suffix of the StackSet's role, named `hush-security-<suffix>`. With `cf_stackset_arn`, set this or `role_name`.
 
 <a id="nestedatt--features"></a>
 ### Nested Schema for `features`
