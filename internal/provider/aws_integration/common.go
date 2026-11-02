@@ -18,7 +18,8 @@ const (
 	descriptionDesc           = "The description of the AWS integration"
 	roleArnDesc               = "The IAM role ARN for Hush to assume. Mutually exclusive with `cf_stackset_arn`."
 	cfStacksetArnDesc         = "The CloudFormation StackSet ARN. Mutually exclusive with `role_arn`."
-	uniqueSuffixDesc          = "A unique suffix for CloudFormation resources. Required when using `cf_stackset_arn`."
+	uniqueSuffixDesc          = "The suffix of the StackSet's role, named `hush-security-<suffix>`. With `cf_stackset_arn`, set this or `role_name`."
+	roleNameDesc              = "The name of the StackSet's role in every account, when chosen instead of `hush-security-<unique_suffix>`. Only valid with `cf_stackset_arn`."
 	accountIDsDesc            = "The list of AWS account IDs discovered via this integration"
 	cfStackIDDesc             = "The CloudFormation stack ID (if applicable)"
 	statusDesc                = "The current status of the integration"
@@ -71,6 +72,14 @@ func AWSIntegrationResourceSchema() map[string]*schema.Schema {
 		ForceNew:     true,
 		RequiredWith: []string{"cf_stackset_arn"},
 	}
+	s["role_name"] = &schema.Schema{
+		Description:  roleNameDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		ForceNew:     true,
+		ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[\w+=,.@-]{1,64}$`), "must be a valid IAM role name"),
+		RequiredWith: []string{"cf_stackset_arn"},
+	}
 
 	return s
 }
@@ -113,6 +122,11 @@ func AWSIntegrationDataSourceSchema() map[string]*schema.Schema {
 		},
 		"unique_suffix": {
 			Description: uniqueSuffixDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"role_name": {
+			Description: roleNameDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -216,6 +230,7 @@ func awsIntegrationRead(ctx context.Context, d *schema.ResourceData, m any) diag
 		"cf_stackset_arn": integration.CfStacksetArn,
 		"cf_stack_id":     integration.CfStackID,
 		"unique_suffix":   integration.UniqueSuffix,
+		"role_name":       integration.RoleName,
 		"account_ids":     integration.AccountIDs,
 		"status":          integration.Status,
 	}
