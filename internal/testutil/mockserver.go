@@ -141,6 +141,28 @@ func (ms *MockServer) Handle(pattern string, handler http.HandlerFunc) {
 	ms.extra.HandleFunc(pattern, handler)
 }
 
+// AliasRoutes serves every fixture endpoint under from (such as
+// "access_credentials/elasticsearch") under to as well, for a resource type the
+// published fixtures predate. A path the fixtures already have is left alone,
+// so the alias retires itself once they catch up. Call it before the server
+// takes requests: routes are read without the lock.
+func (ms *MockServer) AliasRoutes(from, to string) {
+	from, to = "/v1/"+from, "/v1/"+to
+	aliased := map[string]map[string]any{}
+	for endpoint, responses := range ms.fixtures.Endpoints {
+		method, path, ok := strings.Cut(endpoint, " ")
+		if !ok || (path != from && !strings.HasPrefix(path, from+"/")) {
+			continue
+		}
+		alias := method + " " + to + strings.TrimPrefix(path, from)
+		if _, exists := ms.fixtures.Endpoints[alias]; !exists {
+			aliased[alias] = responses
+		}
+	}
+	ms.routes = append(ms.routes, parseRoutes(aliased)...)
+	sortRoutes(ms.routes)
+}
+
 // SeedObject inserts a pre-existing object into the mock store.
 // Useful for resources that require pre-existing data (e.g., predefined configs).
 func (ms *MockServer) SeedObject(storeKey, id string, obj map[string]any) {
@@ -560,10 +582,15 @@ func parseRoutes(endpoints map[string]map[string]any) []route {
 		})
 	}
 
-	// /v1/deployments/{deployment_id} also matches
-	// /v1/deployments/image_pull_credentials, and map iteration order is random,
-	// so sort literal paths ahead of parameterized ones to make the more
-	// specific route win deterministically.
+	sortRoutes(routes)
+	return routes
+}
+
+// sortRoutes orders routes so the most specific one matches first.
+// /v1/deployments/{deployment_id} also matches
+// /v1/deployments/image_pull_credentials, and map iteration order is random, so
+// literal paths go ahead of parameterized ones.
+func sortRoutes(routes []route) {
 	sort.SliceStable(routes, func(i, j int) bool {
 		literalI := !strings.Contains(routes[i].template, "{")
 		literalJ := !strings.Contains(routes[j].template, "{")
@@ -572,7 +599,6 @@ func parseRoutes(endpoints map[string]map[string]any) []route {
 		}
 		return routes[i].template < routes[j].template
 	})
-	return routes
 }
 
 // extractResourceKey extracts resource identifier from path template.

@@ -60,6 +60,8 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/notification_configuration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/openai_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/openai_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/pinot_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/pinot_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/plaintext_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/postgres_access_privilege"
@@ -183,6 +185,8 @@ func New(version string) func() *schema.Provider {
 				"hush_secret_store":                     secret_store.Resource(),
 				"hush_kafka_access_credential":          kafka_access_credential.Resource(),
 				"hush_kafka_access_privilege":           kafka_access_privilege.Resource(),
+				"hush_pinot_access_credential":          pinot_access_credential.Resource(),
+				"hush_pinot_access_privilege":           pinot_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
@@ -255,6 +259,8 @@ func New(version string) func() *schema.Provider {
 				"hush_secret_store":                     secret_store.DataSource(),
 				"hush_kafka_access_credential":          kafka_access_credential.DataSource(),
 				"hush_kafka_access_privilege":           kafka_access_privilege.DataSource(),
+				"hush_pinot_access_credential":          pinot_access_credential.DataSource(),
+				"hush_pinot_access_privilege":           pinot_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)

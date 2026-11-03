@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -68,5 +69,43 @@ func TestSingletonRoutes(t *testing.T) {
 		if !strings.Contains(string(body), want) {
 			t.Fatalf("%s: got %s, want it to contain %s", path, body, want)
 		}
+	}
+}
+
+// An aliased type is served like the one it copies, and an alias never shadows
+// a route the fixtures already have.
+func TestAliasRoutes(t *testing.T) {
+	ms := NewMockServer(&Fixtures{Endpoints: map[string]map[string]any{
+		"POST /v1/things/old":          {"200": map[string]any{}},
+		"GET /v1/things/old/{id}":      {"200": map[string]any{}},
+		"GET /v1/things/older/{id}":    {"200": map[string]any{}},
+		"POST /v1/things/present":      {"200": map[string]any{}},
+		"GET /v1/things/present/{id}":  {"200": map[string]any{}},
+		"PATCH /v1/things/present/{x}": {"200": map[string]any{}},
+	}})
+	defer ms.Close()
+	before := len(ms.routes)
+	ms.AliasRoutes("things/old", "things/new")
+	ms.AliasRoutes("things/old", "things/present")
+	if got := len(ms.routes) - before; got != 2 {
+		t.Fatalf("aliased %d routes, want 2 (not things/older, nothing already present)", got)
+	}
+
+	resp, err := http.Post(ms.URL()+"/v1/things/new", "application/json", strings.NewReader(`{"name":"a"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var created map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	resp, err = http.Get(ms.URL() + "/v1/things/new/" + created["id"].(string))
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET aliased route: %d", resp.StatusCode)
 	}
 }
