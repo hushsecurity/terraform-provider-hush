@@ -33,6 +33,7 @@ const (
 	AccessCredentialTypeSalesforce    AccessCredentialType = "salesforce"
 	AccessCredentialTypeTemporalCloud AccessCredentialType = "temporal_cloud"
 	AccessCredentialTypeKafka         AccessCredentialType = "kafka"
+	AccessCredentialTypePinot         AccessCredentialType = "pinot"
 )
 
 // Postgres
@@ -2145,4 +2146,89 @@ func UpdateKafkaAccessCredential(ctx context.Context, c *Client, id string, inpu
 
 func (k KafkaAccessCredential) statusFields() (string, string) {
 	return k.Status, k.StatusDetail
+}
+
+// Pinot
+
+type PinotAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
+	Host          string               `json:"host,omitempty"`
+	Port          int                  `json:"port,omitempty"`
+	Username      string               `json:"username,omitempty"`
+	TLS           bool                 `json:"tls,omitempty"`
+	TLSCA         string               `json:"tls_ca,omitempty"`
+	BrokerURL     string               `json:"broker_url,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreatePinotAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
+	Host          string   `json:"host"`
+	Port          int      `json:"port,omitempty"`
+	Username      string   `json:"username"`
+	Password      string   `json:"password"`
+	TLS           bool     `json:"tls,omitempty"`
+	TLSCA         string   `json:"tls_ca,omitempty"`
+	BrokerURL     string   `json:"broker_url,omitempty"`
+}
+
+// BrokerURL is sent as null to unset it: midgard refuses an empty URL.
+type UpdatePinotAccessCredentialInput struct {
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	Host          *string              `json:"host,omitempty"`
+	Port          *int                 `json:"port,omitempty"`
+	Username      *string              `json:"username,omitempty"`
+	Password      *string              `json:"password,omitempty"`
+	TLS           *bool                `json:"tls,omitempty"`
+	TLSCA         *string              `json:"tls_ca,omitempty"`
+	BrokerURL     *nullableString      `json:"broker_url,omitempty"`
+}
+
+func CreatePinotAccessCredential(ctx context.Context, c *Client, input *CreatePinotAccessCredentialInput) (*PinotAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/pinot"
+	var resp PinotAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetPinotAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetPinotAccessCredential(ctx context.Context, c *Client, id string) (*PinotAccessCredential, error) {
+	path := fmt.Sprintf("%s/pinot/%s", accessCredentialsEndpoint, id)
+	var resp PinotAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdatePinotAccessCredential(ctx context.Context, c *Client, id string, input *UpdatePinotAccessCredentialInput) (*PinotAccessCredential, error) {
+	path := fmt.Sprintf("%s/pinot/%s", accessCredentialsEndpoint, id)
+	var resp PinotAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetPinotAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (p PinotAccessCredential) statusFields() (string, string) {
+	return p.Status, p.StatusDetail
 }

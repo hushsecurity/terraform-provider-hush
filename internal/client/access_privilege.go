@@ -1188,3 +1188,59 @@ func DeleteAccessPrivilege(ctx context.Context, c *Client, id string) error {
 	}
 	return nil
 }
+
+// Pinot
+
+// PinotGrant leaves out an empty list: midgard reads absent tables as all
+// tables.
+type PinotGrant struct {
+	Tables        []string `json:"tables,omitempty"`
+	ExcludeTables []string `json:"exclude_tables,omitempty"`
+}
+
+type PinotAccessPrivilege struct {
+	ID          string     `json:"id,omitempty"`
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	Type        string     `json:"type,omitempty"`
+	Grant       PinotGrant `json:"grant"`
+}
+
+type CreatePinotAccessPrivilegeInput struct {
+	Name        string     `json:"name"`
+	Description string     `json:"description,omitempty"`
+	Grant       PinotGrant `json:"grant"`
+}
+
+type UpdatePinotAccessPrivilegeInput struct {
+	Name        *string     `json:"name,omitempty"`
+	Description *string     `json:"description,omitempty"`
+	Grant       *PinotGrant `json:"grant,omitempty"`
+}
+
+func CreatePinotAccessPrivilege(ctx context.Context, c *Client, input *CreatePinotAccessPrivilegeInput) (*PinotAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/pinot"
+	var resp PinotAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetPinotAccessPrivilege(ctx context.Context, c *Client, id string) (*PinotAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/pinot/%s", accessPrivilegesEndpoint, id)
+	var resp PinotAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdatePinotAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdatePinotAccessPrivilegeInput) (*PinotAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/pinot/%s", accessPrivilegesEndpoint, id)
+	var resp PinotAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
