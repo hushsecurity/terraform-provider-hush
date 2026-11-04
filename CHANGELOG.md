@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [1.38.0] - 2026-11-04
+
+### Added
+
+* **User tokens from the identity provider on `hush_service_agent`**: a `user_tokens` block with `audiences` and/or `clients` lets an agent acting for users exchange the user's token from the gateway's identity provider (for example one an AgentCore JWT authorizer already checked), not only a Hush user token. Removing the block clears it.
+* **Which users a service agent may act for**: `hush_service_agent` takes `assignment` rules on user properties, like `hush_mcp_application`. Without any rule the agent may act for every user.
+* **Pinot**: `hush_pinot_access_credential` and `hush_pinot_access_privilege`, with matching data sources.
+
 ## [1.37.0] - 2026-10-30
 
 ### Added
