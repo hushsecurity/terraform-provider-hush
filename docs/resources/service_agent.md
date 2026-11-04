@@ -77,6 +77,7 @@ output "summarizer_resource" {
 ### Optional
 
 - `acts_for_users` (Boolean) Whether the agent can act for a signed-in user, by exchanging the user's token (RFC 8693 token exchange).
+- `assignment` (Block List) A rule naming users the agent may act for: any user matching one of the rules; a rule matches when all of its `condition` blocks do. Without any, the agent may act for every user of the gateway's identity provider. Takes effect with `acts_for_users`. (see [below for nested schema](#nestedblock--assignment))
 - `aws_iam_role` (Block Set) An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is the deployment's issuer. (see [below for nested schema](#nestedblock--aws_iam_role))
 - `azure` (Block Set) An Azure / Entra service principal: a managed identity, an app registration or an Entra agent identity (e.g. a Foundry agent). It signs in with an app-only Entra token for `audience`, so it also sends `resource` (the gateway) when it signs in. The app registration must issue v2 tokens and be dedicated to Hush: anything that receives tokens for it could replay them. (see [below for nested schema](#nestedblock--azure))
 - `description` (String) What the agent does.
@@ -89,6 +90,37 @@ output "summarizer_resource" {
 
 - `id` (String) The ID of this resource.
 - `resource` (String) What a front end passes as `resource` when it signs a user in for this agent to act for them.
+
+<a id="nestedblock--assignment"></a>
+### Nested Schema for `assignment`
+
+Required:
+
+- `condition` (Block List, Min: 1) A condition of the rule. It holds when any of its `match` blocks does. (see [below for nested schema](#nestedblock--assignment--condition))
+
+<a id="nestedblock--assignment--condition"></a>
+### Nested Schema for `assignment.condition`
+
+Required:
+
+- `match` (Block List, Min: 1) One comparison of a property of the user. (see [below for nested schema](#nestedblock--assignment--condition--match))
+
+<a id="nestedblock--assignment--condition--match"></a>
+### Nested Schema for `assignment.condition.match`
+
+Required:
+
+- `op` (String) How the property is compared: 'eq' and 'neq' against `value`, 'in' and 'nin' against `values`.
+- `property` (String) A claim of the user's identity provider profile, such as 'email', or 'groups' for the groups the user is in.
+- `source` (String) Always 'user'.
+
+Optional:
+
+- `value` (String) The value 'eq' and 'neq' compare against.
+- `values` (List of String) The values 'in' and 'nin' compare against. At least one.
+
+
+
 
 <a id="nestedblock--aws_iam_role"></a>
 ### Nested Schema for `aws_iam_role`

@@ -33,6 +33,7 @@ output "summarizer_id" {
 ### Read-Only
 
 - `acts_for_users` (Boolean) Whether the agent can act for a signed-in user, by exchanging the user's token (RFC 8693 token exchange).
+- `assignment` (List of Object) A rule naming users the agent may act for: any user matching one of the rules; a rule matches when all of its `condition` blocks do. Without any, the agent may act for every user of the gateway's identity provider. Takes effect with `acts_for_users`. (see [below for nested schema](#nestedatt--assignment))
 - `aws_iam_role` (Set of Object) An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is the deployment's issuer. (see [below for nested schema](#nestedatt--aws_iam_role))
 - `azure` (Set of Object) An Azure / Entra service principal: a managed identity, an app registration or an Entra agent identity (e.g. a Foundry agent). It signs in with an app-only Entra token for `audience`, so it also sends `resource` (the gateway) when it signs in. The app registration must issue v2 tokens and be dedicated to Hush: anything that receives tokens for it could replay them. (see [below for nested schema](#nestedatt--azure))
 - `description` (String) What the agent does.
@@ -41,6 +42,34 @@ output "summarizer_id" {
 - `oidc` (Set of Object) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience. (see [below for nested schema](#nestedatt--oidc))
 - `resource` (String) What a front end passes as `resource` when it signs a user in for this agent to act for them.
 - `user_tokens` (List of Object) Lets the agent act for a user with the user's token from the gateway's identity provider, instead of a Hush user token. Give `audiences`, `clients` or both; each given must match. Needs `acts_for_users`. (see [below for nested schema](#nestedatt--user_tokens))
+
+<a id="nestedatt--assignment"></a>
+### Nested Schema for `assignment`
+
+Read-Only:
+
+- `condition` (List of Object) (see [below for nested schema](#nestedobjatt--assignment--condition))
+
+<a id="nestedobjatt--assignment--condition"></a>
+### Nested Schema for `assignment.condition`
+
+Read-Only:
+
+- `match` (List of Object) (see [below for nested schema](#nestedobjatt--assignment--condition--match))
+
+<a id="nestedobjatt--assignment--condition--match"></a>
+### Nested Schema for `assignment.condition.match`
+
+Read-Only:
+
+- `op` (String)
+- `property` (String)
+- `source` (String)
+- `value` (String)
+- `values` (List of String)
+
+
+
 
 <a id="nestedatt--aws_iam_role"></a>
 ### Nested Schema for `aws_iam_role`
