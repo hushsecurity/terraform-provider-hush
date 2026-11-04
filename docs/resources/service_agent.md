@@ -83,6 +83,7 @@ output "summarizer_resource" {
 - `enabled` (Boolean) Whether the agent can sign in.
 - `kubernetes` (Block Set) A Kubernetes service account, signing in with a projected token whose audience is the deployment's issuer. (see [below for nested schema](#nestedblock--kubernetes))
 - `oidc` (Block Set) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience. (see [below for nested schema](#nestedblock--oidc))
+- `user_tokens` (Block List, Max: 1) Lets the agent act for a user with the user's token from the gateway's identity provider, instead of a Hush user token. Give `audiences`, `clients` or both; each given must match. Needs `acts_for_users`. (see [below for nested schema](#nestedblock--user_tokens))
 
 ### Read-Only
 
@@ -195,6 +196,16 @@ Required:
 Optional:
 
 - `op` (String) 'eq' (equal), 'pfx' (starts with) or 'sfx' (ends with).
+
+
+
+<a id="nestedblock--user_tokens"></a>
+### Nested Schema for `user_tokens`
+
+Optional:
+
+- `audiences` (List of String) Apps the token may be addressed to (`aud`): the agent's own app, or the front ends that call it.
+- `clients` (List of String) Apps that may have obtained the token (`azp`, `client_id` or `cid`), for identity providers whose `aud` names a shared API (e.g. Okta, PingOne).
 
 ## Import
 

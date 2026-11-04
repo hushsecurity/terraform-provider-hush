@@ -95,6 +95,14 @@ type AgentCredential struct {
 	Secret string `json:"secret,omitempty"` // only in the response that creates it
 }
 
+// UserTokens are the users' tokens from the gateway's IdP an agent may
+// exchange: addressed to one of Audiences and/or obtained by one of Clients.
+// A nil list isn't checked.
+type UserTokens struct {
+	Audiences []string `json:"audiences,omitempty"`
+	Clients   []string `json:"clients,omitempty"`
+}
+
 type ServiceAgent struct {
 	ID           string            `json:"id"`
 	SubjectType  string            `json:"subject_type"`
@@ -102,23 +110,27 @@ type ServiceAgent struct {
 	Description  string            `json:"description"`
 	Enabled      bool              `json:"enabled"`
 	ActsForUsers bool              `json:"acts_for_users"`
+	UserTokens   *UserTokens       `json:"user_tokens"`
 	Resource     string            `json:"resource"`
 	Credentials  []AgentCredential `json:"credentials"`
 }
 
 type ServiceAgentInput struct {
-	Name         string `json:"name"`
-	Description  string `json:"description,omitempty"`
-	Enabled      bool   `json:"enabled"`
-	ActsForUsers bool   `json:"acts_for_users"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description,omitempty"`
+	Enabled      bool        `json:"enabled"`
+	ActsForUsers bool        `json:"acts_for_users"`
+	UserTokens   *UserTokens `json:"user_tokens,omitempty"`
 }
 
-// ServiceAgentUpdate is a patch: a nil field is left as it is.
+// ServiceAgentUpdate is a patch: a nil field is left as it is. UserTokens
+// pointing at nil clears them.
 type ServiceAgentUpdate struct {
-	Name         *string `json:"name,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	Enabled      *bool   `json:"enabled,omitempty"`
-	ActsForUsers *bool   `json:"acts_for_users,omitempty"`
+	Name         *string      `json:"name,omitempty"`
+	Description  *string      `json:"description,omitempty"`
+	Enabled      *bool        `json:"enabled,omitempty"`
+	ActsForUsers *bool        `json:"acts_for_users,omitempty"`
+	UserTokens   **UserTokens `json:"user_tokens,omitempty"`
 }
 
 const agentsEndpoint = "/v1/agents"

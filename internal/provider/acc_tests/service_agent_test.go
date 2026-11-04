@@ -76,6 +76,10 @@ resource "hush_service_agent" "test" {
   name           = "acc-summarizer-2"
   acts_for_users = true
 
+  user_tokens {
+    audiences = ["appwayweb", "clientworksweb"]
+  }
+
   kubernetes {
     issuer          = "https://oidc.eks.eu-central-1.amazonaws.com/id/ABC"
     namespace       = "agents"
@@ -136,6 +140,8 @@ func TestAccServiceAgent(t *testing.T) {
 					resource.TestCheckResourceAttr("hush_service_agent.test", "name", "acc-summarizer-2"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "description", ""),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "acts_for_users", "true"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.audiences.#", "2"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.clients.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "aws_iam_role.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "kubernetes.#", "1"),
 					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "azure.*",
@@ -194,6 +200,14 @@ resource "hush_service_agent" "bad" {
   }
 }`,
 				ExpectError: regexp.MustCompile(`must be an IAM role ARN`),
+			},
+			{
+				Config: `
+resource "hush_service_agent" "bad" {
+  name = "acc-bad"
+  user_tokens {}
+}`,
+				ExpectError: regexp.MustCompile(`give audiences, clients or both`),
 			},
 		},
 	})

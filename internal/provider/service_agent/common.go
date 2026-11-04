@@ -26,6 +26,13 @@ const (
 		"(RFC 8693 token exchange)."
 	resourceAttrDesc = "What a front end passes as `resource` when it signs a user in for this agent " +
 		"to act for them."
+	userTokensDesc = "Lets the agent act for a user with the user's token from the gateway's identity " +
+		"provider, instead of a Hush user token. Give " +
+		"`audiences`, `clients` or both; each given must match. Needs `acts_for_users`."
+	audiencesDesc = "Apps the token may be addressed to (`aud`): the agent's own app, or the front " +
+		"ends that call it."
+	clientsDesc = "Apps that may have obtained the token (`azp`, `client_id` or `cid`), for identity " +
+		"providers whose `aud` names a shared API (e.g. Okta, PingOne)."
 	awsDesc = "An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is " +
 		"the deployment's issuer."
 	awsIssuerDesc = "The AWS account's outbound identity federation issuer, from " +
@@ -146,6 +153,16 @@ func ResourceSchema() map[string]*schema.Schema {
 		"enabled":        {Description: enabledDesc, Type: schema.TypeBool, Optional: true, Default: true},
 		"acts_for_users": {Description: actsForUsersDesc, Type: schema.TypeBool, Optional: true, Default: false},
 		"resource":       {Description: resourceAttrDesc, Type: schema.TypeString, Computed: true},
+		"user_tokens": {
+			Description: userTokensDesc,
+			Type:        schema.TypeList,
+			Optional:    true,
+			MaxItems:    1,
+			Elem: &schema.Resource{Schema: map[string]*schema.Schema{
+				"audiences": tokenClaims(audiencesDesc),
+				"clients":   tokenClaims(clientsDesc),
+			}},
+		},
 		client.CredentialAWSIAMRole: credentialBlock(awsDesc, map[string]*schema.Schema{
 			"issuer":        str(awsIssuerDesc, https),
 			"role_arn":      str(awsRoleDesc, validation.StringMatch(awsRolePattern, "must be an IAM role ARN")),
@@ -361,6 +378,7 @@ func flatten(d *schema.ResourceData, agent *client.ServiceAgent) error {
 		"description":    agent.Description,
 		"enabled":        agent.Enabled,
 		"acts_for_users": agent.ActsForUsers,
+		"user_tokens":    flattenUserTokens(agent.UserTokens),
 		"resource":       agent.Resource,
 	}
 	for kind, list := range blocks {
@@ -420,4 +438,53 @@ func identityKnown(c credential) bool {
 		}
 	}
 	return true
+}
+
+func tokenClaims(desc string) *schema.Schema {
+	return &schema.Schema{
+		Description: desc,
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    20,
+		Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringLenBetween(1, 512)},
+	}
+}
+
+// expandUserTokens is nil without a block. An empty list isn't sent: heimdall
+// takes a missing list as not checked.
+func expandUserTokens(d getter) *client.UserTokens {
+	blocks, _ := d.Get("user_tokens").([]any)
+	if len(blocks) == 0 {
+		return nil
+	}
+	block, _ := blocks[0].(map[string]any) // nil for an empty block
+	strs := func(key string) []string {
+		var out []string
+		values, _ := block[key].([]any)
+		for _, v := range values {
+			if s, ok := v.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return &client.UserTokens{Audiences: strs("audiences"), Clients: strs("clients")}
+}
+
+func flattenUserTokens(tokens *client.UserTokens) []any {
+	if tokens == nil {
+		return []any{}
+	}
+	return []any{map[string]any{"audiences": tokens.Audiences, "clients": tokens.Clients}}
+}
+
+// validateUserTokens wants at least one list in a user_tokens block.
+func validateUserTokens(d *schema.ResourceDiff) error {
+	if !d.NewValueKnown("user_tokens.0.audiences") || !d.NewValueKnown("user_tokens.0.clients") {
+		return nil
+	}
+	if tokens := expandUserTokens(d); tokens != nil && tokens.Audiences == nil && tokens.Clients == nil {
+		return fmt.Errorf("user_tokens: give audiences, clients or both")
+	}
+	return nil
 }

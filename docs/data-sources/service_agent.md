@@ -40,6 +40,7 @@ output "summarizer_id" {
 - `kubernetes` (Set of Object) A Kubernetes service account, signing in with a projected token whose audience is the deployment's issuer. (see [below for nested schema](#nestedatt--kubernetes))
 - `oidc` (Set of Object) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience. (see [below for nested schema](#nestedatt--oidc))
 - `resource` (String) What a front end passes as `resource` when it signs a user in for this agent to act for them.
+- `user_tokens` (List of Object) Lets the agent act for a user with the user's token from the gateway's identity provider, instead of a Hush user token. Give `audiences`, `clients` or both; each given must match. Needs `acts_for_users`. (see [below for nested schema](#nestedatt--user_tokens))
 
 <a id="nestedatt--aws_iam_role"></a>
 ### Nested Schema for `aws_iam_role`
@@ -123,3 +124,13 @@ Read-Only:
 - `claim` (List of String)
 - `op` (String)
 - `value` (String)
+
+
+
+<a id="nestedatt--user_tokens"></a>
+### Nested Schema for `user_tokens`
+
+Read-Only:
+
+- `audiences` (List of String)
+- `clients` (List of String)
