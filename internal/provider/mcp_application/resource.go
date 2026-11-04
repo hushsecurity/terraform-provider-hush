@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/assignment"
 	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
@@ -98,7 +99,7 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		update.Scopes = &scopes
 		patch = true
 	}
-	if assignments := expandAssignments(d); len(assignments) > 0 {
+	if assignments := assignment.Expand(d, "assignment"); len(assignments) > 0 {
 		update.Assignments = &assignments
 		patch = true
 	}
@@ -214,7 +215,7 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		changed = true
 	}
 	if d.HasChange("assignment") {
-		assignments := expandAssignments(d)
+		assignments := assignment.Expand(d, "assignment")
 		input.Assignments = &assignments
 		changed = true
 	}
@@ -465,7 +466,7 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication, managed bool) e
 		"deployment_ids":       app.DeploymentIDs,
 		"enabled":              app.Enabled,
 		"assign_all":           app.AssignAll,
-		"assignment":           flattenAssignments(app.Assignments),
+		"assignment":           assignment.Flatten(app.Assignments),
 		"allowed_agents":       app.AllowedAgents,
 		"scopes":               app.Scopes,
 		"client_id":            deref(app.ClientID),

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/assignment"
 )
 
 const (
@@ -33,6 +34,13 @@ const (
 		"ends that call it."
 	clientsDesc = "Apps that may have obtained the token (`azp`, `client_id` or `cid`), for identity " +
 		"providers whose `aud` names a shared API (e.g. Okta, PingOne)."
+	assignmentDesc = "A rule naming users the agent may act for: any user matching one of the " +
+		"rules; a rule matches when all of its `condition` blocks do. Without any, the agent may act " +
+		"for every user of the gateway's identity provider. Takes effect with `acts_for_users`."
+	matchDesc    = "One comparison of a property of the user."
+	sourceDesc   = "Always 'user'."
+	propertyDesc = "A claim of the user's identity provider profile, such as 'email', or 'groups' " +
+		"for the groups the user is in."
 	awsDesc = "An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is " +
 		"the deployment's issuer."
 	awsIssuerDesc = "The AWS account's outbound identity federation issuer, from " +
@@ -153,6 +161,7 @@ func ResourceSchema() map[string]*schema.Schema {
 		"enabled":        {Description: enabledDesc, Type: schema.TypeBool, Optional: true, Default: true},
 		"acts_for_users": {Description: actsForUsersDesc, Type: schema.TypeBool, Optional: true, Default: false},
 		"resource":       {Description: resourceAttrDesc, Type: schema.TypeString, Computed: true},
+		"assignment":     assignment.Schema(assignmentDesc, matchDesc, sourceDesc, propertyDesc, []string{"user"}),
 		"user_tokens": {
 			Description: userTokensDesc,
 			Type:        schema.TypeList,
@@ -379,6 +388,7 @@ func flatten(d *schema.ResourceData, agent *client.ServiceAgent) error {
 		"enabled":        agent.Enabled,
 		"acts_for_users": agent.ActsForUsers,
 		"user_tokens":    flattenUserTokens(agent.UserTokens),
+		"assignment":     assignment.Flatten(agent.Assignments),
 		"resource":       agent.Resource,
 	}
 	for kind, list := range blocks {
@@ -485,6 +495,14 @@ func validateUserTokens(d *schema.ResourceDiff) error {
 	}
 	if tokens := expandUserTokens(d); tokens != nil && tokens.Audiences == nil && tokens.Clients == nil {
 		return fmt.Errorf("user_tokens: give audiences, clients or both")
+	}
+	return nil
+}
+
+// expandAssignments is nil without rules, which heimdall takes as any user.
+func expandAssignments(d getter) []client.Assignment {
+	if rules := assignment.Expand(d, "assignment"); len(rules) > 0 {
+		return rules
 	}
 	return nil
 }

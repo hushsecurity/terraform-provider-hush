@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/assignment"
 	"github.com/hushsecurity/terraform-provider-hush/internal/writeonly"
 )
 
@@ -16,7 +17,7 @@ import (
 // another resource supplies is unknown here and reads as empty, so each rule
 // skips what it cannot see rather than guess.
 func customizeDiff(ctx context.Context, d *schema.ResourceDiff, m any) error {
-	if err := validateAssignments(d); err != nil {
+	if err := assignment.Validate(d, "assignment"); err != nil {
 		return err
 	}
 	if err := validateToolOperations(d); err != nil {

@@ -111,26 +111,29 @@ type ServiceAgent struct {
 	Enabled      bool              `json:"enabled"`
 	ActsForUsers bool              `json:"acts_for_users"`
 	UserTokens   *UserTokens       `json:"user_tokens"`
+	Assignments  []Assignment      `json:"assignments"`
 	Resource     string            `json:"resource"`
 	Credentials  []AgentCredential `json:"credentials"`
 }
 
 type ServiceAgentInput struct {
-	Name         string      `json:"name"`
-	Description  string      `json:"description,omitempty"`
-	Enabled      bool        `json:"enabled"`
-	ActsForUsers bool        `json:"acts_for_users"`
-	UserTokens   *UserTokens `json:"user_tokens,omitempty"`
+	Name         string       `json:"name"`
+	Description  string       `json:"description,omitempty"`
+	Enabled      bool         `json:"enabled"`
+	ActsForUsers bool         `json:"acts_for_users"`
+	UserTokens   *UserTokens  `json:"user_tokens,omitempty"`
+	Assignments  []Assignment `json:"assignments,omitempty"`
 }
 
-// ServiceAgentUpdate is a patch: a nil field is left as it is. UserTokens
-// pointing at nil clears them.
+// ServiceAgentUpdate is a patch: a nil field is left as it is. UserTokens or
+// Assignments pointing at nil clears them.
 type ServiceAgentUpdate struct {
-	Name         *string      `json:"name,omitempty"`
-	Description  *string      `json:"description,omitempty"`
-	Enabled      *bool        `json:"enabled,omitempty"`
-	ActsForUsers *bool        `json:"acts_for_users,omitempty"`
-	UserTokens   **UserTokens `json:"user_tokens,omitempty"`
+	Name         *string       `json:"name,omitempty"`
+	Description  *string       `json:"description,omitempty"`
+	Enabled      *bool         `json:"enabled,omitempty"`
+	ActsForUsers *bool         `json:"acts_for_users,omitempty"`
+	UserTokens   **UserTokens  `json:"user_tokens,omitempty"`
+	Assignments  *[]Assignment `json:"assignments,omitempty"`
 }
 
 const agentsEndpoint = "/v1/agents"

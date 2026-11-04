@@ -80,6 +80,17 @@ resource "hush_service_agent" "test" {
     audiences = ["appwayweb", "clientworksweb"]
   }
 
+  assignment {
+    condition {
+      match {
+        source   = "user"
+        property = "groups"
+        op       = "in"
+        values   = ["finance", "advisors"]
+      }
+    }
+  }
+
   kubernetes {
     issuer          = "https://oidc.eks.eu-central-1.amazonaws.com/id/ABC"
     namespace       = "agents"
@@ -142,6 +153,8 @@ func TestAccServiceAgent(t *testing.T) {
 					resource.TestCheckResourceAttr("hush_service_agent.test", "acts_for_users", "true"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.audiences.#", "2"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.clients.#", "0"),
+					resource.TestCheckResourceAttr("hush_service_agent.test",
+						"assignment.0.condition.0.match.0.values.#", "2"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "aws_iam_role.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "kubernetes.#", "1"),
 					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "azure.*",
@@ -156,6 +169,29 @@ func TestAccServiceAgent(t *testing.T) {
 					resource.TestCheckResourceAttr("data.hush_service_agent.by_name", "kubernetes.#", "1"),
 					resource.TestCheckResourceAttr("data.hush_service_agent.by_id", "name", "acc-summarizer-2"),
 					resource.TestCheckResourceAttr("data.hush_service_agent.by_id", "oidc.#", "1"),
+				),
+			},
+			{
+				// Dropping the blocks clears them on the server.
+				Config: strings.Replace(serviceAgentStep2, `  user_tokens {
+    audiences = ["appwayweb", "clientworksweb"]
+  }
+
+  assignment {
+    condition {
+      match {
+        source   = "user"
+        property = "groups"
+        op       = "in"
+        values   = ["finance", "advisors"]
+      }
+    }
+  }
+
+`, "", 1),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.#", "0"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "assignment.#", "0"),
 				),
 			},
 			{
@@ -208,6 +244,23 @@ resource "hush_service_agent" "bad" {
   user_tokens {}
 }`,
 				ExpectError: regexp.MustCompile(`give audiences, clients or both`),
+			},
+			{
+				Config: `
+resource "hush_service_agent" "bad" {
+  name = "acc-bad"
+  assignment {
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "eq"
+        value    = "agt-other"
+      }
+    }
+  }
+}`,
+				ExpectError: regexp.MustCompile(`expected assignment.0.condition.0.match.0.source to be one of`),
 			},
 		},
 	})

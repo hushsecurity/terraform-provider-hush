@@ -7,6 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/assignment"
 )
 
 func Resource() *schema.Resource {
@@ -24,6 +25,9 @@ func Resource() *schema.Resource {
 			if err := validateUserTokens(d); err != nil {
 				return err
 			}
+			if err := assignment.Validate(d, "assignment"); err != nil {
+				return err
+			}
 			return validateCredentials(d)
 		},
 		Schema: ResourceSchema(),
@@ -39,6 +43,7 @@ func agentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 		Enabled:      d.Get("enabled").(bool),
 		ActsForUsers: d.Get("acts_for_users").(bool),
 		UserTokens:   expandUserTokens(d),
+		Assignments:  expandAssignments(d),
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -97,6 +102,11 @@ func agentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 	if d.HasChange("user_tokens") {
 		tokens := expandUserTokens(d)
 		patch.UserTokens = &tokens
+		changed = true
+	}
+	if d.HasChange("assignment") {
+		rules := expandAssignments(d)
+		patch.Assignments = &rules
 		changed = true
 	}
 	var agent *client.ServiceAgent
