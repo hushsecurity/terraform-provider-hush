@@ -21,6 +21,9 @@ func Resource() *schema.Resource {
 			StateContext: schema.ImportStatePassthroughContext,
 		},
 		CustomizeDiff: func(_ context.Context, d *schema.ResourceDiff, _ any) error {
+			if err := validateUserTokens(d); err != nil {
+				return err
+			}
 			return validateCredentials(d)
 		},
 		Schema: ResourceSchema(),
@@ -35,6 +38,7 @@ func agentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 		Description:  d.Get("description").(string),
 		Enabled:      d.Get("enabled").(bool),
 		ActsForUsers: d.Get("acts_for_users").(bool),
+		UserTokens:   expandUserTokens(d),
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -88,6 +92,11 @@ func agentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 	if d.HasChange("acts_for_users") {
 		acts := d.Get("acts_for_users").(bool)
 		patch.ActsForUsers = &acts
+		changed = true
+	}
+	if d.HasChange("user_tokens") {
+		tokens := expandUserTokens(d)
+		patch.UserTokens = &tokens
 		changed = true
 	}
 	var agent *client.ServiceAgent
