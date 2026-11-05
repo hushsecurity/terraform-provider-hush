@@ -221,6 +221,46 @@ func TestAccResourceDeploymentKindIsImmutable(t *testing.T) {
 	})
 }
 
+// A systemd deployment, for the sensor or the connector installed on a VM, is
+// created, read back by the data source, and fixed at creation like any other.
+func TestAccResourceDeploymentSystemd(t *testing.T) {
+	var deploymentID string
+
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("deployment", "v1/deployments"),
+		Steps: []resource.TestStep{
+			{
+				Config: deploymentKindConfig("systemd") + `
+data "hush_deployment" "kind" {
+  id = hush_deployment.kind.id
+}
+`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_deployment.kind", "kind", "systemd"),
+					resource.TestCheckResourceAttr(
+						"data.hush_deployment.kind", "kind", "systemd"),
+					recordID("hush_deployment.kind", &deploymentID),
+				),
+			},
+			{
+				Config: deploymentKindConfig("k8s"),
+				ExpectError: regexp.MustCompile(
+					`kind: cannot be changed from "systemd" to "k8s"`),
+			},
+			{
+				Config: deploymentKindConfig("systemd"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"hush_deployment.kind", "kind", "systemd"),
+					checkIDUnchanged("hush_deployment.kind", &deploymentID),
+				),
+			},
+		},
+	})
+}
+
 func deploymentKindConfig(kind string) string {
 	return fmt.Sprintf(`
 resource "hush_deployment" "kind" {
