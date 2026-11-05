@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ## [Unreleased]
 
+### Added
+
+* **`systemd` deployments**: `hush_deployment` accepts `kind = "systemd"`, the kind of a Linux VM the sensor or the connector is installed on with Hush's install script. Such deployments, created in the console or the API so far, can now be declared, or imported with `terraform import`, and the `hush_deployment` data source reads them as before. Like every kind, it is fixed at creation. A systemd deployment does not take an `agw` block yet; the plan refuses one, as on `ecs` and `serverless`.
+
 ### Changed
 
 * **Docs**: the `hush_plaintext_access_credential` and `hush_kv_access_credential` pages no longer name environment variables as the way to deliver them. An access policy also delivers them as files in a volume or through the SDK; the `hush_access_policy` examples show a plaintext credential delivered as a file.
