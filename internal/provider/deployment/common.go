@@ -18,8 +18,8 @@ const (
 	nameDesc        = "The name of the deployment"
 	descriptionDesc = "The description of the deployment"
 	envTypeDesc     = "The environment type for the deployment (dev, prod)"
-	kindDesc        = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway."
-	kindDataDesc    = "The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway."
+	kindDesc        = "The deployment kind (k8s, hosted, ecs, serverless, systemd; systemd is a Linux VM the sensor or the connector is installed on with Hush's install script). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway."
+	kindDataDesc    = "The deployment kind (k8s, hosted, ecs, serverless, systemd). Only 'hosted' and 'k8s' can carry an agent gateway."
 	statusDesc      = "The current status of the deployment"
 	tokenDesc       = "The deployment token for authentication"
 	passwordDesc    = "The deployment password for authentication"
@@ -40,15 +40,17 @@ const (
 	oidcAllowedSubjectsDesc = "Optional list of allowed subject claims. A trailing '*' acts as a prefix wildcard (for example 'system:serviceaccount:hush-security:*'). When omitted, any subject is accepted."
 )
 
-// The deployment kinds the schema accepts. Only two carry a gateway: a hosted
-// one is run by Hush and placed by region, and a k8s one may run a gateway the
-// customer installed from the Helm chart, which is why no other self-hosted
-// kind accepts the block.
+// The deployment kinds the schema accepts. A systemd deployment is a Linux VM
+// the sensor or the connector is installed on with Hush's install script. Only
+// two kinds carry a gateway: a hosted one is run by Hush and placed by region,
+// and a k8s one may run a gateway the customer installed from the Helm chart,
+// which is why no other self-hosted kind accepts the block.
 const (
 	deploymentKindK8s        = "k8s"
 	deploymentKindHosted     = "hosted"
 	deploymentKindECS        = "ecs"
 	deploymentKindServerless = "serverless"
+	deploymentKindSystemd    = "systemd"
 )
 
 // gatewayHostnamePattern matches a bare domain name: lowercase labels joined by
@@ -120,6 +122,7 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 			deploymentKindHosted,
 			deploymentKindECS,
 			deploymentKindServerless,
+			deploymentKindSystemd,
 		}, false),
 	}
 

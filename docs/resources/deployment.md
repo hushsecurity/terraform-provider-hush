@@ -20,6 +20,14 @@ resource "hush_deployment" "example" {
   kind        = "k8s"
 }
 
+# A Linux VM the sensor or the connector is installed on with Hush's install
+# script, which configures it with this deployment's token and password.
+resource "hush_deployment" "vm" {
+  name     = "vm-deployment"
+  env_type = "prod"
+  kind     = "systemd"
+}
+
 # Deployment with OIDC configuration for passwordless token exchange. The agent
 # presents a signed OIDC token (e.g. a Kubernetes service account token) instead
 # of the deployment password.
@@ -101,7 +109,7 @@ output "deployment" {
 
 ### Required
 
-- `kind` (String) The deployment kind (k8s, hosted, ecs, serverless). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway.
+- `kind` (String) The deployment kind (k8s, hosted, ecs, serverless, systemd; systemd is a Linux VM the sensor or the connector is installed on with Hush's install script). Only 'hosted' and 'k8s' can carry an agent gateway. The kind is fixed at creation; it cannot be changed afterwards. Moving a deployment to another kind means removing this resource from the configuration, applying, and declaring it again, which reissues its credentials and detaches any application bound to its gateway.
 - `name` (String) The name of the deployment
 
 ### Optional

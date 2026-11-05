@@ -410,6 +410,11 @@ func TestAgwKindRules(t *testing.T) {
 		{name: "a kind that cannot run a gateway", kind: "ecs",
 			agw:     map[string]any{"hostname": "gw.example.com"},
 			wantErr: `agw: a gateway is only valid on kind "k8s" or "hosted"`},
+		// the API does not take a gateway on a systemd deployment yet
+		{name: "systemd with a gateway", kind: deploymentKindSystemd,
+			agw:     map[string]any{"hostname": "gw.example.com"},
+			wantErr: `agw: a gateway is only valid on kind "k8s" or "hosted"`},
+		{name: "systemd with no block at all", kind: deploymentKindSystemd},
 
 		// A member the caller wrote but Terraform cannot resolve yet must not
 		// be mistaken for one they left out, or the ordinary shape of this
