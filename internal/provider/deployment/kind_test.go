@@ -103,3 +103,43 @@ func TestKindIsNotForceNew(t *testing.T) {
 		t.Fatal("kind must not be ForceNew: a change is refused, not replaced")
 	}
 }
+
+// systemd is a Linux VM the sensor or the connector is installed on, and the
+// API takes it; the schema must not refuse it before the request is sent, and
+// must still refuse a kind the API has never heard of.
+func TestKindSchemaAcceptsSystemd(t *testing.T) {
+	validate := DeploymentResourceSchema()["kind"].ValidateFunc
+	for _, kind := range []string{"k8s", "hosted", "ecs", "serverless", "systemd"} {
+		if _, errs := validate(kind, "kind"); len(errs) > 0 {
+			t.Errorf("expected kind %q to be accepted, got %v", kind, errs)
+		}
+	}
+	if _, errs := validate("vm", "kind"); len(errs) == 0 {
+		t.Error(`expected kind "vm" to be refused`)
+	}
+}
+
+// A systemd deployment is created like any other kind.
+func TestKindSystemdOnCreateIsNotAChange(t *testing.T) {
+	config := terraform.NewResourceConfigRaw(map[string]any{
+		"name": "d", "kind": "systemd",
+	})
+	if _, err := Resource().Diff(
+		context.Background(), nil, config, nil,
+	); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+// and is fixed at creation like any other.
+func TestKindSystemdCannotBeEdited(t *testing.T) {
+	err := kindDiff(t, "systemd", "k8s")
+	if err == nil {
+		t.Fatal("expected the kind change to be refused")
+	}
+	for _, want := range []string{"cannot be changed", `"systemd"`, `"k8s"`} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected the refusal to mention %s, got: %v", want, err)
+		}
+	}
+}
