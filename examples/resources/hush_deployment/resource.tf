@@ -5,6 +5,14 @@ resource "hush_deployment" "example" {
   kind        = "k8s"
 }
 
+# A Linux VM the sensor or the connector is installed on with Hush's install
+# script, which configures it with this deployment's token and password.
+resource "hush_deployment" "vm" {
+  name     = "vm-deployment"
+  env_type = "prod"
+  kind     = "systemd"
+}
+
 # Deployment with OIDC configuration for passwordless token exchange. The agent
 # presents a signed OIDC token (e.g. a Kubernetes service account token) instead
 # of the deployment password.
