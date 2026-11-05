@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Redis access credentials**: new `redis_cloud` engine for `hush_redis_access_credential`, which provisions ACL users for a Redis Cloud database via the Redis Cloud API. Set `engine = "redis_cloud"` with `host` (plus the optional `port`, `database`, `tls`, `tls_ca`), `redis_cloud_subscription_id`, `database_id`, `api_key`, and `api_secret_key` (or the write-only `api_secret_key_wo`/`api_secret_key_wo_version`). `password`, `username`, and the other engines' fields must not be set. Changing `api_key` requires a new secret key, which is checked at plan time. Needs an access-manager at v0.33.0 or later; see the [resource documentation](docs/resources/redis_access_credential.md#redis-cloud-requirements).
+
 ## [1.38.0] - 2026-11-04
 
 ### Added

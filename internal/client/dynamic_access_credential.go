@@ -696,6 +696,10 @@ type RedisAccessCredential struct {
 	SubscriptionID string `json:"subscription_id,omitempty"`
 	ResourceGroup  string `json:"resource_group,omitempty"`
 	ClusterName    string `json:"cluster_name,omitempty"`
+	// Redis Cloud engine fields.
+	APIKey                   string `json:"api_key,omitempty"`
+	RedisCloudSubscriptionID int    `json:"redis_cloud_subscription_id,omitempty"`
+	DatabaseID               int    `json:"database_id,omitempty"`
 
 	Status       string `json:"status,omitempty"`
 	StatusDetail string `json:"status_detail,omitempty"`
@@ -733,6 +737,11 @@ type CreateRedisAccessCredentialInput struct {
 	SubscriptionID string `json:"subscription_id,omitempty"`
 	ResourceGroup  string `json:"resource_group,omitempty"`
 	ClusterName    string `json:"cluster_name,omitempty"`
+	// Redis Cloud engine fields.
+	APIKey                   string `json:"api_key,omitempty"`
+	APISecretKey             string `json:"api_secret_key,omitempty"`
+	RedisCloudSubscriptionID int    `json:"redis_cloud_subscription_id,omitempty"`
+	DatabaseID               int    `json:"database_id,omitempty"`
 }
 
 // UpdateRedisAccessCredentialInput omits engine: it is immutable and ignored by
@@ -766,6 +775,11 @@ type UpdateRedisAccessCredentialInput struct {
 	SubscriptionID *string         `json:"subscription_id,omitempty"`
 	ResourceGroup  *string         `json:"resource_group,omitempty"`
 	ClusterName    *string         `json:"cluster_name,omitempty"`
+	// Redis Cloud engine fields.
+	APIKey                   *string `json:"api_key,omitempty"`
+	APISecretKey             *string `json:"api_secret_key,omitempty"`
+	RedisCloudSubscriptionID *int    `json:"redis_cloud_subscription_id,omitempty"`
+	DatabaseID               *int    `json:"database_id,omitempty"`
 }
 
 func CreateRedisAccessCredential(ctx context.Context, c *Client, input *CreateRedisAccessCredentialInput) (*RedisAccessCredential, error) {
