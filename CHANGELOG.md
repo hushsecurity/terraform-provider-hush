@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **`systemd` deployments**: `hush_deployment` accepts `kind = "systemd"`, the kind of a Linux VM the sensor or the connector is installed on with Hush's install script. Such deployments, created in the console or the API so far, can now be declared, or imported with `terraform import`, and the `hush_deployment` data source reads them as before. Like every kind, it is fixed at creation. A systemd deployment does not take an `agw` block yet; the plan refuses one, as on `ecs` and `serverless`.
+
 ## [1.38.0] - 2026-11-04
 
 ### Added
