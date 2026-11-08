@@ -12,7 +12,7 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Manage key-value access credentials in the Hush Security platform. KV credentials store multiple key-value pairs that can be delivered as separate environment variables to specified deployments.",
+		Description:   "Manage key-value access credentials in the Hush Security platform. A KV credential stores a set of key-value pairs.",
 		CreateContext: kvAccessCredentialCreate,
 		ReadContext:   kvAccessCredentialRead,
 		UpdateContext: kvAccessCredentialUpdate,
