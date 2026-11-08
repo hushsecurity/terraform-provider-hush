@@ -182,6 +182,27 @@ resource "hush_access_policy" "volume_template_example" {
   }
 }
 
+# Create an access policy that delivers a plaintext credential as a file.
+# An item without key delivers the secret value.
+resource "hush_access_policy" "plaintext_volume_example" {
+  name                 = "api-key-file-policy"
+  access_credential_id = hush_plaintext_access_credential.example.id
+  deployment_ids       = ["dep-example123456789"]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  volume_delivery_config {
+    mount_point = "/etc/secrets"
+
+    item {
+      path = "api_key"
+    }
+  }
+}
+
 # Create an access policy with AWS WIF delivery (hush_subject)
 resource "hush_access_policy" "aws_wif_example" {
   name                 = "prod-aws-wif-policy"
