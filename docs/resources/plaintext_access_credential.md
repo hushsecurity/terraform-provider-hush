@@ -3,12 +3,12 @@
 page_title: "hush_plaintext_access_credential Resource - terraform-provider-hush"
 subcategory: ""
 description: |-
-  Manage plaintext access credentials in the Hush Security platform. Plaintext credentials store a single secret value that can be delivered as an environment variable to specified deployments.
+  Manage plaintext access credentials in the Hush Security platform. A plaintext credential stores a single secret value.
 ---
 
 # hush_plaintext_access_credential (Resource)
 
-Manage plaintext access credentials in the Hush Security platform. Plaintext credentials store a single secret value that can be delivered as an environment variable to specified deployments.
+Manage plaintext access credentials in the Hush Security platform. A plaintext credential stores a single secret value.
 
 ## Example Usage
 

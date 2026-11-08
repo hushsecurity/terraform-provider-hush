@@ -13,7 +13,7 @@ import (
 
 func Resource() *schema.Resource {
 	return &schema.Resource{
-		Description:   "Manage plaintext access credentials in the Hush Security platform. Plaintext credentials store a single secret value that can be delivered as an environment variable to specified deployments.",
+		Description:   "Manage plaintext access credentials in the Hush Security platform. A plaintext credential stores a single secret value.",
 		CreateContext: plaintextAccessCredentialCreate,
 		ReadContext:   plaintextAccessCredentialRead,
 		UpdateContext: plaintextAccessCredentialUpdate,

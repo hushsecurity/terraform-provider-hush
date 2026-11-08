@@ -3,12 +3,12 @@
 page_title: "hush_kv_access_credential Resource - terraform-provider-hush"
 subcategory: ""
 description: |-
-  Manage key-value access credentials in the Hush Security platform. KV credentials store multiple key-value pairs that can be delivered as separate environment variables to specified deployments.
+  Manage key-value access credentials in the Hush Security platform. A KV credential stores a set of key-value pairs.
 ---
 
 # hush_kv_access_credential (Resource)
 
-Manage key-value access credentials in the Hush Security platform. KV credentials store multiple key-value pairs that can be delivered as separate environment variables to specified deployments.
+Manage key-value access credentials in the Hush Security platform. A KV credential stores a set of key-value pairs.
 
 ## Example Usage
 
@@ -79,5 +79,5 @@ output "available_keys" {
 
 Required:
 
-- `key` (String) The key name for the environment variable
+- `key` (String) The key for the key-value pair
 - `value` (String, Sensitive) The value for the key-value pair
