@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Changed
+
+* **Docs**: the `hush_plaintext_access_credential` and `hush_kv_access_credential` pages no longer name environment variables as the way to deliver them. An access policy also delivers them as files in a volume or through the SDK; the `hush_access_policy` examples show a plaintext credential delivered as a file.
+
 ## [1.38.0] - 2026-11-04
 
 ### Added
