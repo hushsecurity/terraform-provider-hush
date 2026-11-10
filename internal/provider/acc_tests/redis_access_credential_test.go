@@ -19,6 +19,7 @@ var redisNonAzureFields = []string{
 	"host", "port", "password", "username", "database", "tls", "tls_ca", "cache_engine",
 	"region", "user_group_id", "access_key_id", "secret_access_key",
 	"project", "service_name", "token",
+	"api_key", "api_secret_key", "redis_cloud_subscription_id", "database_id",
 }
 
 // Seeded rather than created, so it exists in the backend but not in state --

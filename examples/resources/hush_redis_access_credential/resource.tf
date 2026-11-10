@@ -64,3 +64,22 @@ resource "hush_redis_access_credential" "azure_managed_redis_example" {
   client_secret_wo         = var.azure_client_secret
   client_secret_wo_version = "1"
 }
+
+# Create a Redis Cloud dynamic access credential.
+# Provisions ephemeral ACL users for the database via the Redis Cloud API,
+# authenticated by an API account key and user key. The connection fields
+# tell the workload where to connect.
+resource "hush_redis_access_credential" "redis_cloud_example" {
+  name                        = "prod-redis-cloud"
+  description                 = "Production Redis Cloud credential"
+  deployment_ids              = [hush_deployment.example.id]
+  engine                      = "redis_cloud"
+  host                        = "redis-12345.c1.us-east-1-2.ec2.redns.redis-cloud.com"
+  port                        = 12345
+  tls                         = true
+  redis_cloud_subscription_id = 123456
+  database_id                 = 7890123
+  api_key                     = var.redis_cloud_api_key
+  api_secret_key_wo           = var.redis_cloud_api_secret_key
+  api_secret_key_wo_version   = "1"
+}

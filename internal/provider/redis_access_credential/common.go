@@ -12,10 +12,11 @@ const (
 	engineElastiCache       = "elasticache"
 	engineAiven             = "aiven"
 	engineAzureManagedRedis = "azure_managed_redis"
+	engineRedisCloud        = "redis_cloud"
 )
 
 var (
-	validEngines      = []string{engineRedis, engineElastiCache, engineAiven, engineAzureManagedRedis}
+	validEngines      = []string{engineRedis, engineElastiCache, engineAiven, engineAzureManagedRedis, engineRedisCloud}
 	validCacheEngines = []string{"redis", "valkey"}
 )
 
@@ -28,21 +29,28 @@ var (
 	clusterNameRegex = regexp.MustCompile(`^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$`)
 )
 
+// Bounds of a Redis Cloud subscription or database id, mirroring midgard's
+// RedisCloudId.
+const (
+	minRedisCloudID = 1
+	maxRedisCloudID = 1<<31 - 1
+)
+
 const (
 	idDesc                 = "The unique identifier of the Redis access credential"
 	nameDesc               = "The name of the Redis access credential"
 	descriptionDesc        = "The description of the Redis access credential"
 	deploymentIDsDesc      = "List of deployment IDs that can access this credential. Currently limited to a single deployment"
-	hostDesc               = "The hostname or IP address of the Redis server. Required when `engine` is `redis` or `elasticache`; must not be set when `engine` is `aiven` or `azure_managed_redis` (Hush resolves the endpoint from the provider's API)."
-	portDesc               = "The port number of the Redis server (default: 6379). Only valid when `engine` is `redis` or `elasticache`."
+	hostDesc               = "The hostname or IP address of the Redis server. Required when `engine` is `redis`, `elasticache` or `redis_cloud`; must not be set when `engine` is `aiven` or `azure_managed_redis` (Hush resolves the endpoint from the provider's API)."
+	portDesc               = "The port number of the Redis server (default: 6379). Only valid when `engine` is `redis`, `elasticache` or `redis_cloud`, and required for `redis_cloud`."
 	usernameDesc           = "The username for the Redis connection (Redis 6+ ACL). Only valid when `engine` is `redis` or `elasticache`."
 	passwordDesc           = "The password for the Redis connection. Required when `engine` is `redis`; must not be set for any other engine."
 	passwordWODesc         = "The password for the Redis connection (write-only). This is a write-only attribute that is more secure than `password` because Terraform will not store this value in the state file. Required when `engine` is `redis`; must not be set for any other engine."
 	passwordWOVerDesc      = "Used to trigger updates for `password_wo`. This value should be changed when the password content changes. Can be any value (e.g., a timestamp, version number, or hash)."
-	databaseDesc           = "The Redis database number (0-15, default: 0). Only valid when `engine` is `redis` or `elasticache`."
-	tlsDesc                = "Whether to use TLS for the Redis connection. Only valid when `engine` is `redis` or `elasticache`."
-	tlsCADesc              = "The TLS CA certificate for the Redis connection. Only valid when `engine` is `redis` or `elasticache`."
-	engineDesc             = "The routing engine for this credential. `redis` connects directly to a Redis server using a password. `elasticache` provisions users via the AWS ElastiCache API. `aiven` provisions users via the Aiven API for an Aiven-managed Valkey service. `azure_managed_redis` provisions Entra ID service principals for an Azure Managed Redis cluster via the Azure APIs. Immutable; changing it forces replacement."
+	databaseDesc           = "The Redis database number (0-15, default: 0). Only valid when `engine` is `redis`, `elasticache` or `redis_cloud`; must be 0 for `redis_cloud`."
+	tlsDesc                = "Whether to use TLS for the Redis connection. Only valid when `engine` is `redis`, `elasticache` or `redis_cloud`."
+	tlsCADesc              = "The TLS CA certificate for the Redis connection. Only valid when `engine` is `redis`, `elasticache` or `redis_cloud`."
+	engineDesc             = "The routing engine for this credential. `redis` connects directly to a Redis server using a password. `elasticache` provisions users via the AWS ElastiCache API. `aiven` provisions users via the Aiven API for an Aiven-managed Valkey service. `azure_managed_redis` provisions Entra ID service principals for an Azure Managed Redis cluster via the Azure APIs. `redis_cloud` provisions ACL users for a Redis Cloud database via the Redis Cloud API. Immutable; changing it forces replacement."
 	cacheEngineDesc        = "The AWS ElastiCache cache engine. Required and only valid when `engine` is `elasticache`. One of `redis`, `valkey`. Not valid for the `aiven` or `azure_managed_redis` engines (Hush resolves the variant from the live service)."
 	regionDesc             = "The AWS region of the ElastiCache cluster. Required and only valid when `engine` is `elasticache`."
 	userGroupIDDesc        = "The ElastiCache user group ID to add provisioned users to. Required and only valid when `engine` is `elasticache`."
@@ -63,6 +71,12 @@ const (
 	subscriptionIDDesc     = "The Azure subscription ID (lowercase UUID) that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
 	resourceGroupDesc      = "The Azure resource group that contains the Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
 	clusterNameDesc        = "The name of the Azure Managed Redis cluster. Required and only valid when `engine` is `azure_managed_redis`."
+	apiKeyDesc             = "The Redis Cloud API account key Hush uses to manage the database's ACL users. Required and only valid when `engine` is `redis_cloud`. Changing it requires a new `api_secret_key` (or a bumped `api_secret_key_wo_version`), since the user key is issued under one account. A new `api_key` names another account: the versions issued under the old one keep their rule, role and user there, named `hush-<id>-<version>`, and must be deleted by hand."
+	apiSecretKeyDesc       = "The Redis Cloud API user key that goes with `api_key`. Required (or `api_secret_key_wo`) and only valid when `engine` is `redis_cloud`."
+	apiSecretKeyWODesc     = "The Redis Cloud API user key that goes with `api_key` (write-only). This is a write-only attribute that is more secure than `api_secret_key` because Terraform will not store this value in the state file. Required (or `api_secret_key`) and only valid when `engine` is `redis_cloud`."
+	apiSecretKeyWOVDesc    = "Used to trigger updates for `api_secret_key_wo`. This value should be changed when the key content changes. Can be any value (e.g., a timestamp, version number, or hash)."
+	rcSubscriptionIDDesc   = "The ID of the Redis Cloud subscription that contains the database. Required and only valid when `engine` is `redis_cloud`."
+	databaseIDDesc         = "The ID of the Redis Cloud database. Required and only valid when `engine` is `redis_cloud`."
 	typeDesc               = "The type of access credential"
 	kindDesc               = "The kind of access credential"
 	secretStoreIDDesc      = "The ID of the secret store where this credential is saved (optional)"
@@ -307,6 +321,49 @@ func ResourceSchema() map[string]*schema.Schema {
 			validation.StringMatch(clusterNameRegex, "cluster_name must be alphanumeric segments separated by single hyphens"),
 		),
 	}
+	// Redis Cloud engine fields.
+	s["api_key"] = &schema.Schema{
+		Description:  apiKeyDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		ValidateFunc: validation.StringIsNotEmpty,
+	}
+	s["api_secret_key"] = &schema.Schema{
+		Description:   apiSecretKeyDesc,
+		Type:          schema.TypeString,
+		Optional:      true,
+		Sensitive:     true,
+		ConflictsWith: []string{"api_secret_key_wo"},
+		ValidateFunc:  validation.StringLenBetween(1, 4096),
+	}
+	s["api_secret_key_wo"] = &schema.Schema{
+		Description:   apiSecretKeyWODesc,
+		Type:          schema.TypeString,
+		Optional:      true,
+		Sensitive:     true,
+		WriteOnly:     true,
+		ConflictsWith: []string{"api_secret_key"},
+		RequiredWith:  []string{"api_secret_key_wo_version"},
+		ValidateFunc:  validation.StringLenBetween(1, 4096),
+	}
+	s["api_secret_key_wo_version"] = &schema.Schema{
+		Description:  apiSecretKeyWOVDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		RequiredWith: []string{"api_secret_key_wo"},
+	}
+	s["redis_cloud_subscription_id"] = &schema.Schema{
+		Description:  rcSubscriptionIDDesc,
+		Type:         schema.TypeInt,
+		Optional:     true,
+		ValidateFunc: validation.IntBetween(minRedisCloudID, maxRedisCloudID),
+	}
+	s["database_id"] = &schema.Schema{
+		Description:  databaseIDDesc,
+		Type:         schema.TypeInt,
+		Optional:     true,
+		ValidateFunc: validation.IntBetween(minRedisCloudID, maxRedisCloudID),
+	}
 
 	return s
 }
@@ -424,6 +481,21 @@ func DataSourceSchema() map[string]*schema.Schema {
 		"cluster_name": {
 			Description: clusterNameDesc,
 			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"api_key": {
+			Description: apiKeyDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"redis_cloud_subscription_id": {
+			Description: rcSubscriptionIDDesc,
+			Type:        schema.TypeInt,
+			Computed:    true,
+		},
+		"database_id": {
+			Description: databaseIDDesc,
+			Type:        schema.TypeInt,
 			Computed:    true,
 		},
 		"type": {
