@@ -1,6 +1,10 @@
 package postgres_access_privilege
 
 import (
+	"context"
+	"errors"
+
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
@@ -11,8 +15,11 @@ const (
 	nameDesc        = "The name of the PostgreSQL access privilege"
 	descriptionDesc = "The description of the PostgreSQL access privilege"
 	grantsDesc      = "The list of privilege grants"
+	memberOfDesc    = "Roles the user is made a member of, with INHERIT and SET, so it can transfer what it creates to them (ALTER ... OWNER TO). The root credential's user needs ADMIN OPTION on each role, or SUPERUSER for a superuser role. Requires access-manager chart 0.34.0 or later on the deployments of policies using the privilege."
 	typeDesc        = "The type of access privilege"
 )
+
+var errNothingGranted = errors.New("at least one of grants or member_of is required")
 
 func ResourceSchema() map[string]*schema.Schema {
 	s := DataSourceSchema()
@@ -34,11 +41,22 @@ func ResourceSchema() map[string]*schema.Schema {
 		Optional:     true,
 		ValidateFunc: validation.StringLenBetween(0, 1000),
 	}
+	s["member_of"] = &schema.Schema{
+		Description: memberOfDesc,
+		Type:        schema.TypeSet,
+		Optional:    true,
+		Elem: &schema.Schema{
+			Type: schema.TypeString,
+			ValidateFunc: validation.All(
+				validation.StringLenBetween(1, 63),
+				validation.StringNotInSlice([]string{"public"}, false),
+			),
+		},
+	}
 	s["grants"] = &schema.Schema{
-		Description: grantsDesc,
+		Description: grantsDesc + ". At least one of grants or member_of is required.",
 		Type:        schema.TypeList,
-		Required:    true,
-		MinItems:    1,
+		Optional:    true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"privileges": {
@@ -144,12 +162,52 @@ func DataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"member_of": {
+			Description: memberOfDesc,
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 		"type": {
 			Description: typeDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
 	}
+}
+
+// requireGrantsOrMemberOf mirrors midgard, which refuses a privilege that
+// grants nothing. It reads the raw config, where a value unknown at plan time
+// is still present; the resolved diff drops an unknown set element.
+func requireGrantsOrMemberOf(_ context.Context, d *schema.ResourceDiff, _ any) error {
+	config := d.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() {
+		return nil
+	}
+	if grantsSomething(config.GetAttr("grants")) || grantsSomething(config.GetAttr("member_of")) {
+		return nil
+	}
+	return errNothingGranted
+}
+
+// grantsSomething counts a value not wholly known as granting, leaving it to
+// the API at apply.
+func grantsSomething(v cty.Value) bool {
+	if v.IsNull() {
+		return false
+	}
+	if !v.IsWhollyKnown() {
+		return true
+	}
+	return v.LengthInt() > 0
+}
+
+func expandMemberOf(set *schema.Set) []string {
+	roles := make([]string, 0, set.Len())
+	for _, r := range set.List() {
+		roles = append(roles, r.(string))
+	}
+	return roles
 }
 
 func expandGrants(list []any) []client.PostgresGrant {
