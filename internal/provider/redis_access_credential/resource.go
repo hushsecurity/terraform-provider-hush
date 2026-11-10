@@ -2,6 +2,7 @@ package redis_access_credential
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -33,9 +34,9 @@ func Resource() *schema.Resource {
 // customizeDiff rejects deployment_ids changes after creation and enforces the
 // per-engine field rules (mirroring midgard's _validate_redis_engine_fields):
 // each engine requires its own mandatory fields and forbids the other engines'
-// fields. port/database/tls/tls_ca/username are optional connection fields
-// shared by the redis and elasticache engines; they appear only in the aiven
-// engine's forbidden list.
+// fields. port/database/tls/tls_ca are optional connection fields shared by
+// the redis, elasticache and redis_cloud engines; they appear only in the
+// aiven and azure_managed_redis engines' forbidden lists.
 func customizeDiff(ctx context.Context, d *schema.ResourceDiff, meta any) error {
 	if err := credutil.ForbidDeploymentIDsChange(ctx, d, meta); err != nil {
 		return err
@@ -50,6 +51,7 @@ var (
 	elastiCacheFields = []string{"cache_engine", "region", "user_group_id", "access_key_id", "secret_access_key"}
 	aivenFields       = []string{"project", "service_name", "token"}
 	azureFields       = []string{"tenant_id", "client_id", "client_secret", "subscription_id", "resource_group", "cluster_name"}
+	redisCloudFields  = []string{"api_key", "api_secret_key", "redis_cloud_subscription_id", "database_id"}
 )
 
 func validateEngineFields(d *schema.ResourceDiff) error {
@@ -59,16 +61,22 @@ func validateEngineFields(d *schema.ResourceDiff) error {
 	switch engine {
 	case engineRedis:
 		required = []string{"host", "password"}
-		forbidden = slices.Concat(elastiCacheFields, aivenFields, azureFields)
+		forbidden = slices.Concat(elastiCacheFields, aivenFields, azureFields, redisCloudFields)
 	case engineElastiCache:
 		required = []string{"host", "cache_engine", "region", "user_group_id"}
-		forbidden = slices.Concat([]string{"password"}, aivenFields, azureFields)
+		forbidden = slices.Concat([]string{"password"}, aivenFields, azureFields, redisCloudFields)
 	case engineAiven:
 		required = []string{"project", "service_name", "token"}
-		forbidden = slices.Concat(connectionFields, elastiCacheFields, azureFields)
+		forbidden = slices.Concat(connectionFields, elastiCacheFields, azureFields, redisCloudFields)
 	case engineAzureManagedRedis:
 		required = []string{"tenant_id", "subscription_id", "resource_group", "cluster_name"}
-		forbidden = slices.Concat(connectionFields, elastiCacheFields, aivenFields)
+		forbidden = slices.Concat(connectionFields, elastiCacheFields, aivenFields, redisCloudFields)
+	case engineRedisCloud:
+		// Hush manages the users through the Redis Cloud API, so the connection
+		// fields only tell the workload where to connect.
+		// port too: its 6379 default is rarely a Redis Cloud endpoint's.
+		required = slices.Concat([]string{"host", "port"}, redisCloudFields)
+		forbidden = slices.Concat([]string{"password", "username"}, elastiCacheFields, aivenFields, azureFields)
 	default:
 		return nil
 	}
@@ -98,9 +106,29 @@ func validateEngineFields(d *schema.ResourceDiff) error {
 		return validateElastiCacheAPICredentials(d)
 	case engineAzureManagedRedis:
 		return validateAzureAppCredentials(d)
+	case engineRedisCloud:
+		// A Redis Cloud database has only database 0.
+		if d.Get("database").(int) != 0 {
+			return fmt.Errorf("engine %q requires database 0", engineRedisCloud)
+		}
+		return validateRedisCloudAPIKey(d)
 	}
 
 	return nil
+}
+
+// validateRedisCloudAPIKey enforces the API's rule that a new api_key comes
+// with a new api_secret_key: the user key is issued under one account. A
+// create, including the replacement an engine change plans, has none stored.
+func validateRedisCloudAPIKey(d *schema.ResourceDiff) error {
+	if d.Id() == "" || d.HasChange("engine") || !d.HasChange("api_key") {
+		return nil
+	}
+	if d.HasChange("api_secret_key") || d.HasChange("api_secret_key_wo_version") {
+		return nil
+	}
+	return errors.New(
+		"changing api_key requires a new api_secret_key (or api_secret_key_wo with a bumped api_secret_key_wo_version)")
 }
 
 // validateElastiCacheAPICredentials enforces the API's pair rule: access_key_id
@@ -163,6 +191,8 @@ func attrSet(d *schema.ResourceDiff, attr string) bool {
 		return rawSet(d, "token") || rawSet(d, "token_wo")
 	case "client_secret":
 		return rawSet(d, "client_secret") || rawSet(d, "client_secret_wo")
+	case "api_secret_key":
+		return rawSet(d, "api_secret_key") || rawSet(d, "api_secret_key_wo")
 	default:
 		return rawSet(d, attr)
 	}
@@ -225,6 +255,21 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		input.ClusterName = d.Get("cluster_name").(string)
 		input.ClientID = d.Get("client_id").(string)
 		input.ClientSecret = writeonly.GetString(d, "client_secret", "client_secret_wo")
+	case engineRedisCloud:
+		// Hush manages the users through the Redis Cloud API, so no username or
+		// password is sent; the connection fields are delivered to the workload.
+		db := d.Get("database").(int)
+		input.Host = d.Get("host").(string)
+		input.Port = d.Get("port").(int)
+		input.Database = &db
+		input.TLS = d.Get("tls").(bool)
+		if v, ok := d.GetOk("tls_ca"); ok {
+			input.TLSCA = v.(string)
+		}
+		input.APIKey = d.Get("api_key").(string)
+		input.APISecretKey = writeonly.GetString(d, "api_secret_key", "api_secret_key_wo")
+		input.RedisCloudSubscriptionID = d.Get("redis_cloud_subscription_id").(int)
+		input.DatabaseID = d.Get("database_id").(int)
 	default:
 		// redis and elasticache share the connection fields.
 		db := d.Get("database").(int)
@@ -304,6 +349,10 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"type":            string(credential.Type),
 		"kind":            credential.Kind,
 		"secret_store_id": credential.SecretStoreID,
+
+		"api_key":                     credential.APIKey,
+		"redis_cloud_subscription_id": credential.RedisCloudSubscriptionID,
+		"database_id":                 credential.DatabaseID,
 	}
 
 	// The redis/elasticache connection and AWS fields are unset for the aiven and
@@ -385,6 +434,43 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 		if d.HasChange("cluster_name") {
 			v := d.Get("cluster_name").(string)
 			input.ClusterName = &v
+		}
+	case engineRedisCloud:
+		if d.HasChange("host") {
+			v := d.Get("host").(string)
+			input.Host = &v
+		}
+		if d.HasChange("port") {
+			v := d.Get("port").(int)
+			input.Port = &v
+		}
+		if d.HasChange("database") {
+			v := d.Get("database").(int)
+			input.Database = &v
+		}
+		if d.HasChange("tls") {
+			v := d.Get("tls").(bool)
+			input.TLS = &v
+		}
+		if d.HasChange("tls_ca") {
+			v := d.Get("tls_ca").(string)
+			input.TLSCA = &v
+		}
+		if d.HasChange("api_key") {
+			v := d.Get("api_key").(string)
+			input.APIKey = &v
+		}
+		if d.HasChange("api_secret_key") || d.HasChange("api_secret_key_wo") || d.HasChange("api_secret_key_wo_version") {
+			secret := writeonly.GetString(d, "api_secret_key", "api_secret_key_wo")
+			input.APISecretKey = &secret
+		}
+		if d.HasChange("redis_cloud_subscription_id") {
+			v := d.Get("redis_cloud_subscription_id").(int)
+			input.RedisCloudSubscriptionID = &v
+		}
+		if d.HasChange("database_id") {
+			v := d.Get("database_id").(int)
+			input.DatabaseID = &v
 		}
 	default:
 		if d.HasChange("host") {
