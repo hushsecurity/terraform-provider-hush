@@ -191,6 +191,22 @@ func GetDeployment(ctx context.Context, c *Client, id string) (*Deployment, erro
 	return &dep, nil
 }
 
+// AgentAuthorizationServer is the deployment's authorization server for
+// service agents (heimdall), not the gateway's own one for MCP clients.
+type AgentAuthorizationServer struct {
+	Issuer        string `json:"issuer"`
+	TokenEndpoint string `json:"token_endpoint"`
+}
+
+func GetAgentAuthorizationServer(ctx context.Context, c *Client, id string) (*AgentAuthorizationServer, error) {
+	path := fmt.Sprintf("%s/%s/agents/.well-known/oauth-authorization-server", deploymentsEndpoint, id)
+	var as AgentAuthorizationServer
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &as); err != nil {
+		return nil, err
+	}
+	return &as, nil
+}
+
 func UpdateDeployment(ctx context.Context, c *Client, id string, input *UpdateDeploymentInput) (*Deployment, error) {
 	path := fmt.Sprintf("%s/%s", deploymentsEndpoint, id)
 	var result Deployment

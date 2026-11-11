@@ -42,13 +42,13 @@ const (
 	propertyDesc = "A claim of the user's identity provider profile, such as 'email', or 'groups' " +
 		"for the groups the user is in."
 	awsDesc = "An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is " +
-		"the deployment's issuer."
+		"the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience."
 	awsIssuerDesc = "The AWS account's outbound identity federation issuer, from " +
 		"`aws iam get-outbound-web-identity-federation-info`."
 	awsRoleDesc = "The role's ARN. The role needs `sts:GetWebIdentityToken`. With `subject_match = \"prefix\"`, " +
 		"a role path ending in `/` (e.g. `arn:aws:iam::123456789012:role/agents/`) admits every role under it."
 	k8sDesc = "A Kubernetes service account, signing in with a projected token whose audience is " +
-		"the deployment's issuer."
+		"the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience."
 	k8sIssuerDesc   = "The cluster's OIDC issuer, as its `/.well-known/openid-configuration` reports it."
 	k8sNSDesc       = "The service account's namespace."
 	k8sSADesc       = "The service account's name. Leave it out, with `subject_match = \"prefix\"`, to admit every service account in the namespace."
@@ -56,7 +56,7 @@ const (
 	azureTenantDesc = "The Entra tenant id, lowercase."
 	azureSPDesc     = "The service principal's object id (the token's `sub`), lowercase."
 	azureAudDesc    = "The application (client) id of the app registration the identity requests tokens for, lowercase."
-	oidcDesc        = "Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience."
+	oidcDesc        = "Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the `issuer` of the `hush_agent_authorization_server` data source as its audience."
 	oidcIssuerDesc  = "The issuer, an https URL whose `/.well-known/openid-configuration` is public."
 	oidcSubjectDesc = "The token's `sub`, or with `subject_match = \"prefix\"` what it starts with: it ends " +
 		"in `:` or `/` and has at least two parts (e.g. `repo:acme/`)."

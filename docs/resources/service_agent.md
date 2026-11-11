@@ -78,12 +78,12 @@ output "summarizer_resource" {
 
 - `acts_for_users` (Boolean) Whether the agent can act for a signed-in user, by exchanging the user's token (RFC 8693 token exchange).
 - `assignment` (Block List) A rule naming users the agent may act for: any user matching one of the rules; a rule matches when all of its `condition` blocks do. Without any, the agent may act for every user of the gateway's identity provider. Takes effect with `acts_for_users`. (see [below for nested schema](#nestedblock--assignment))
-- `aws_iam_role` (Block Set) An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is the deployment's issuer. (see [below for nested schema](#nestedblock--aws_iam_role))
+- `aws_iam_role` (Block Set) An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience. (see [below for nested schema](#nestedblock--aws_iam_role))
 - `azure` (Block Set) An Azure / Entra service principal: a managed identity, an app registration or an Entra agent identity (e.g. a Foundry agent). It signs in with an app-only Entra token for `audience`, so it also sends `resource` (the gateway) when it signs in. The app registration must issue v2 tokens and be dedicated to Hush: anything that receives tokens for it could replay them. (see [below for nested schema](#nestedblock--azure))
 - `description` (String) What the agent does.
 - `enabled` (Boolean) Whether the agent can sign in.
-- `kubernetes` (Block Set) A Kubernetes service account, signing in with a projected token whose audience is the deployment's issuer. (see [below for nested schema](#nestedblock--kubernetes))
-- `oidc` (Block Set) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the deployment's issuer as its audience. (see [below for nested schema](#nestedblock--oidc))
+- `kubernetes` (Block Set) A Kubernetes service account, signing in with a projected token whose audience is the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience. (see [below for nested schema](#nestedblock--kubernetes))
+- `oidc` (Block Set) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the `issuer` of the `hush_agent_authorization_server` data source as its audience. (see [below for nested schema](#nestedblock--oidc))
 - `user_tokens` (Block List, Max: 1) Lets the agent act for a user with the user's token from the gateway's identity provider, instead of a Hush user token. Give `audiences`, `clients` or both; each given must match. Needs `acts_for_users`. (see [below for nested schema](#nestedblock--user_tokens))
 
 ### Read-Only
