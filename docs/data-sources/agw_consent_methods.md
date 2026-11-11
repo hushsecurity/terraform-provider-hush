@@ -33,7 +33,7 @@ output "gateway_consent_methods" {
 
 - `id` (String) The ID of this resource.
 - `method` (List of Object) Each method with how it prompts the user, as Hush describes it. (see [below for nested schema](#nestedatt--method))
-- `methods` (Set of String) The methods allowed, such as 'oidc_callback' and 'push_slack'. Empty when none were ever set for the deployment.
+- `methods` (Set of String) The methods allowed, such as 'oidc_callback', 'push_slack' and 'mcp_elicitation'. Empty when none were ever set for the deployment.
 
 <a id="nestedatt--method"></a>
 ### Nested Schema for `method`

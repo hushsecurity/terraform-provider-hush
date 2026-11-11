@@ -19,11 +19,13 @@ const (
 		"methods last applied."
 	deploymentIDDesc = "The deployment whose gateway the methods apply to. Changing it moves " +
 		"management to the other deployment and leaves this one's methods as they are."
-	methodsDesc = "The methods allowed: 'oidc_callback' (the user signs in with the org's " +
-		"identity provider and answers on a consent page) and 'push_slack' (a Slack direct " +
-		"message, which needs a Slack integration that can message the org's users). At least " +
-		"one is required. When the org's Slack integration is removed, Hush drops 'push_slack' " +
-		"on its own, which shows up as drift."
+	methodsDesc = "The methods allowed, at least one:\n" +
+		"  - 'oidc_callback' (Browser): users sign in with your IdP and approve on a consent page. Recommended, as the method every client supports.\n" +
+		"  - 'push_slack' (Slack): users get a Slack direct message to approve or deny. Requires a " +
+		"Slack integration with direct messages enabled; if it is removed, Hush drops 'push_slack' " +
+		"on its own, which shows up as drift.\n" +
+		"  - 'mcp_elicitation' (In chat): users approve right in the agent's chat. If a user's AI " +
+		"tool doesn't support it, they'll use another allowed method."
 )
 
 func Resource() *schema.Resource {

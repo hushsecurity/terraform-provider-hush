@@ -13,11 +13,12 @@ The consent methods a deployment's agent gateway may prompt a user through, when
 ## Example Usage
 
 ```terraform
-# Let the gateway ask for consent in a Slack direct message, or through a
-# browser sign-in. Declare one of these per deployment.
+# Let the gateway ask for consent in the chat itself, in a Slack direct
+# message, or through a browser sign-in. A client that does not support MCP
+# elicitation is offered the other methods. Declare one of these per deployment.
 resource "hush_agw_consent_methods" "gateway" {
   deployment_id = hush_deployment.gateway.id
-  methods       = ["push_slack", "oidc_callback"]
+  methods       = ["mcp_elicitation", "push_slack", "oidc_callback"]
 }
 ```
 
@@ -27,7 +28,10 @@ resource "hush_agw_consent_methods" "gateway" {
 ### Required
 
 - `deployment_id` (String) The deployment whose gateway the methods apply to. Changing it moves management to the other deployment and leaves this one's methods as they are.
-- `methods` (Set of String) The methods allowed: 'oidc_callback' (the user signs in with the org's identity provider and answers on a consent page) and 'push_slack' (a Slack direct message, which needs a Slack integration that can message the org's users). At least one is required. When the org's Slack integration is removed, Hush drops 'push_slack' on its own, which shows up as drift.
+- `methods` (Set of String) The methods allowed, at least one:
+  - 'oidc_callback' (Browser): users sign in with your IdP and approve on a consent page. Recommended, as the method every client supports.
+  - 'push_slack' (Slack): users get a Slack direct message to approve or deny. Requires a Slack integration with direct messages enabled; if it is removed, Hush drops 'push_slack' on its own, which shows up as drift.
+  - 'mcp_elicitation' (In chat): users approve right in the agent's chat. If a user's AI tool doesn't support it, they'll use another allowed method.
 
 ### Read-Only
 
