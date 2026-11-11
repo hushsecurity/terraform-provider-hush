@@ -114,6 +114,14 @@ func init() {
 
 func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("GET /v1/deployments/{deployment_id}/agw/consent_methods", h.getConsentMethods)
+	ms.Handle("GET /v1/deployments/{deployment_id}/agents/.well-known/oauth-authorization-server",
+		func(w http.ResponseWriter, r *http.Request) {
+			issuer := "https://api.example.com/v1/deployments/" + r.PathValue("deployment_id") + "/agents"
+			_ = json.NewEncoder(w).Encode(map[string]string{
+				"issuer":         issuer,
+				"token_endpoint": "https://api.example.com/v1/agents/oauth/token",
+			})
+		})
 	ms.Handle("PUT /v1/deployments/{deployment_id}/agw/consent_methods", h.putConsentMethods)
 	ms.Handle("POST /v1/applications/custom/mcp", h.createCustomApp)
 	ms.Handle("DELETE /v1/applications/custom/{name}", h.deleteCustomApp)

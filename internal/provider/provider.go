@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/access_policy"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/agent_authorization_server"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/agw_consent_methods"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/apigee_access_privilege"
@@ -195,6 +196,7 @@ func New(version string) func() *schema.Provider {
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
 				"hush_agw_consent_methods":              agw_consent_methods.DataSource(),
+				"hush_agent_authorization_server":       agent_authorization_server.DataSource(),
 				"hush_mcp_catalog_entry":                mcp_catalog_entry.DataSource(),
 				"hush_custom_mcp_application":           custom_mcp_application.DataSource(),
 				"hush_mcp_application":                  mcp_application.DataSource(),
