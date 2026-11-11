@@ -15,7 +15,7 @@ const (
 	dataSourceDescription = "The consent methods a deployment's agent gateway may prompt a user through, " +
 		"when a tool call needs the user's consent."
 	dataDeploymentIDDesc = "The deployment whose gateway's methods to read."
-	dataMethodsDesc      = "The methods allowed, such as 'oidc_callback' and 'push_slack'. Empty when none were ever set for the deployment."
+	dataMethodsDesc      = "The methods allowed, such as 'oidc_callback', 'push_slack' and 'mcp_elicitation'. Empty when none were ever set for the deployment."
 	dataMethodDesc       = "Each method with how it prompts the user, as Hush describes it."
 	methodNameDesc       = "The method."
 	methodDescDesc       = "How the method prompts the user."

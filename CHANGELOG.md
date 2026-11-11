@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
+* **Docs**: `hush_agw_consent_methods` now documents `mcp_elicitation`, where the user answers the consent prompt in the chat through the MCP client's elicitation support. The provider has accepted it since 1.26.0; it was left undocumented until the gateway supported it. A client without elicitation support is offered the other methods.
 * **Docs**: the `hush_plaintext_access_credential` and `hush_kv_access_credential` pages no longer name environment variables as the way to deliver them. An access policy also delivers them as files in a volume or through the SDK; the `hush_access_policy` examples show a plaintext credential delivered as a file.
 
 ## [1.38.0] - 2026-11-04

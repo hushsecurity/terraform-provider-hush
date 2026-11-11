@@ -14,10 +14,7 @@ const (
 	ConsentMethodMCPElicitation = "mcp_elicitation"
 )
 
-// ConsentMethods are the methods the provider accepts. mcp_elicitation is
-// among them because heimdall accepts it, and refusing it would take a
-// provider release once it works; the gateway does not act on it yet, so the
-// documentation and examples leave it out on purpose.
+// ConsentMethods are the methods the provider accepts.
 var ConsentMethods = []string{
 	ConsentMethodOIDCCallback,
 	ConsentMethodPushSlack,
