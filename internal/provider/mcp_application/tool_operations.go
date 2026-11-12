@@ -122,7 +122,7 @@ func toolOperationMap(set any) map[string]string {
 // applyToolOperations sends what changed. The group defaults go first: a tool
 // with no setting of its own follows them. A tool whose block was removed is
 // sent a null operation, which returns it to its class default.
-func applyToolOperations(ctx context.Context, c *client.Client, d *schema.ResourceData, creating bool) error {
+func applyToolOperations(ctx context.Context, c *client.Client, d *schema.ResourceData, typ string, creating bool) error {
 	if creating || d.HasChange("tool_defaults") {
 		var groups []client.ToolGroupOperationChange
 		for _, toolType := range client.ToolTypes {
@@ -135,7 +135,7 @@ func applyToolOperations(ctx context.Context, c *client.Client, d *schema.Resour
 			}
 		}
 		if len(groups) > 0 {
-			if _, err := client.ChangeMCPToolGroupOperations(ctx, c, d.Id(), groups); err != nil {
+			if _, err := client.ChangeToolGroupOperations(ctx, c, d.Id(), typ, groups); err != nil {
 				return fmt.Errorf("tool_defaults: %w", err)
 			}
 		}
@@ -164,7 +164,7 @@ func applyToolOperations(ctx context.Context, c *client.Client, d *schema.Resour
 	slices.SortFunc(changes, func(a, b client.ToolOperationChange) int {
 		return cmp.Compare(a.Name, b.Name)
 	})
-	if _, err := client.ChangeMCPToolOperations(ctx, c, d.Id(), changes); err != nil {
+	if _, err := client.ChangeToolOperations(ctx, c, d.Id(), typ, changes); err != nil {
 		var apiErr *client.APIError
 		if errors.As(err, &apiErr) && apiErr.IsNotFound() {
 			return fmt.Errorf("tool_operation: the application has no such tool (see its tools attribute): %w", err)
