@@ -138,6 +138,11 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("POST /v1/applications/custom/api", h.createCustomAPIApp)
 	ms.Handle("GET /v1/applications/custom/{name}/api/tools", h.getAPITools)
 	ms.Handle("PUT /v1/applications/custom/{name}/api/tools", h.putAPITools)
+	ms.Handle("POST /v1/applications/api/{app}", h.createAPIApp)
+	ms.Handle("GET /v1/applications/{id}/api", h.getApp)
+	ms.Handle("PATCH /v1/applications/{id}/api", h.patchAPIApp)
+	ms.Handle("POST /v1/applications/{id}/api/tool_operations", h.toolOperations)
+	ms.Handle("POST /v1/applications/{id}/api/tool_group_operations", h.toolGroupOperations)
 	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
 	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}/{target}", h.rateLimit)
 	ms.Handle("DELETE /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
@@ -649,6 +654,9 @@ func (h *fakeHeimdall) fetchApp(w http.ResponseWriter, r *http.Request) (map[str
 		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
 		return nil, "", false
 	}
+	if wrongType(w, r, app) {
+		return nil, "", false
+	}
 	kind := routeKind(r)
 	if kind != "" && kind != app["app_catalog_id"] {
 		testutil.WriteError(w, http.StatusBadRequest, "application is not a "+kind+" application")
@@ -802,6 +810,9 @@ func (h *fakeHeimdall) toolOperations(w http.ResponseWriter, r *http.Request) {
 		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
 		return
 	}
+	if wrongType(w, r, app) {
+		return
+	}
 	tools := cloneTools(app["tools"])
 	byName := map[string]map[string]any{}
 	for _, tool := range tools {
@@ -829,6 +840,9 @@ func (h *fakeHeimdall) toolGroupOperations(w http.ResponseWriter, r *http.Reques
 	app, ok := h.apps[r.PathValue("id")]
 	if !ok {
 		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
+		return
+	}
+	if wrongType(w, r, app) {
 		return
 	}
 	groups := cloneTools(app["tool_groups"])

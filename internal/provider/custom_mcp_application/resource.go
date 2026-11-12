@@ -167,7 +167,7 @@ func customAppDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Di
 			}
 			if apiErr.IsConflict() {
 				return diag.Errorf("custom app %s is still used by applications; "+
-					"destroy those hush_mcp_application resources first: %s", d.Id(), apiErr.Detail)
+					"destroy those hush_mcp_application or hush_api_application resources first: %s", d.Id(), apiErr.Detail)
 			}
 		}
 		return diag.FromErr(err)

@@ -235,7 +235,7 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	return applicationRead(ctx, d, m)
 }
 
-// baseUpdate patches the fields every application type has.
+// baseUpdate patches the fields every application has, mcp or api.
 func baseUpdate(d *schema.ResourceData) (*client.MCPApplicationUpdate, bool) {
 	input := &client.MCPApplicationUpdate{}
 	changed := false

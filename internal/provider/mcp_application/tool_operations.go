@@ -152,11 +152,11 @@ func applyToolOperations(ctx context.Context, c *client.Client, d *schema.Resour
 			changes = append(changes, client.ToolOperationChange{Name: name, Operation: &operation})
 		}
 	}
-	for name := range before {
-		if _, kept := after[name]; !kept {
-			changes = append(changes, client.ToolOperationChange{Name: name})
-		}
+	resets, err := toolsToReset(ctx, c, d, typ, before, after)
+	if err != nil {
+		return fmt.Errorf("tool_operation: %w", err)
 	}
+	changes = append(changes, resets...)
 	if len(changes) == 0 {
 		return nil
 	}
@@ -215,4 +215,30 @@ func flattenTools(app *client.MCPApplication) []any {
 		})
 	}
 	return tools
+}
+
+// toolsToReset nulls the operation of each tool whose block was removed and
+// that the application still has: a rename or removal on the custom app runs
+// first, and the API refuses a name it no longer knows.
+func toolsToReset(ctx context.Context, c *client.Client, d *schema.ResourceData, typ string, before, after map[string]string) ([]client.ToolOperationChange, error) {
+	var removed []string
+	for name := range before {
+		if _, kept := after[name]; !kept {
+			removed = append(removed, name)
+		}
+	}
+	if len(removed) == 0 {
+		return nil, nil
+	}
+	app, err := client.GetTypedApplication(ctx, c, d.Id(), typ)
+	if err != nil {
+		return nil, err
+	}
+	var resets []client.ToolOperationChange
+	for _, name := range removed {
+		if slices.ContainsFunc(app.Tools, func(t client.MCPTool) bool { return t.Name == name }) {
+			resets = append(resets, client.ToolOperationChange{Name: name})
+		}
+	}
+	return resets, nil
 }
