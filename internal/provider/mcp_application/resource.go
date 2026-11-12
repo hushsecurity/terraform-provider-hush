@@ -177,51 +177,10 @@ func readMCPApplication(ctx context.Context, c *client.Client, id, appCatalogID 
 func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
 	c := m.(*client.Client)
 
-	input := &client.MCPApplicationUpdate{}
-	changed := false
-	if d.HasChange("display_name") {
-		name := d.Get("display_name").(string)
-		input.DisplayName = &name
-		changed = true
-	}
-	if d.HasChange("description") {
-		input.Description = optionalString(d, "description")
-		changed = true
-	}
-	if d.HasChange("deployment_ids") {
-		ids := setStrings(d, "deployment_ids")
-		input.DeploymentIDs = &ids
-		changed = true
-	}
-	if d.HasChange("enabled") {
-		enabled := d.Get("enabled").(bool)
-		input.Enabled = &enabled
-		changed = true
-	}
-	if d.HasChange("allowed_agents") {
-		// null lifts the limit; an empty list would allow no agent at all,
-		// which heimdall refuses.
-		var agents *[]string
-		if _, ok := d.GetOk("allowed_agents"); ok {
-			list := setStrings(d, "allowed_agents")
-			agents = &list
-		}
-		input.AllowedAgents = &agents
-		changed = true
-	}
+	input, changed := baseUpdate(d)
 	if d.HasChange("scopes") {
 		scopes := listStrings(d, "scopes")
 		input.Scopes = &scopes
-		changed = true
-	}
-	if d.HasChange("assignment") {
-		assignments := assignment.Expand(d, "assignment")
-		input.Assignments = &assignments
-		changed = true
-	}
-	if d.HasChange("assign_all") {
-		all := d.Get("assign_all").(bool)
-		input.AssignAll = &all
 		changed = true
 	}
 	if d.HasChange("client_id") {
@@ -274,6 +233,53 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 		return diag.FromErr(err)
 	}
 	return applicationRead(ctx, d, m)
+}
+
+// baseUpdate patches the fields every application type has.
+func baseUpdate(d *schema.ResourceData) (*client.MCPApplicationUpdate, bool) {
+	input := &client.MCPApplicationUpdate{}
+	changed := false
+	if d.HasChange("display_name") {
+		name := d.Get("display_name").(string)
+		input.DisplayName = &name
+		changed = true
+	}
+	if d.HasChange("description") {
+		input.Description = optionalString(d, "description")
+		changed = true
+	}
+	if d.HasChange("deployment_ids") {
+		ids := setStrings(d, "deployment_ids")
+		input.DeploymentIDs = &ids
+		changed = true
+	}
+	if d.HasChange("enabled") {
+		enabled := d.Get("enabled").(bool)
+		input.Enabled = &enabled
+		changed = true
+	}
+	if d.HasChange("allowed_agents") {
+		// null lifts the limit; an empty list would allow no agent at all,
+		// which heimdall refuses.
+		var agents *[]string
+		if _, ok := d.GetOk("allowed_agents"); ok {
+			list := setStrings(d, "allowed_agents")
+			agents = &list
+		}
+		input.AllowedAgents = &agents
+		changed = true
+	}
+	if d.HasChange("assignment") {
+		assignments := assignment.Expand(d, "assignment")
+		input.Assignments = &assignments
+		changed = true
+	}
+	if d.HasChange("assign_all") {
+		all := d.Get("assign_all").(bool)
+		input.AssignAll = &all
+		changed = true
+	}
+	return input, changed
 }
 
 func applicationDelete(ctx context.Context, d *schema.ResourceData, m any) diag.Diagnostics {
@@ -415,20 +421,6 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication, managed bool) e
 			}
 		}
 	}
-	defaults := map[string]string{}
-	for _, group := range app.ToolGroups {
-		defaults[group.Type] = group.Operation
-	}
-	tools := make([]any, 0, len(app.Tools))
-	for _, tool := range app.Tools {
-		operation := defaults[tool.Type]
-		if tool.Operation != nil {
-			operation = *tool.Operation
-		}
-		tools = append(tools, map[string]any{
-			"name": tool.Name, "type": tool.Type, "description": tool.Description, "operation": operation,
-		})
-	}
 	var qb []any
 	if app.QuickBooksCompanyID != nil {
 		qb = []any{map[string]any{
@@ -476,7 +468,7 @@ func flatten(d *schema.ResourceData, app *client.MCPApplication, managed bool) e
 		"url":                  deref(app.URL),
 		"hosted":               app.Hosted,
 		"oauth_relay":          app.OAuthRelay,
-		"tools":                tools,
+		"tools":                flattenTools(app),
 		"tool_defaults":        flattenToolDefaults(app.ToolGroups),
 		"tool_operation":       flattenToolOperations(app.Tools),
 		"rate_limit":           flattenRateLimits(app.RateLimits),
