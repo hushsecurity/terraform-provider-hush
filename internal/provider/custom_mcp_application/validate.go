@@ -126,7 +126,8 @@ func validateAuth(d *schema.ResourceDiff) error {
 	}
 
 	// OAuth sends its token in Authorization too, so only one of them can.
-	if authType != client.MCPAuthTypeHeader && writeonly.IsSet(d, "client_id") {
+	// IsSetNested, as an api app has no client_id.
+	if authType != client.MCPAuthTypeHeader && writeonly.IsSetNested(d, "client_id") {
 		return fmt.Errorf("auth: type %q sets the Authorization header, which OAuth needs "+
 			"for client_id; use type %q instead", authType, client.MCPAuthTypeHeader)
 	}

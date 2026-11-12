@@ -172,6 +172,7 @@ func ResourceSchema() map[string]*schema.Schema {
 	}
 }
 
+// authSchema is the auth block, shared with hush_custom_api_application.
 func authSchema(desc, typeDesc string) *schema.Schema {
 	return &schema.Schema{
 		Description: desc,
