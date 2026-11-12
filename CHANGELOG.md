@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Tool-call rate limits on API applications**: `hush_api_application` takes the `rate_limit` blocks of `hush_mcp_application`, capping how many calls one caller may make to any of the application's tools, to its tools of one class, or to one tool.
+
 ## [1.39.0] - 2026-11-12
 
 ### Added
