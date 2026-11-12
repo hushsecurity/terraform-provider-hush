@@ -3,15 +3,29 @@ package acc_tests
 import (
 	"maps"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/hushsecurity/terraform-provider-hush/internal/testutil"
 )
 
-// The custom api app routes of the fake.
+// The api app routes of the fake: custom api apps, their tool lists, and
+// the applications created from them.
 
 var customAPIAppKeys = map[string]bool{
 	"name": true, "display_name": true, "description": true, "url": true, "spec_url": true,
 	"headers": true, "auth": true,
+}
+
+// wrongType refuses a route of another application type, as heimdall's
+// _fetch does.
+func wrongType(w http.ResponseWriter, r *http.Request, app map[string]any) bool {
+	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(parts) > 3 && parts[3] != app["type"] {
+		testutil.WriteError(w, http.StatusBadRequest, "application must be of type "+parts[3])
+		return true
+	}
+	return false
 }
 
 func (h *fakeHeimdall) createCustomAPIApp(w http.ResponseWriter, r *http.Request) {
@@ -150,4 +164,85 @@ func seedDetectedAPITools(name string, tools ...map[string]any) {
 		listed = append(listed, tool)
 	}
 	heimdall.apiTools[name] = listed
+}
+
+func (h *fakeHeimdall) createAPIApp(w http.ResponseWriter, r *http.Request) {
+	var body map[string]any
+	if !decodeBody(w, r, &body) {
+		return
+	}
+	if key := unknownKey(body, map[string]bool{
+		"display_name": true, "description": true, "deployment_ids": true, "allowed_agents": true, "enabled": true,
+	}); key != "" {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, "unknown field "+key)
+		return
+	}
+	appCatalogID := r.PathValue("app")
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	custom, ok := h.customApps[strings.TrimPrefix(appCatalogID, "custom-")]
+	if !strings.HasPrefix(appCatalogID, "custom-") || !ok || custom["type"] != "api" {
+		testutil.WriteError(w, http.StatusNotFound, "api app "+appCatalogID)
+		return
+	}
+	var tools []any
+	for _, tool := range h.apiTools[custom["name"].(string)] {
+		if tool := tool.(map[string]any); tool["enabled"] == true {
+			tools = append(tools, map[string]any{
+				"name": tool["name"], "type": tool["type"], "description": tool["description"], "operation": nil,
+			})
+		}
+	}
+	if len(tools) == 0 {
+		testutil.WriteError(w, http.StatusBadRequest, appCatalogID+" has no enabled tools")
+		return
+	}
+	h.nextAppID++
+	id := "app-acc" + strconv.Itoa(h.nextAppID)
+	app := map[string]any{
+		"id": id, "name": appCatalogID, "type": "api", "app_catalog_id": appCatalogID,
+		"catalog_display_name": custom["display_name"],
+		"description":          nil, "allowed_agents": nil, "enabled": true,
+		"assignments": []any{}, "assign_all": false, "url": custom["url"],
+		"tool_groups": []any{
+			map[string]any{"type": "read", "operation": "allow"},
+			map[string]any{"type": "write", "operation": "user_consent"},
+			map[string]any{"type": "destructive", "operation": "block"},
+		},
+		"tools": tools,
+	}
+	maps.Copy(app, body)
+	h.apps[id] = app
+	testutil.WriteJSON(w, http.StatusCreated, app)
+}
+
+func (h *fakeHeimdall) patchAPIApp(w http.ResponseWriter, r *http.Request) {
+	var body map[string]any
+	if !decodeBody(w, r, &body) {
+		return
+	}
+	if key := unknownKey(body, map[string]bool{
+		"display_name": true, "description": true, "deployment_ids": true, "allowed_agents": true,
+		"enabled": true, "assignments": true, "assign_all": true,
+	}); key != "" {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, "unknown field "+key)
+		return
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	app, ok := h.apps[r.PathValue("id")]
+	if !ok {
+		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
+		return
+	}
+	if wrongType(w, r, app) {
+		return
+	}
+	updated := maps.Clone(app)
+	if problem := h.setAppFields(r.PathValue("id"), updated, body); problem != "" {
+		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
+		return
+	}
+	h.apps[r.PathValue("id")] = updated
+	testutil.WriteJSON(w, http.StatusOK, updated)
 }

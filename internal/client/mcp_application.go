@@ -239,6 +239,35 @@ func ChangeToolGroupOperations(ctx context.Context, c *Client, id, typ string, c
 	return &app, nil
 }
 
+// CreateAPIApplication creates an application from a custom API app. Its body
+// takes only the fields every application has.
+func CreateAPIApplication(ctx context.Context, c *Client, appCatalogID string, input *MCPApplicationInput) (*MCPApplication, error) {
+	var app MCPApplication
+	path := fmt.Sprintf("/v1/applications/api/%s", appCatalogID)
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+// GetTypedApplication reads an application through its type's generic route,
+// "mcp" or "api".
+func GetTypedApplication(ctx context.Context, c *Client, id, typ string) (*MCPApplication, error) {
+	var app MCPApplication
+	if err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("/v1/applications/%s/%s", id, typ), nil, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
+func UpdateAPIApplication(ctx context.Context, c *Client, id string, input *MCPApplicationUpdate) (*MCPApplication, error) {
+	var app MCPApplication
+	if err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("/v1/applications/%s/api", id), input, &app); err != nil {
+		return nil, err
+	}
+	return &app, nil
+}
+
 type mcpApplicationListResponse struct {
 	Items    []MCPApplication `json:"items"`
 	NextPage *string          `json:"next_page"`
