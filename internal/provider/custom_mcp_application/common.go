@@ -168,55 +168,59 @@ func ResourceSchema() map[string]*schema.Schema {
 			Optional:     true,
 			RequiredWith: []string{"client_secret_wo"},
 		},
-		"auth": {
-			Description: authDesc,
-			Type:        schema.TypeList,
-			Optional:    true,
-			MaxItems:    1,
-			Elem: &schema.Resource{Schema: map[string]*schema.Schema{
-				"type": {
-					Description:  authTypeDesc,
-					Type:         schema.TypeString,
-					Required:     true,
-					ValidateFunc: validation.StringInSlice(client.MCPAuthTypes, false),
-				},
-				"username":  {Description: authUsernameDesc, Type: schema.TypeString, Optional: true},
-				"name":      {Description: authNameDesc, Type: schema.TypeString, Optional: true},
-				"client_id": {Description: authClientIDDesc, Type: schema.TypeString, Optional: true},
-				"token_url": {Description: authTokenURLDesc, Type: schema.TypeString, Optional: true},
-				"scopes": {
-					Description: authScopesDesc,
-					Type:        schema.TypeList,
-					Optional:    true,
-					Computed:    true,
-					Elem:        &schema.Schema{Type: schema.TypeString},
-				},
-				"auth_method": {
-					Description:  authMethodDesc,
-					Type:         schema.TypeString,
-					Optional:     true,
-					Computed:     true,
-					ValidateFunc: validation.StringInSlice(client.MCPAuthMethods, false),
-				},
-				"secret": {
-					Description: authSecretDesc,
-					Type:        schema.TypeString,
-					Optional:    true,
-					Sensitive:   true,
-				},
-				"secret_wo": {
-					Description: authSecretWODesc,
-					Type:        schema.TypeString,
-					Optional:    true,
-					Sensitive:   true,
-					WriteOnly:   true,
-				},
-				"secret_wo_version": {
-					Description: authSecretWOVerDesc,
-					Type:        schema.TypeString,
-					Optional:    true,
-				},
-			}},
-		},
+		"auth": authSchema(authDesc, authTypeDesc),
+	}
+}
+
+func authSchema(desc, typeDesc string) *schema.Schema {
+	return &schema.Schema{
+		Description: desc,
+		Type:        schema.TypeList,
+		Optional:    true,
+		MaxItems:    1,
+		Elem: &schema.Resource{Schema: map[string]*schema.Schema{
+			"type": {
+				Description:  typeDesc,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringInSlice(client.MCPAuthTypes, false),
+			},
+			"username":  {Description: authUsernameDesc, Type: schema.TypeString, Optional: true},
+			"name":      {Description: authNameDesc, Type: schema.TypeString, Optional: true},
+			"client_id": {Description: authClientIDDesc, Type: schema.TypeString, Optional: true},
+			"token_url": {Description: authTokenURLDesc, Type: schema.TypeString, Optional: true},
+			"scopes": {
+				Description: authScopesDesc,
+				Type:        schema.TypeList,
+				Optional:    true,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+			},
+			"auth_method": {
+				Description:  authMethodDesc,
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ValidateFunc: validation.StringInSlice(client.MCPAuthMethods, false),
+			},
+			"secret": {
+				Description: authSecretDesc,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+			},
+			"secret_wo": {
+				Description: authSecretWODesc,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Sensitive:   true,
+				WriteOnly:   true,
+			},
+			"secret_wo_version": {
+				Description: authSecretWOVerDesc,
+				Type:        schema.TypeString,
+				Optional:    true,
+			},
+		}},
 	}
 }
