@@ -24,6 +24,7 @@ type fakeHeimdall struct {
 	customApps     map[string]map[string]any // name -> custom app, as returned
 	// Secrets the API never echoes, kept so a test can see what was sent.
 	customSecrets map[string]map[string]any // name -> client_secret, auth secret
+	apiTools      map[string][]any          // custom api app name -> its tool list
 	apps          map[string]map[string]any // application id -> application, as returned
 	appSecrets    map[string]any            // application id -> client_secret
 	nextAppID     int
@@ -37,6 +38,7 @@ var heimdall = &fakeHeimdall{
 	catalog:        fakeCatalog(),
 	customApps:     map[string]map[string]any{},
 	customSecrets:  map[string]map[string]any{},
+	apiTools:       map[string][]any{},
 	apps:           map[string]map[string]any{},
 	appSecrets:     map[string]any{},
 	keyless:        map[string]bool{},
@@ -133,6 +135,9 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("PATCH /v1/applications/{id}/mcp", h.patchApp)
 	ms.Handle("POST /v1/applications/{id}/mcp/tool_operations", h.toolOperations)
 	ms.Handle("POST /v1/applications/{id}/mcp/tool_group_operations", h.toolGroupOperations)
+	ms.Handle("POST /v1/applications/custom/api", h.createCustomAPIApp)
+	ms.Handle("GET /v1/applications/custom/{name}/api/tools", h.getAPITools)
+	ms.Handle("PUT /v1/applications/custom/{name}/api/tools", h.putAPITools)
 	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
 	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}/{target}", h.rateLimit)
 	ms.Handle("DELETE /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
@@ -154,8 +159,9 @@ func (h *fakeHeimdall) dispatch(catalog, custom, app http.HandlerFunc) http.Hand
 		case a == "catalog" && b == "mcp" && catalog != nil:
 			r.SetPathValue("app_catalog_id", c)
 			catalog(w, r)
-		case a == "custom" && c == "mcp":
+		case a == "custom" && (c == "mcp" || c == "api"):
 			r.SetPathValue("name", b)
+			r.SetPathValue("type", c)
 			custom(w, r)
 		case b == "mcp" && appKind(c) != "":
 			r.SetPathValue("id", a)
@@ -181,9 +187,9 @@ var authSecretKey = map[string]string{
 
 // setCustomAppFields applies a create or patch body. The secrets are split
 // off, as heimdall keeps them apart, and auth is masked the way it is shown.
-func (h *fakeHeimdall) setCustomAppFields(name string, app, body map[string]any) string {
+func (h *fakeHeimdall) setCustomAppFields(name string, app, body map[string]any, keys map[string]bool) string {
 	for key := range body {
-		if !customAppKeys[key] {
+		if !keys[key] {
 			return "unknown field " + key
 		}
 	}
@@ -250,7 +256,7 @@ func (h *fakeHeimdall) createCustomApp(w http.ResponseWriter, r *http.Request) {
 		"client_id": nil, "auth": nil,
 	}
 	h.customSecrets[name] = map[string]any{}
-	if problem := h.setCustomAppFields(name, app, body); problem != "" {
+	if problem := h.setCustomAppFields(name, app, body, customAppKeys); problem != "" {
 		delete(h.customSecrets, name)
 		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
 		return
@@ -263,7 +269,7 @@ func (h *fakeHeimdall) getCustomApp(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	app, ok := h.customApps[r.PathValue("name")]
-	if !ok {
+	if !ok || app["type"] != r.PathValue("type") {
 		testutil.WriteError(w, http.StatusNotFound, r.PathValue("name")+" not found")
 		return
 	}
@@ -279,8 +285,12 @@ func (h *fakeHeimdall) patchCustomApp(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	app, ok := h.customApps[name]
-	if !ok {
+	if !ok || app["type"] != r.PathValue("type") {
 		testutil.WriteError(w, http.StatusNotFound, name+" not found")
+		return
+	}
+	if app["type"] == "api" {
+		h.patchCustomAPIApp(w, name, app, body)
 		return
 	}
 	if _, ok := body["name"]; ok {
@@ -288,7 +298,7 @@ func (h *fakeHeimdall) patchCustomApp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	updated := maps.Clone(app)
-	if problem := h.setCustomAppFields(name, updated, body); problem != "" {
+	if problem := h.setCustomAppFields(name, updated, body, customAppKeys); problem != "" {
 		testutil.WriteError(w, http.StatusUnprocessableEntity, problem)
 		return
 	}
@@ -325,6 +335,7 @@ func (h *fakeHeimdall) deleteCustomApp(w http.ResponseWriter, r *http.Request) {
 	}
 	delete(h.customApps, name)
 	delete(h.customSecrets, name)
+	delete(h.apiTools, name)
 	testutil.WriteJSON(w, http.StatusOK, app)
 }
 
@@ -390,7 +401,7 @@ func unknownKey(body map[string]any, allowed map[string]bool) string {
 func (h *fakeHeimdall) entryFor(appCatalogID string) (map[string]any, bool) {
 	if name, ok := strings.CutPrefix(appCatalogID, "custom-"); ok {
 		custom, ok := h.customApps[name]
-		if !ok {
+		if !ok || custom["type"] != "mcp" {
 			return nil, false
 		}
 		return map[string]any{
