@@ -116,7 +116,7 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	if err := applyToolOperations(ctx, c, d, "mcp", true); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := applyRateLimits(ctx, c, d); err != nil {
+	if err := applyRateLimits(ctx, c, d, "mcp"); err != nil {
 		return diag.FromErr(err)
 	}
 	return applicationRead(ctx, d, m)
@@ -229,7 +229,7 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 	if err := applyToolOperations(ctx, c, d, "mcp", false); err != nil {
 		return diag.FromErr(err)
 	}
-	if err := applyRateLimits(ctx, c, d); err != nil {
+	if err := applyRateLimits(ctx, c, d, "mcp"); err != nil {
 		return diag.FromErr(err)
 	}
 	return applicationRead(ctx, d, m)
