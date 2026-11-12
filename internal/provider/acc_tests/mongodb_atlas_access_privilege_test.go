@@ -49,6 +49,91 @@ func TestAccResourceMongoDBAtlasAccessPrivilege(t *testing.T) {
 					),
 				),
 			},
+			{
+				// built-in roles may replace the grants; read back through
+				// the data source, since resource state keeps the planned value
+				Config: mongodbAtlasAccessPrivilegeBuiltinRoles() + mongodbAtlasAccessPrivilegeDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "builtin_roles.#", "1",
+					),
+					resource.TestCheckTypeSetElemAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "builtin_roles.*", "clusterMonitor",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "grants.#", "0",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceMongoDBAtlasAccessPrivilege_BuiltinRoles(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("mongodb_atlas_access_privilege", "v1/access_privileges"),
+		Steps: []resource.TestStep{
+			{
+				// created with built-in roles only; read back through the data
+				// source, since resource state keeps the planned value
+				Config: mongodbAtlasAccessPrivilegeBuiltinRoles() + mongodbAtlasAccessPrivilegeDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "builtin_roles.#", "1",
+					),
+					resource.TestCheckTypeSetElemAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "builtin_roles.*", "clusterMonitor",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "grants.#", "0",
+					),
+				),
+			},
+			{
+				ResourceName:      "hush_mongodb_atlas_access_privilege.test",
+				ImportState:       true,
+				ImportStateVerify: true,
+			},
+			{
+				// back to grants only, which clears the built-in roles
+				Config: mongodbAtlasAccessPrivilegeStep2() + mongodbAtlasAccessPrivilegeDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "builtin_roles.#", "0",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_mongodb_atlas_access_privilege.test", "grants.#", "1",
+					),
+				),
+			},
+		},
+	})
+}
+
+func TestAccResourceMongoDBAtlasAccessPrivilegeValidation(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+resource "hush_mongodb_atlas_access_privilege" "test" {
+  name = "test-atlas-priv-empty"
+}
+`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`name at least one grant or built-in role`),
+			},
+			{
+				Config: `
+resource "hush_mongodb_atlas_access_privilege" "test" {
+  name          = "test-atlas-priv-bad-role"
+  builtin_roles = ["atlasAdmin"]
+}
+`,
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile(`expected builtin_roles\.\d+ to be one of \["clusterMonitor"\]`),
+			},
 		},
 	})
 }
@@ -102,6 +187,16 @@ resource "hush_mongodb_atlas_access_privilege" "test" {
     resource_type  = "collection"
     resource_names = ["users"]
   }
+}
+`
+}
+
+func mongodbAtlasAccessPrivilegeBuiltinRoles() string {
+	return `
+resource "hush_mongodb_atlas_access_privilege" "test" {
+  name          = "test-atlas-priv-updated"
+  description   = "updated atlas privilege"
+  builtin_roles = ["clusterMonitor"]
 }
 `
 }

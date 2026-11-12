@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+* **Atlas built-in roles**: `hush_mongodb_atlas_access_privilege` takes `builtin_roles`, Atlas built-in roles granted on the admin database, for what no custom-role action carries: `clusterMonitor` grants `$indexStats` and the server diagnostics. `grants` is now optional; a privilege names at least one grant or built-in role, which is checked at plan time. With an older hush-am, a privilege that also has grants mints users without the built-in roles, and one with only built-in roles fails to create its credentials.
+
 ## [1.39.0] - 2026-11-12
 
 ### Added

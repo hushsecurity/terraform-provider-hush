@@ -19,7 +19,8 @@ func Resource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Schema: ResourceSchema(),
+		Schema:        ResourceSchema(),
+		CustomizeDiff: customizeDiff,
 	}
 }
 
@@ -27,8 +28,9 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	c := meta.(*client.Client)
 
 	input := &client.CreateMongoDBAtlasAccessPrivilegeInput{
-		Name:   d.Get("name").(string),
-		Grants: expandGrants(d.Get("grants").([]any)),
+		Name:         d.Get("name").(string),
+		Grants:       expandGrants(d.Get("grants").([]any)),
+		BuiltinRoles: expandBuiltinRoles(d.Get("builtin_roles").(*schema.Set)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
@@ -71,10 +73,11 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 	d.SetId(privilege.ID)
 
 	fields := map[string]any{
-		"name":        privilege.Name,
-		"description": privilege.Description,
-		"grants":      flattenGrants(privilege.Grants),
-		"type":        privilege.Type,
+		"name":          privilege.Name,
+		"description":   privilege.Description,
+		"grants":        flattenGrants(privilege.Grants),
+		"builtin_roles": flattenBuiltinRoles(privilege.BuiltinRoles),
+		"type":          privilege.Type,
 	}
 
 	for field, value := range fields {
@@ -103,6 +106,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("grants") {
 		grants := expandGrants(d.Get("grants").([]any))
 		input.Grants = &grants
+	}
+	if d.HasChange("builtin_roles") {
+		roles := expandBuiltinRoles(d.Get("builtin_roles").(*schema.Set))
+		input.BuiltinRoles = &roles
 	}
 
 	_, err := client.UpdateMongoDBAtlasAccessPrivilege(ctx, c, id, input)

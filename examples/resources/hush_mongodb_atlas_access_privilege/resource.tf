@@ -14,3 +14,10 @@ resource "hush_mongodb_atlas_access_privilege" "example" {
     resource_type = "database"
   }
 }
+
+# Grant an Atlas built-in role, such as clusterMonitor for $indexStats
+resource "hush_mongodb_atlas_access_privilege" "monitoring" {
+  name          = "cluster-monitor"
+  description   = "Index usage and server diagnostics"
+  builtin_roles = ["clusterMonitor"]
+}
