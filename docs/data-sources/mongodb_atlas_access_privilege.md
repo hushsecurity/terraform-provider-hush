@@ -35,6 +35,7 @@ output "grants" {
 
 ### Read-Only
 
+- `builtin_roles` (Set of String) Atlas built-in roles granted on the admin database, for privileges no custom-role action carries, such as indexStats
 - `description` (String) The description of the MongoDB Atlas access privilege
 - `grants` (List of Object) The list of privilege grants (see [below for nested schema](#nestedatt--grants))
 - `name` (String) The name of the MongoDB Atlas access privilege

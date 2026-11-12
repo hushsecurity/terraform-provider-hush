@@ -1,18 +1,26 @@
 package mongodb_atlas_access_privilege
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hushsecurity/terraform-provider-hush/internal/client"
 )
 
 const (
-	idDesc          = "The unique identifier of the MongoDB Atlas access privilege"
-	nameDesc        = "The name of the MongoDB Atlas access privilege"
-	descriptionDesc = "The description of the MongoDB Atlas access privilege"
-	grantsDesc      = "The list of privilege grants"
-	typeDesc        = "The type of access privilege"
+	idDesc           = "The unique identifier of the MongoDB Atlas access privilege"
+	nameDesc         = "The name of the MongoDB Atlas access privilege"
+	descriptionDesc  = "The description of the MongoDB Atlas access privilege"
+	grantsDesc       = "The list of privilege grants"
+	builtinRolesDesc = "Atlas built-in roles granted on the admin database, for privileges no custom-role action carries, such as indexStats"
+	needOneDesc      = ". Name at least one grant or built-in role."
+	typeDesc         = "The type of access privilege"
 )
+
+var builtinRoles = []string{"clusterMonitor"}
 
 func ResourceSchema() map[string]*schema.Schema {
 	s := DataSourceSchema()
@@ -35,10 +43,9 @@ func ResourceSchema() map[string]*schema.Schema {
 		ValidateFunc: validation.StringLenBetween(0, 1000),
 	}
 	s["grants"] = &schema.Schema{
-		Description: grantsDesc,
+		Description: grantsDesc + needOneDesc,
 		Type:        schema.TypeList,
-		Required:    true,
-		MinItems:    1,
+		Optional:    true,
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"privileges": {
@@ -68,7 +75,45 @@ func ResourceSchema() map[string]*schema.Schema {
 		},
 	}
 
+	s["builtin_roles"] = &schema.Schema{
+		Description: builtinRolesDesc + needOneDesc + " Supported: clusterMonitor.",
+		Type:        schema.TypeSet,
+		Optional:    true,
+		Elem: &schema.Schema{
+			Type:         schema.TypeString,
+			ValidateFunc: validation.StringInSlice(builtinRoles, false),
+		},
+	}
+
 	return s
+}
+
+// customizeDiff mirrors the Hush API's rule that a privilege names at least
+// one grant or built-in role. It reads the raw config, so a value unknown at
+// plan time is never rejected.
+func customizeDiff(_ context.Context, d *schema.ResourceDiff, _ any) error {
+	config := d.GetRawConfig()
+	if config.IsNull() || !config.IsKnown() {
+		return nil
+	}
+	return checkGrantsOrBuiltinRoles(
+		config.GetAttr("grants"), config.GetAttr("builtin_roles"))
+}
+
+func checkGrantsOrBuiltinRoles(grants, roles cty.Value) error {
+	if named(grants) || named(roles) {
+		return nil
+	}
+	return fmt.Errorf("name at least one grant or built-in role")
+}
+
+// named reports whether a list or set may hold an element. A value not
+// wholly known counts: an unknown element is still an element.
+func named(v cty.Value) bool {
+	if v.IsNull() {
+		return false
+	}
+	return !v.IsWhollyKnown() || v.LengthInt() > 0
 }
 
 func DataSourceSchema() map[string]*schema.Schema {
@@ -118,12 +163,34 @@ func DataSourceSchema() map[string]*schema.Schema {
 				},
 			},
 		},
+		"builtin_roles": {
+			Description: builtinRolesDesc,
+			Type:        schema.TypeSet,
+			Computed:    true,
+			Elem:        &schema.Schema{Type: schema.TypeString},
+		},
 		"type": {
 			Description: typeDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
 	}
+}
+
+func expandBuiltinRoles(set *schema.Set) []string {
+	roles := []string{}
+	for _, r := range set.List() {
+		roles = append(roles, r.(string))
+	}
+	return roles
+}
+
+func flattenBuiltinRoles(roles []string) []any {
+	result := make([]any, len(roles))
+	for i, r := range roles {
+		result[i] = r
+	}
+	return result
 }
 
 func expandGrants(list []any) []client.MongoDBAtlasGrant {
