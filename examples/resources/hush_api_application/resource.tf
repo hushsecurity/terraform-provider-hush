@@ -1,5 +1,5 @@
 # The billing API on the gateway of one deployment, for the finance team, asking
-# the user before listing invoices.
+# the user before listing invoices and capping each caller at 100 calls an hour.
 resource "hush_api_application" "billing" {
   app_catalog_id = hush_custom_api_application.billing.app_catalog_id
   display_name   = "Billing"
@@ -8,6 +8,11 @@ resource "hush_api_application" "billing" {
   tool_operation {
     name      = "list_invoices"
     operation = "user_consent"
+  }
+  rate_limit {
+    target_type = "app"
+    max_calls   = 100
+    window      = 3600
   }
 
   assignment {

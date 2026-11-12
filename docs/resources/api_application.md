@@ -14,7 +14,7 @@ An API application: a `hush_custom_api_application`'s enabled tools made availab
 
 ```terraform
 # The billing API on the gateway of one deployment, for the finance team, asking
-# the user before listing invoices.
+# the user before listing invoices and capping each caller at 100 calls an hour.
 resource "hush_api_application" "billing" {
   app_catalog_id = hush_custom_api_application.billing.app_catalog_id
   display_name   = "Billing"
@@ -23,6 +23,11 @@ resource "hush_api_application" "billing" {
   tool_operation {
     name      = "list_invoices"
     operation = "user_consent"
+  }
+  rate_limit {
+    target_type = "app"
+    max_calls   = 100
+    window      = 3600
   }
 
   assignment {
@@ -54,6 +59,7 @@ resource "hush_api_application" "billing" {
 - `assignment` (Block List) A rule granting the application to the users and agents it matches. An agent may use the application when any of the rules matches it; a rule matches when all of its `condition` blocks do. With neither this nor `assign_all`, the application is granted to no one, and users can only request access to it. (see [below for nested schema](#nestedblock--assignment))
 - `description` (String) A description of the application.
 - `enabled` (Boolean) Whether the gateways serve the application. A disabled application keeps its configuration.
+- `rate_limit` (Block Set) A cap on how many calls each caller (a user, or a service agent) may make through the gateway: to any of the application's tools, to its tools of one class, or to one tool. A call must fit every limit it matches. One block per target; a limit without a block is removed, including one set elsewhere, such as in the console. (see [below for nested schema](#nestedblock--rate_limit))
 - `tool_defaults` (Block List, Max: 1) What the gateway does with a call to a tool of each class, unless `tool_operation` sets the tool's own. Each is 'allow', 'block' or 'user_consent' (ask the user, through the deployment's `hush_agw_consent_methods`). A class left unset keeps what the application has, which starts as allow for read, user_consent for write and block for destructive; removing the block changes nothing. (see [below for nested schema](#nestedblock--tool_defaults))
 - `tool_operation` (Block Set) The operation for one tool, overriding its class default. The tool must be one of the application's (see `tools`). A tool without a block takes its class default, so removing a block returns the tool to it, and an override set elsewhere, such as in the console, is removed on the next apply. (see [below for nested schema](#nestedblock--tool_operation))
 
@@ -94,6 +100,21 @@ Optional:
 - `values` (List of String) The values 'in' and 'nin' compare against. At least one.
 
 
+
+
+<a id="nestedblock--rate_limit"></a>
+### Nested Schema for `rate_limit`
+
+Required:
+
+- `max_calls` (Number) The calls allowed at once; they come back one by one over `window`.
+- `target_type` (String) 'app', 'group' or 'tool'.
+- `window` (Number) Seconds, from 60 to 86400.
+
+Optional:
+
+- `mode` (String) 'block' refuses calls past the limit; 'warn' lets them through and flags them in the activity log.
+- `target` (String) For 'group', the class: 'read', 'write' or 'destructive'. For 'tool', the tool's name (see `tools`). Unset for 'app'.
 
 
 <a id="nestedblock--tool_defaults"></a>

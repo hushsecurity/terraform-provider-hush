@@ -31,7 +31,7 @@ const (
 var apiFields = []string{
 	"app_catalog_id", "name", "catalog_display_name", "display_name", "description",
 	"deployment_ids", "enabled", "allowed_agents", "url", "tools",
-	"assign_all", "assignment", "tool_defaults", "tool_operation",
+	"assign_all", "assignment", "tool_defaults", "tool_operation", "rate_limit",
 }
 
 func APIResourceSchema() map[string]*schema.Schema {
@@ -65,6 +65,9 @@ func APIResource() *schema.Resource {
 				return err
 			}
 			if err := validateToolOperations(d); err != nil {
+				return err
+			}
+			if err := validateRateLimits(d); err != nil {
 				return err
 			}
 			return planToolsRecompute(d)
@@ -118,6 +121,9 @@ func apiApplicationCreate(ctx context.Context, d *schema.ResourceData, m any) di
 	if err := applyToolOperations(ctx, c, d, "api", true); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := applyRateLimits(ctx, c, d, "api"); err != nil {
+		return diag.FromErr(err)
+	}
 	return apiApplicationRead(ctx, d, m)
 }
 
@@ -150,6 +156,9 @@ func apiApplicationUpdate(ctx context.Context, d *schema.ResourceData, m any) di
 	if err := applyToolOperations(ctx, c, d, "api", false); err != nil {
 		return diag.FromErr(err)
 	}
+	if err := applyRateLimits(ctx, c, d, "api"); err != nil {
+		return diag.FromErr(err)
+	}
 	return apiApplicationRead(ctx, d, m)
 }
 
@@ -169,6 +178,7 @@ func flattenAPI(d *schema.ResourceData, app *client.MCPApplication) error {
 		"assignment":           assignment.Flatten(app.Assignments),
 		"tool_defaults":        flattenToolDefaults(app.ToolGroups),
 		"tool_operation":       flattenToolOperations(app.Tools),
+		"rate_limit":           flattenRateLimits(app.RateLimits),
 	} {
 		if err := d.Set(key, value); err != nil {
 			return fmt.Errorf("setting %s: %w", key, err)

@@ -147,6 +147,10 @@ func (h *fakeHeimdall) register(ms *testutil.MockServer) {
 	ms.Handle("PUT /v1/applications/{id}/mcp/rate_limits/{type}/{target}", h.rateLimit)
 	ms.Handle("DELETE /v1/applications/{id}/mcp/rate_limits/{type}", h.rateLimit)
 	ms.Handle("DELETE /v1/applications/{id}/mcp/rate_limits/{type}/{target}", h.rateLimit)
+	ms.Handle("PUT /v1/applications/{id}/api/rate_limits/{type}", h.rateLimit)
+	ms.Handle("PUT /v1/applications/{id}/api/rate_limits/{type}/{target}", h.rateLimit)
+	ms.Handle("DELETE /v1/applications/{id}/api/rate_limits/{type}", h.rateLimit)
+	ms.Handle("DELETE /v1/applications/{id}/api/rate_limits/{type}/{target}", h.rateLimit)
 	// The catalog, custom app and per-entry routes all have four segments
 	// under /v1/applications, and ServeMux refuses patterns that overlap
 	// without one being more specific, so they share one dispatcher.
@@ -873,6 +877,9 @@ func (h *fakeHeimdall) rateLimit(w http.ResponseWriter, r *http.Request) {
 	app, ok := h.apps[r.PathValue("id")]
 	if !ok {
 		testutil.WriteError(w, http.StatusNotFound, r.PathValue("id")+" not found")
+		return
+	}
+	if wrongType(w, r, app) {
 		return
 	}
 	targetType, target := r.PathValue("type"), r.PathValue("target")

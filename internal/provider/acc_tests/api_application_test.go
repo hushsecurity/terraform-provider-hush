@@ -2,6 +2,7 @@ package acc_tests
 
 import (
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -174,6 +175,86 @@ resource "hush_api_application" "renamed" {
 				),
 			},
 			{Config: config(renamed, "list_pets"), PlanOnly: true},
+		},
+	})
+}
+
+func TestAccResourceAPIApplication_rateLimits(t *testing.T) {
+	const addr = "hush_api_application.test"
+	config := func(limits string) string {
+		return strings.Replace(apiAppConfig(apiAppTools, `  display_name = "acc-api-rate-limits"`+"\n"+limits),
+			`"acc-api-app"`, `"acc-api-rate-limits"`, 1)
+	}
+	limits := `
+  rate_limit {
+    target_type = "group"
+    target      = "destructive"
+    max_calls   = 30
+    window      = 300
+  }
+  rate_limit {
+    target_type = "tool"
+    target      = "list_items"
+    max_calls   = 10
+    window      = 60
+  }
+  rate_limit {
+    target_type = "app"
+    max_calls   = 500
+    window      = 3600
+    mode        = "warn"
+  }
+`
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      mcpAppsDestroyed("acc-api-rate-limits"),
+		Steps: []resource.TestStep{
+			{
+				Config: config(limits),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(addr, "rate_limit.#", "3"),
+					resource.TestCheckTypeSetElemNestedAttrs(addr, "rate_limit.*", map[string]string{
+						"target_type": "group", "target": "destructive", "max_calls": "30", "window": "300", "mode": "block",
+					}),
+					resource.TestCheckTypeSetElemNestedAttrs(addr, "rate_limit.*", map[string]string{
+						"target_type": "app", "target": "", "max_calls": "500", "mode": "warn",
+					}),
+				),
+			},
+			{Config: config(limits), PlanOnly: true},
+			{ResourceName: addr, ImportState: true, ImportStateVerify: true},
+			// A changed limit is set again; a removed block removes its limit.
+			{
+				Config: config(`
+  rate_limit {
+    target_type = "tool"
+    target      = "list_items"
+    max_calls   = 5
+    window      = 60
+  }
+`),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(addr, "rate_limit.#", "1"),
+					resource.TestCheckTypeSetElemNestedAttrs(addr, "rate_limit.*", map[string]string{
+						"target_type": "tool", "target": "list_items", "max_calls": "5",
+					}),
+				),
+			},
+			{
+				Config: config(""),
+				Check:  resource.TestCheckResourceAttr(addr, "rate_limit.#", "0"),
+			},
+			{
+				Config: config(`
+  rate_limit {
+    target_type = "tool"
+    target      = "nope"
+    max_calls   = 1
+    window      = 60
+  }
+`),
+				ExpectError: regexp.MustCompile(`has no tool "nope"`),
+			},
 		},
 	})
 }

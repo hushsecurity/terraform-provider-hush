@@ -209,7 +209,7 @@ func (h *fakeHeimdall) createAPIApp(w http.ResponseWriter, r *http.Request) {
 			map[string]any{"type": "write", "operation": "user_consent"},
 			map[string]any{"type": "destructive", "operation": "block"},
 		},
-		"tools": tools,
+		"tools": tools, "rate_limits": []any{},
 	}
 	maps.Copy(app, body)
 	h.apps[id] = app
