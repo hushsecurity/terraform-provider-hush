@@ -197,3 +197,22 @@ func flattenToolOperations(tools []client.MCPTool) []any {
 	}
 	return out
 }
+
+// flattenTools resolves each tool's operation: its own, or its class default.
+func flattenTools(app *client.MCPApplication) []any {
+	defaults := map[string]string{}
+	for _, group := range app.ToolGroups {
+		defaults[group.Type] = group.Operation
+	}
+	tools := make([]any, 0, len(app.Tools))
+	for _, tool := range app.Tools {
+		operation := defaults[tool.Type]
+		if tool.Operation != nil {
+			operation = *tool.Operation
+		}
+		tools = append(tools, map[string]any{
+			"name": tool.Name, "type": tool.Type, "description": tool.Description, "operation": operation,
+		})
+	}
+	return tools
+}
