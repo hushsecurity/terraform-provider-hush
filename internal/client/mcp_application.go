@@ -219,20 +219,20 @@ func DeleteApplication(ctx context.Context, c *Client, id string) error {
 	return c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("/v1/applications/%s", id), nil, nil)
 }
 
-// ChangeMCPToolOperations answers 404 for a tool the application does not
-// have.
-func ChangeMCPToolOperations(ctx context.Context, c *Client, id string, changes []ToolOperationChange) (*MCPApplication, error) {
+// ChangeToolOperations answers 404 for a tool the application does not
+// have. typ is the application's type, "mcp" or "api".
+func ChangeToolOperations(ctx context.Context, c *Client, id, typ string, changes []ToolOperationChange) (*MCPApplication, error) {
 	var app MCPApplication
-	path := fmt.Sprintf("/v1/applications/%s/mcp/tool_operations", id)
+	path := fmt.Sprintf("/v1/applications/%s/%s/tool_operations", id, typ)
 	if err := c.doRequest(ctx, http.MethodPost, path, changes, &app); err != nil {
 		return nil, err
 	}
 	return &app, nil
 }
 
-func ChangeMCPToolGroupOperations(ctx context.Context, c *Client, id string, changes []ToolGroupOperationChange) (*MCPApplication, error) {
+func ChangeToolGroupOperations(ctx context.Context, c *Client, id, typ string, changes []ToolGroupOperationChange) (*MCPApplication, error) {
 	var app MCPApplication
-	path := fmt.Sprintf("/v1/applications/%s/mcp/tool_group_operations", id)
+	path := fmt.Sprintf("/v1/applications/%s/%s/tool_group_operations", id, typ)
 	if err := c.doRequest(ctx, http.MethodPost, path, changes, &app); err != nil {
 		return nil, err
 	}

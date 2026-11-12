@@ -113,7 +113,7 @@ func applicationCreate(ctx context.Context, d *schema.ResourceData, m any) diag.
 			return explainGatewayNotReady(err)
 		}
 	}
-	if err := applyToolOperations(ctx, c, d, true); err != nil {
+	if err := applyToolOperations(ctx, c, d, "mcp", true); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := applyRateLimits(ctx, c, d); err != nil {
@@ -267,7 +267,7 @@ func applicationUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.
 			return explainGatewayNotReady(err)
 		}
 	}
-	if err := applyToolOperations(ctx, c, d, false); err != nil {
+	if err := applyToolOperations(ctx, c, d, "mcp", false); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := applyRateLimits(ctx, c, d); err != nil {
