@@ -120,7 +120,7 @@ func validateRateLimits(d *schema.ResourceDiff) error {
 
 // applyRateLimits sets every limit that is new or changed, and removes those
 // whose block is gone.
-func applyRateLimits(ctx context.Context, c *client.Client, d *schema.ResourceData) error {
+func applyRateLimits(ctx context.Context, c *client.Client, d *schema.ResourceData, typ string) error {
 	if !d.HasChange("rate_limit") {
 		return nil
 	}
@@ -130,7 +130,7 @@ func applyRateLimits(ctx context.Context, c *client.Client, d *schema.ResourceDa
 		if old, ok := before[key]; ok && old == limit {
 			continue
 		}
-		if err := client.SetMCPRateLimit(ctx, c, d.Id(), key.targetType, key.target, &limit); err != nil {
+		if err := client.SetRateLimit(ctx, c, d.Id(), typ, key.targetType, key.target, &limit); err != nil {
 			var apiErr *client.APIError
 			if key.targetType == "tool" && errors.As(err, &apiErr) && apiErr.IsNotFound() {
 				return fmt.Errorf("rate_limit: the application has no tool %q (see its tools attribute): %w", key.target, err)
@@ -142,7 +142,7 @@ func applyRateLimits(ctx context.Context, c *client.Client, d *schema.ResourceDa
 		if _, kept := after[key]; kept {
 			continue
 		}
-		if err := client.SetMCPRateLimit(ctx, c, d.Id(), key.targetType, key.target, nil); err != nil {
+		if err := client.SetRateLimit(ctx, c, d.Id(), typ, key.targetType, key.target, nil); err != nil {
 			return fmt.Errorf("rate_limit: %w", err)
 		}
 	}

@@ -286,9 +286,10 @@ func ListMCPApplications(ctx context.Context, c *Client) ([]MCPApplication, erro
 	})
 }
 
-// SetMCPRateLimit sets the limit on one target, or removes it when limit is nil.
-func SetMCPRateLimit(ctx context.Context, c *Client, id, targetType, target string, limit *RateLimitIn) error {
-	path := fmt.Sprintf("/v1/applications/%s/mcp/rate_limits/%s", id, targetType)
+// SetRateLimit sets the limit on one target of an application of type typ,
+// "mcp" or "api", or removes it when limit is nil.
+func SetRateLimit(ctx context.Context, c *Client, id, typ, targetType, target string, limit *RateLimitIn) error {
+	path := fmt.Sprintf("/v1/applications/%s/%s/rate_limits/%s", id, typ, targetType)
 	if target != "" {
 		path += "/" + url.PathEscape(target)
 	}
