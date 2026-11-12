@@ -282,23 +282,6 @@ func flatten(d *schema.ResourceData, app *client.CustomMCPApplication, managed b
 			"name": tool.Name, "type": tool.Type, "description": tool.Description,
 		})
 	}
-	var auth []any
-	if app.Auth != nil {
-		block := map[string]any{
-			"type":        app.Auth.Type,
-			"username":    app.Auth.Username,
-			"name":        app.Auth.Name,
-			"client_id":   app.Auth.ClientID,
-			"token_url":   app.Auth.TokenURL,
-			"scopes":      app.Auth.Scopes,
-			"auth_method": app.Auth.AuthMethod,
-		}
-		if managed {
-			block["secret"] = d.Get("auth.0.secret")
-			block["secret_wo_version"] = d.Get("auth.0.secret_wo_version")
-		}
-		auth = []any{block}
-	}
 	description, clientID := "", ""
 	if app.Description != nil {
 		description = *app.Description
@@ -318,11 +301,31 @@ func flatten(d *schema.ResourceData, app *client.CustomMCPApplication, managed b
 		"oauth_relay":    app.OAuthRelay,
 		"headers":        app.Headers,
 		"client_id":      clientID,
-		"auth":           auth,
+		"auth":           flattenAuth(d, app.Auth, managed),
 	} {
 		if err := d.Set(key, value); err != nil {
 			return fmt.Errorf("setting %s: %w", key, err)
 		}
 	}
 	return nil
+}
+
+func flattenAuth(d *schema.ResourceData, auth *client.MCPAuth, managed bool) []any {
+	if auth == nil {
+		return nil
+	}
+	block := map[string]any{
+		"type":        auth.Type,
+		"username":    auth.Username,
+		"name":        auth.Name,
+		"client_id":   auth.ClientID,
+		"token_url":   auth.TokenURL,
+		"scopes":      auth.Scopes,
+		"auth_method": auth.AuthMethod,
+	}
+	if managed {
+		block["secret"] = d.Get("auth.0.secret")
+		block["secret_wo_version"] = d.Get("auth.0.secret_wo_version")
+	}
+	return []any{block}
 }
