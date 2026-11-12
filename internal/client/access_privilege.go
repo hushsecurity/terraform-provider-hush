@@ -1075,23 +1075,26 @@ type MongoDBAtlasGrant struct {
 }
 
 type MongoDBAtlasAccessPrivilege struct {
-	ID          string              `json:"id,omitempty"`
-	Name        string              `json:"name"`
-	Description string              `json:"description,omitempty"`
-	Type        string              `json:"type,omitempty"`
-	Grants      []MongoDBAtlasGrant `json:"grants"`
+	ID           string              `json:"id,omitempty"`
+	Name         string              `json:"name"`
+	Description  string              `json:"description,omitempty"`
+	Type         string              `json:"type,omitempty"`
+	Grants       []MongoDBAtlasGrant `json:"grants"`
+	BuiltinRoles []string            `json:"builtin_roles"`
 }
 
 type CreateMongoDBAtlasAccessPrivilegeInput struct {
-	Name        string              `json:"name"`
-	Description string              `json:"description,omitempty"`
-	Grants      []MongoDBAtlasGrant `json:"grants"`
+	Name         string              `json:"name"`
+	Description  string              `json:"description,omitempty"`
+	Grants       []MongoDBAtlasGrant `json:"grants"`
+	BuiltinRoles []string            `json:"builtin_roles,omitempty"`
 }
 
 type UpdateMongoDBAtlasAccessPrivilegeInput struct {
-	Name        *string              `json:"name,omitempty"`
-	Description *string              `json:"description,omitempty"`
-	Grants      *[]MongoDBAtlasGrant `json:"grants,omitempty"`
+	Name         *string              `json:"name,omitempty"`
+	Description  *string              `json:"description,omitempty"`
+	Grants       *[]MongoDBAtlasGrant `json:"grants,omitempty"`
+	BuiltinRoles *[]string            `json:"builtin_roles,omitempty"`
 }
 
 func CreateMongoDBAtlasAccessPrivilege(ctx context.Context, c *Client, input *CreateMongoDBAtlasAccessPrivilegeInput) (*MongoDBAtlasAccessPrivilege, error) {
