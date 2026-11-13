@@ -72,6 +72,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/rabbitmq_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/redis_access_privilege"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/resource_server"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/salesforce_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/salesforce_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/secret_store"
@@ -125,6 +126,8 @@ func New(version string) func() *schema.Provider {
 				"hush_custom_api_application":           custom_mcp_application.APIResource(),
 				"hush_api_application":                  mcp_application.APIResource(),
 				"hush_mcp_application":                  mcp_application.Resource(),
+				"hush_resource_application":             mcp_application.ResourceApp(),
+				"hush_resource_server":                  resource_server.Resource(),
 				"hush_service_agent":                    service_agent.Resource(),
 				"hush_service_agent_client_secret":      service_agent_client_secret.Resource(),
 				"hush_notification_channel":             notification_channel.Resource(),
