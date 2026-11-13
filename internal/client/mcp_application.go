@@ -67,6 +67,7 @@ type MCPApplication struct {
 	URL                *string      `json:"url"`
 	Hosted             bool         `json:"hosted"`
 	Scopes             []string     `json:"scopes"`
+	Resource           string       `json:"resource"`
 	ToolGroups         []ToolGroup  `json:"tool_groups"`
 	Tools              []MCPTool    `json:"tools"`
 	RateLimits         []RateLimit  `json:"rate_limits"`

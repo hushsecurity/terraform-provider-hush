@@ -28,6 +28,7 @@ type fakeHeimdall struct {
 	apps          map[string]map[string]any // application id -> application, as returned
 	appSecrets    map[string]any            // application id -> client_secret
 	nextAppID     int
+	servers       map[string]map[string]any // resource server name -> server, as returned
 	// Deployments whose gateway has not published its key: an enabled
 	// application with a client secret cannot be placed on them.
 	keyless map[string]bool
@@ -42,6 +43,7 @@ var heimdall = &fakeHeimdall{
 	apps:           map[string]map[string]any{},
 	appSecrets:     map[string]any{},
 	keyless:        map[string]bool{},
+	servers:        map[string]map[string]any{},
 }
 
 func label(s string) *string { return &s }
