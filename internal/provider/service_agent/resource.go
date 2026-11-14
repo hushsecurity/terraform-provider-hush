@@ -38,12 +38,13 @@ func agentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 	c := m.(*client.Client)
 
 	agent, err := client.CreateServiceAgent(ctx, c, &client.ServiceAgentInput{
-		Name:         d.Get("name").(string),
-		Description:  d.Get("description").(string),
-		Enabled:      d.Get("enabled").(bool),
-		ActsForUsers: d.Get("acts_for_users").(bool),
-		UserTokens:   expandUserTokens(d),
-		Assignments:  expandAssignments(d),
+		Name:                d.Get("name").(string),
+		Description:         d.Get("description").(string),
+		Enabled:             d.Get("enabled").(bool),
+		ActsForUsers:        d.Get("acts_for_users").(bool),
+		UserTokens:          expandUserTokens(d),
+		UserSessionLifetime: sessionLifetime(d),
+		Assignments:         expandAssignments(d),
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -102,6 +103,11 @@ func agentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 	if d.HasChange("user_tokens") {
 		tokens := expandUserTokens(d)
 		patch.UserTokens = &tokens
+		changed = true
+	}
+	if d.HasChange("user_session_lifetime") {
+		lifetime := sessionLifetime(d)
+		patch.UserSessionLifetime = &lifetime
 		changed = true
 	}
 	if d.HasChange("assignment") {

@@ -1,8 +1,9 @@
 # An agent running on AWS (e.g. Bedrock AgentCore) that can also act for the
-# users a front end signs in for it.
+# users a front end signs in for it, for up to 4 hours of work.
 resource "hush_service_agent" "summarizer" {
-  name           = "summarizer"
-  acts_for_users = true
+  name                  = "summarizer"
+  acts_for_users        = true
+  user_session_lifetime = 14400
 
   aws_iam_role {
     issuer   = "https://a1c0f603-652b-4692-937c-822f21592bdc.tokens.sts.global.api.aws"

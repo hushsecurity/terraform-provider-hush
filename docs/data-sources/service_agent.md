@@ -41,6 +41,7 @@ output "summarizer_id" {
 - `kubernetes` (Set of Object) A Kubernetes service account, signing in with a projected token whose audience is the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience. (see [below for nested schema](#nestedatt--kubernetes))
 - `oidc` (Set of Object) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the `issuer` of the `hush_agent_authorization_server` data source as its audience. (see [below for nested schema](#nestedatt--oidc))
 - `resource` (String) What a front end passes as `resource` when it signs a user in for this agent to act for them.
+- `user_session_lifetime` (Number) Seconds (300 to 86400) the agent keeps acting for a user after exchanging their token, past that token's expiry. Unset, it stops when the user's token expires. Removing it ends the agent's running sessions. Needs `acts_for_users`.
 - `user_tokens` (List of Object) Lets the agent act for a user with the user's token from the gateway's identity provider, instead of a Hush user token. Give `audiences`, `clients` or both; each given must match. Needs `acts_for_users`. (see [below for nested schema](#nestedatt--user_tokens))
 
 <a id="nestedatt--assignment"></a>

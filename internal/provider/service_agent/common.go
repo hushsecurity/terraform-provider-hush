@@ -25,6 +25,9 @@ const (
 	enabledDesc      = "Whether the agent can sign in."
 	actsForUsersDesc = "Whether the agent can act for a signed-in user, by exchanging the user's token " +
 		"(RFC 8693 token exchange)."
+	sessionLifetimeDesc = "Seconds (300 to 86400) the agent keeps acting for a user after exchanging " +
+		"their token, past that token's expiry. Unset, it stops when the user's token expires. " +
+		"Removing it ends the agent's running sessions. Needs `acts_for_users`."
 	resourceAttrDesc = "What a front end passes as `resource` when it signs a user in for this agent " +
 		"to act for them."
 	userTokensDesc = "Lets the agent act for a user with the user's token from the gateway's identity " +
@@ -160,8 +163,14 @@ func ResourceSchema() map[string]*schema.Schema {
 		},
 		"enabled":        {Description: enabledDesc, Type: schema.TypeBool, Optional: true, Default: true},
 		"acts_for_users": {Description: actsForUsersDesc, Type: schema.TypeBool, Optional: true, Default: false},
-		"resource":       {Description: resourceAttrDesc, Type: schema.TypeString, Computed: true},
-		"assignment":     assignment.Schema(assignmentDesc, matchDesc, sourceDesc, propertyDesc, []string{"user"}),
+		"user_session_lifetime": {
+			Description:  sessionLifetimeDesc,
+			Type:         schema.TypeInt,
+			Optional:     true,
+			ValidateFunc: validation.IntBetween(300, 86400),
+		},
+		"resource":   {Description: resourceAttrDesc, Type: schema.TypeString, Computed: true},
+		"assignment": assignment.Schema(assignmentDesc, matchDesc, sourceDesc, propertyDesc, []string{"user"}),
 		"user_tokens": {
 			Description: userTokensDesc,
 			Type:        schema.TypeList,
@@ -383,13 +392,14 @@ func flatten(d *schema.ResourceData, agent *client.ServiceAgent) error {
 	}
 
 	values := map[string]any{
-		"name":           agent.Name,
-		"description":    agent.Description,
-		"enabled":        agent.Enabled,
-		"acts_for_users": agent.ActsForUsers,
-		"user_tokens":    flattenUserTokens(agent.UserTokens),
-		"assignment":     assignment.Flatten(agent.Assignments),
-		"resource":       agent.Resource,
+		"name":                  agent.Name,
+		"description":           agent.Description,
+		"enabled":               agent.Enabled,
+		"acts_for_users":        agent.ActsForUsers,
+		"user_tokens":           flattenUserTokens(agent.UserTokens),
+		"user_session_lifetime": agent.UserSessionLifetime,
+		"assignment":            assignment.Flatten(agent.Assignments),
+		"resource":              agent.Resource,
 	}
 	for kind, list := range blocks {
 		values[kind] = list
@@ -458,6 +468,14 @@ func tokenClaims(desc string) *schema.Schema {
 		MaxItems:    20,
 		Elem:        &schema.Schema{Type: schema.TypeString, ValidateFunc: validation.StringLenBetween(1, 512)},
 	}
+}
+
+// sessionLifetime is nil when unset (0).
+func sessionLifetime(d getter) *int {
+	if v := d.Get("user_session_lifetime").(int); v > 0 {
+		return &v
+	}
+	return nil
 }
 
 // expandUserTokens is nil without a block. An empty list isn't sent: heimdall

@@ -14,10 +14,11 @@ A service agent: an AI agent that signs in to Hush with the identity of the work
 
 ```terraform
 # An agent running on AWS (e.g. Bedrock AgentCore) that can also act for the
-# users a front end signs in for it.
+# users a front end signs in for it, for up to 4 hours of work.
 resource "hush_service_agent" "summarizer" {
-  name           = "summarizer"
-  acts_for_users = true
+  name                  = "summarizer"
+  acts_for_users        = true
+  user_session_lifetime = 14400
 
   aws_iam_role {
     issuer   = "https://a1c0f603-652b-4692-937c-822f21592bdc.tokens.sts.global.api.aws"
@@ -84,6 +85,7 @@ output "summarizer_resource" {
 - `enabled` (Boolean) Whether the agent can sign in.
 - `kubernetes` (Block Set) A Kubernetes service account, signing in with a projected token whose audience is the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience. (see [below for nested schema](#nestedblock--kubernetes))
 - `oidc` (Block Set) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the `issuer` of the `hush_agent_authorization_server` data source as its audience. (see [below for nested schema](#nestedblock--oidc))
+- `user_session_lifetime` (Number) Seconds (300 to 86400) the agent keeps acting for a user after exchanging their token, past that token's expiry. Unset, it stops when the user's token expires. Removing it ends the agent's running sessions. Needs `acts_for_users`.
 - `user_tokens` (Block List, Max: 1) Lets the agent act for a user with the user's token from the gateway's identity provider, instead of a Hush user token. Give `audiences`, `clients` or both; each given must match. Needs `acts_for_users`. (see [below for nested schema](#nestedblock--user_tokens))
 
 ### Read-Only
