@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 * **Resource servers and resource applications**: `hush_resource_server` declares an API behind your own gateway that agents get Hush tokens for: its `audience`, the `scope`s it supports, the `token_lifetime` and `token_claim`s from the user's profile. `hush_resource_application` says which agents and users get its tokens (`assignment`, `assign_all`), on which deployments, and with which of its `scopes` (empty grants all).
+* **Service agents keep acting for a user**: `user_session_lifetime` on `hush_service_agent` (seconds, 300 to 86400) lets the agent keep acting for a user after exchanging their token, past that token's expiry. Unset, it stops when the user's token expires, as before; removing it ends the agent's running sessions.
 * **Tool-call rate limits on API applications**: `hush_api_application` takes the `rate_limit` blocks of `hush_mcp_application`, capping how many calls one caller may make to any of the application's tools, to its tools of one class, or to one tool.
 
 ## [1.39.0] - 2026-11-12
