@@ -104,36 +104,40 @@ type UserTokens struct {
 }
 
 type ServiceAgent struct {
-	ID           string            `json:"id"`
-	SubjectType  string            `json:"subject_type"`
-	Name         string            `json:"name"`
-	Description  string            `json:"description"`
-	Enabled      bool              `json:"enabled"`
-	ActsForUsers bool              `json:"acts_for_users"`
-	UserTokens   *UserTokens       `json:"user_tokens"`
-	Assignments  []Assignment      `json:"assignments"`
-	Resource     string            `json:"resource"`
-	Credentials  []AgentCredential `json:"credentials"`
+	ID           string      `json:"id"`
+	SubjectType  string      `json:"subject_type"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	Enabled      bool        `json:"enabled"`
+	ActsForUsers bool        `json:"acts_for_users"`
+	UserTokens   *UserTokens `json:"user_tokens"`
+	// UserSessionLifetime is in seconds; nil when off.
+	UserSessionLifetime *int              `json:"user_session_lifetime"`
+	Assignments         []Assignment      `json:"assignments"`
+	Resource            string            `json:"resource"`
+	Credentials         []AgentCredential `json:"credentials"`
 }
 
 type ServiceAgentInput struct {
-	Name         string       `json:"name"`
-	Description  string       `json:"description,omitempty"`
-	Enabled      bool         `json:"enabled"`
-	ActsForUsers bool         `json:"acts_for_users"`
-	UserTokens   *UserTokens  `json:"user_tokens,omitempty"`
-	Assignments  []Assignment `json:"assignments,omitempty"`
+	Name                string       `json:"name"`
+	Description         string       `json:"description,omitempty"`
+	Enabled             bool         `json:"enabled"`
+	ActsForUsers        bool         `json:"acts_for_users"`
+	UserTokens          *UserTokens  `json:"user_tokens,omitempty"`
+	UserSessionLifetime *int         `json:"user_session_lifetime,omitempty"`
+	Assignments         []Assignment `json:"assignments,omitempty"`
 }
 
-// ServiceAgentUpdate is a patch: a nil field is left as it is. UserTokens or
-// Assignments pointing at nil clears them.
+// ServiceAgentUpdate is a patch: a nil field is left as it is. UserTokens,
+// UserSessionLifetime or Assignments pointing at nil clears them.
 type ServiceAgentUpdate struct {
-	Name         *string       `json:"name,omitempty"`
-	Description  *string       `json:"description,omitempty"`
-	Enabled      *bool         `json:"enabled,omitempty"`
-	ActsForUsers *bool         `json:"acts_for_users,omitempty"`
-	UserTokens   **UserTokens  `json:"user_tokens,omitempty"`
-	Assignments  *[]Assignment `json:"assignments,omitempty"`
+	Name                *string       `json:"name,omitempty"`
+	Description         *string       `json:"description,omitempty"`
+	Enabled             *bool         `json:"enabled,omitempty"`
+	ActsForUsers        *bool         `json:"acts_for_users,omitempty"`
+	UserTokens          **UserTokens  `json:"user_tokens,omitempty"`
+	UserSessionLifetime **int         `json:"user_session_lifetime,omitempty"`
+	Assignments         *[]Assignment `json:"assignments,omitempty"`
 }
 
 const agentsEndpoint = "/v1/agents"

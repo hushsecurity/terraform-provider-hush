@@ -73,8 +73,9 @@ resource "hush_service_agent_client_secret" "test" {
 // which replaces it. The client secret is managed apart and stays.
 const serviceAgentStep2 = `
 resource "hush_service_agent" "test" {
-  name           = "acc-summarizer-2"
-  acts_for_users = true
+  name                  = "acc-summarizer-2"
+  acts_for_users        = true
+  user_session_lifetime = 3600
 
   user_tokens {
     audiences = ["appwayweb", "clientworksweb"]
@@ -152,6 +153,7 @@ func TestAccServiceAgent(t *testing.T) {
 					resource.TestCheckResourceAttr("hush_service_agent.test", "description", ""),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "acts_for_users", "true"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.audiences.#", "2"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "user_session_lifetime", "3600"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.clients.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test",
 						"assignment.0.condition.0.match.0.values.#", "2"),
@@ -173,7 +175,7 @@ func TestAccServiceAgent(t *testing.T) {
 			},
 			{
 				// Dropping the blocks clears them on the server.
-				Config: strings.Replace(serviceAgentStep2, `  user_tokens {
+				Config: strings.Replace(strings.Replace(serviceAgentStep2, "  user_session_lifetime = 3600\n", "", 1), `  user_tokens {
     audiences = ["appwayweb", "clientworksweb"]
   }
 
@@ -191,6 +193,7 @@ func TestAccServiceAgent(t *testing.T) {
 `, "", 1),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.#", "0"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "user_session_lifetime", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "assignment.#", "0"),
 				),
 			},
