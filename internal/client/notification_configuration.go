@@ -27,6 +27,7 @@ const (
 	TriggerNHIDigest               Trigger = "nhi_digest"
 	TriggerCertificateExpiring     Trigger = "certificate_expiring"
 	TriggerAGWActivity             Trigger = "agw_activity"
+	TriggerNewAccessRequest        Trigger = "new_access_request"
 )
 
 // DispatchFilter narrows what a configuration sends. Values are numbers for
