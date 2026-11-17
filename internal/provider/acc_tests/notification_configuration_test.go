@@ -186,6 +186,31 @@ func TestAccResourceNotificationConfiguration_stream(t *testing.T) {
 	})
 }
 
+// Access requests are sent as they're made unless aggregation asks for a digest.
+func TestAccResourceNotificationConfiguration_accessRequest(t *testing.T) {
+	resource.ParallelTest(t, resource.TestCase{
+		ProviderFactories: providerFactories,
+		CheckDestroy:      validateResourceDestroyed("notification_configuration", "v1/notification_configurations"),
+		Steps: []resource.TestStep{
+			{
+				Config: notificationChannelDependency + accessRequestStep1,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_notification_configuration.requests", "trigger", "new_access_request"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.requests", "dispatch_filters.0.name", "app"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.requests", "dispatch_filters.0.values.0", "datadog"),
+				),
+			},
+			{
+				Config: notificationChannelDependency + accessRequestStep2,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_notification_configuration.requests", "aggregation", "week"),
+					resource.TestCheckResourceAttr("hush_notification_configuration.requests", "dispatch_filters.#", "0"),
+				),
+			},
+		},
+	})
+}
+
 func TestAccResourceNotificationConfiguration_planChecks(t *testing.T) {
 	for name, testCase := range map[string]struct {
 		config string
@@ -196,6 +221,8 @@ func TestAccResourceNotificationConfiguration_planChecks(t *testing.T) {
 		"certificate without aggregation":    {certificateNoAggregation, `aggregation \(day or week\) is required`},
 		"name on a predefined configuration": {predefinedWithName, "name is the predefined configuration's own"},
 		"certificate by month":               {certificateMonth, "aggregation for trigger certificate_expiring is day or week"},
+		"certificate as it happens":          {certificateShort, "aggregation for trigger certificate_expiring is day or week"},
+		"predefined as it happens":           {predefinedShort, "aggregation for a predefined configuration is day, week or month"},
 		"nhi_digest is predefined only":      {digestCreated, `expected trigger to be one of`},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -267,6 +294,41 @@ resource "hush_notification_configuration" "bad" {
   name        = "bad"
   trigger     = "certificate_expiring"
   aggregation = "month"
+}
+`
+	certificateShort = `
+resource "hush_notification_configuration" "bad" {
+  name        = "bad"
+  trigger     = "certificate_expiring"
+  aggregation = "short"
+}
+`
+	predefinedShort = `
+resource "hush_notification_configuration" "bad" {
+  config_id   = "ncf-mock-config-1"
+  aggregation = "short"
+}
+`
+	accessRequestStep1 = `
+resource "hush_notification_configuration" "requests" {
+  name        = "access requests"
+  trigger     = "new_access_request"
+  enabled     = true
+  channel_ids = [hush_notification_channel.webhook.id]
+  dispatch_filters {
+    name   = "app"
+    op     = "eq"
+    values = ["datadog"]
+  }
+}
+`
+	accessRequestStep2 = `
+resource "hush_notification_configuration" "requests" {
+  name        = "access requests"
+  trigger     = "new_access_request"
+  aggregation = "week"
+  enabled     = true
+  channel_ids = [hush_notification_channel.webhook.id]
 }
 `
 )

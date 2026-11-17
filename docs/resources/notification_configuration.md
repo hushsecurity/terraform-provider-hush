@@ -56,6 +56,20 @@ resource "hush_notification_channel" "datadog" {
   }
 }
 
+resource "hush_notification_configuration" "access_requests" {
+  name        = "access-requests"
+  trigger     = "new_access_request"
+  aggregation = "day" # short sends each request as it's made
+  enabled     = true
+  channel_ids = [hush_notification_channel.datadog.id]
+
+  dispatch_filters {
+    name   = "app"
+    op     = "eq"
+    values = ["datadog"] # an app instance name or its catalog id
+  }
+}
+
 resource "hush_notification_configuration" "activity" {
   name        = "gateway-activity"
   trigger     = "agw_activity"
@@ -75,7 +89,7 @@ resource "hush_notification_configuration" "activity" {
 
 ### Optional
 
-- `aggregation` (String) How notifications are grouped: short, day, week, month, or stream for an activity stream. Set only where the trigger takes one: certificate_expiring (day or week) and nhi_digest (day, week or month); the others are fixed.
+- `aggregation` (String) How notifications are grouped: short, day, week, month, or stream for an activity stream. Set only where the trigger takes one: certificate_expiring (day or week), nhi_digest (day, week or month) and new_access_request (short sends each request as it's made and is the default on creation; day, week or month a digest of the requests still pending); the others are fixed.
 - `channel_ids` (List of String) The list of notification channel IDs to send notifications to
 - `config_id` (String) The ID of a predefined notification configuration to manage. Without it, the resource creates one from name and trigger.
 - `description` (String) The description of the notification configuration
@@ -97,6 +111,6 @@ resource "hush_notification_configuration" "activity" {
 
 Required:
 
-- `name` (String) severity, env_type, notification_type, expires_in_days or deployment
+- `name` (String) severity, env_type, notification_type, expires_in_days, deployment or app (an app instance name or its catalog id)
 - `op` (String) eq or neq; gte or lte for expires_in_days
 - `values` (List of String) The values to match. expires_in_days takes one number of days.

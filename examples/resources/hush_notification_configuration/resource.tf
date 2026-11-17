@@ -41,6 +41,20 @@ resource "hush_notification_channel" "datadog" {
   }
 }
 
+resource "hush_notification_configuration" "access_requests" {
+  name        = "access-requests"
+  trigger     = "new_access_request"
+  aggregation = "day" # short sends each request as it's made
+  enabled     = true
+  channel_ids = [hush_notification_channel.datadog.id]
+
+  dispatch_filters {
+    name   = "app"
+    op     = "eq"
+    values = ["datadog"] # an app instance name or its catalog id
+  }
+}
+
 resource "hush_notification_configuration" "activity" {
   name        = "gateway-activity"
   trigger     = "agw_activity"

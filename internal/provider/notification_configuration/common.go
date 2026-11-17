@@ -33,6 +33,7 @@ var creatableTriggers = []string{
 	string(client.TriggerNewAIAgentSecurityIssue),
 	string(client.TriggerCertificateExpiring),
 	string(client.TriggerAGWActivity),
+	string(client.TriggerNewAccessRequest),
 }
 
 func NotificationConfigurationResourceSchema() map[string]*schema.Schema {
@@ -72,11 +73,12 @@ func NotificationConfigurationResourceSchema() map[string]*schema.Schema {
 		ValidateFunc: validation.StringInSlice(creatableTriggers, false),
 	}
 	s["aggregation"] = &schema.Schema{
-		Description: aggregationDesc + ". Set only where the trigger takes one: certificate_expiring (day or week) and nhi_digest (day, week or month); the others are fixed.",
+		Description: aggregationDesc + ". Set only where the trigger takes one: certificate_expiring (day or week), nhi_digest (day, week or month) and new_access_request (short sends each request as it's made and is the default on creation; day, week or month a digest of the requests still pending); the others are fixed.",
 		Type:        schema.TypeString,
 		Optional:    true,
 		Computed:    true,
 		ValidateFunc: validation.StringInSlice([]string{
+			string(client.AggregationDurationShort),
 			string(client.AggregationDurationDay),
 			string(client.AggregationDurationWeek),
 			string(client.AggregationDurationMonth),
@@ -89,11 +91,11 @@ func NotificationConfigurationResourceSchema() map[string]*schema.Schema {
 		Elem: &schema.Resource{
 			Schema: map[string]*schema.Schema{
 				"name": {
-					Description: "severity, env_type, notification_type, expires_in_days or deployment",
+					Description: "severity, env_type, notification_type, expires_in_days, deployment or app (an app instance name or its catalog id)",
 					Type:        schema.TypeString,
 					Required:    true,
 					ValidateFunc: validation.StringInSlice([]string{
-						"severity", "env_type", "notification_type", "expires_in_days", "deployment",
+						"severity", "env_type", "notification_type", "expires_in_days", "deployment", "app",
 					}, false),
 				},
 				"op": {
@@ -239,6 +241,9 @@ func ValidateMode(_ context.Context, diff *schema.ResourceDiff, _ any) error {
 				return fmt.Errorf("%s is the predefined configuration's own: it can't be set with config_id", attr)
 			}
 		}
+		if diff.Get("aggregation").(string) == string(client.AggregationDurationShort) {
+			return fmt.Errorf("aggregation for a predefined configuration is day, week or month")
+		}
 		return nil
 	}
 	if !set("name") || !set("trigger") {
@@ -248,12 +253,17 @@ func ValidateMode(_ context.Context, diff *schema.ResourceDiff, _ any) error {
 		return nil
 	}
 	trigger := diff.Get("trigger").(string)
+	if trigger == string(client.TriggerNewAccessRequest) {
+		return nil
+	}
 	switch {
 	case trigger == string(client.TriggerCertificateExpiring) && !set("aggregation"):
 		return fmt.Errorf("aggregation (day or week) is required for trigger %s", trigger)
 	case trigger != string(client.TriggerCertificateExpiring) && set("aggregation"):
 		return fmt.Errorf("aggregation is fixed for trigger %s: leave it unset", trigger)
-	case trigger == string(client.TriggerCertificateExpiring) && diff.Get("aggregation").(string) == string(client.AggregationDurationMonth):
+	case trigger == string(client.TriggerCertificateExpiring) && raw.GetAttr("aggregation").IsKnown() &&
+		diff.Get("aggregation").(string) != string(client.AggregationDurationDay) &&
+		diff.Get("aggregation").(string) != string(client.AggregationDurationWeek):
 		return fmt.Errorf("aggregation for trigger %s is day or week", trigger)
 	}
 	return nil
