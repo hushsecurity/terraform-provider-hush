@@ -37,6 +37,7 @@ output "grants" {
 
 - `description` (String) The description of the PostgreSQL access privilege
 - `grants` (List of Object) The list of privilege grants (see [below for nested schema](#nestedatt--grants))
+- `member_of` (Set of String) Roles the user is made a member of, with INHERIT and SET, so it can transfer what it creates to them (ALTER ... OWNER TO). The root credential's user needs ADMIN OPTION on each role, or SUPERUSER for a superuser role. Requires access-manager chart 0.34.0 or later on the deployments of policies using the privilege.
 - `name` (String) The name of the PostgreSQL access privilege
 - `type` (String) The type of access privilege
 

@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Added
 
 * **Atlas built-in roles**: `hush_mongodb_atlas_access_privilege` takes `builtin_roles`, granted on the admin database. `clusterMonitor`, the one offered, grants `$indexStats`; it also reads the oplog and every database's profiler, so a credential holding it sees documents and queries from the whole cluster. `grants` is now optional; a privilege needs at least one grant or built-in role. An older hush-am does not grant the built-in roles.
+* **Postgres role membership**: `hush_postgres_access_privilege` takes `member_of`, a set of roles the user is made a member of, so a migration can hand what it creates to a role with `ALTER ... OWNER TO`. `grants` becomes optional: a privilege needs `grants`, `member_of` or both. The credential's user needs `ADMIN OPTION` on each role, or `SUPERUSER` for a superuser role, and a policy using such a privilege needs `hush-am` 0.34.0 or later on its deployments.
 
 ## [1.40.0] - 2026-11-14
 

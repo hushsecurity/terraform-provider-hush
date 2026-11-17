@@ -24,18 +24,21 @@ type PostgresAccessPrivilege struct {
 	Description string          `json:"description,omitempty"`
 	Type        string          `json:"type,omitempty"`
 	Grants      []PostgresGrant `json:"grants"`
+	MemberOf    []string        `json:"member_of,omitempty"`
 }
 
 type CreatePostgresAccessPrivilegeInput struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description,omitempty"`
 	Grants      []PostgresGrant `json:"grants"`
+	MemberOf    []string        `json:"member_of,omitempty"`
 }
 
 type UpdatePostgresAccessPrivilegeInput struct {
 	Name        *string          `json:"name,omitempty"`
 	Description *string          `json:"description,omitempty"`
 	Grants      *[]PostgresGrant `json:"grants,omitempty"`
+	MemberOf    *[]string        `json:"member_of,omitempty"`
 }
 
 func CreatePostgresAccessPrivilege(ctx context.Context, c *Client, input *CreatePostgresAccessPrivilegeInput) (*PostgresAccessPrivilege, error) {

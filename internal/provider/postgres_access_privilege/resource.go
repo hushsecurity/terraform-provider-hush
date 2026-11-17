@@ -19,7 +19,8 @@ func Resource() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			StateContext: schema.ImportStatePassthroughContext,
 		},
-		Schema: ResourceSchema(),
+		Schema:        ResourceSchema(),
+		CustomizeDiff: requireGrantsOrMemberOf,
 	}
 }
 
@@ -27,8 +28,9 @@ func resourceCreate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	c := meta.(*client.Client)
 
 	input := &client.CreatePostgresAccessPrivilegeInput{
-		Name:   d.Get("name").(string),
-		Grants: expandGrants(d.Get("grants").([]any)),
+		Name:     d.Get("name").(string),
+		Grants:   expandGrants(d.Get("grants").([]any)),
+		MemberOf: expandMemberOf(d.Get("member_of").(*schema.Set)),
 	}
 
 	if v, ok := d.GetOk("description"); ok {
@@ -74,6 +76,7 @@ func resourceRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Di
 		"name":        privilege.Name,
 		"description": privilege.Description,
 		"grants":      flattenGrants(privilege.Grants),
+		"member_of":   privilege.MemberOf,
 		"type":        privilege.Type,
 	}
 
@@ -103,6 +106,10 @@ func resourceUpdate(ctx context.Context, d *schema.ResourceData, meta any) diag.
 	if d.HasChange("grants") {
 		grants := expandGrants(d.Get("grants").([]any))
 		input.Grants = &grants
+	}
+	if d.HasChange("member_of") {
+		roles := expandMemberOf(d.Get("member_of").(*schema.Set))
+		input.MemberOf = &roles
 	}
 
 	_, err := client.UpdatePostgresAccessPrivilege(ctx, c, id, input)
