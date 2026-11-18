@@ -19,6 +19,7 @@ const (
 	roleArnDesc               = "The IAM role ARN for Hush to assume. Mutually exclusive with `cf_stackset_arn`."
 	cfStacksetArnDesc         = "The CloudFormation StackSet ARN. Mutually exclusive with `role_arn`."
 	uniqueSuffixDesc          = "A unique suffix for CloudFormation resources. Required when using `cf_stackset_arn`."
+	rolePrefixDesc            = "The prefix of the StackSet role's name, which is `<role_prefix><unique_suffix>`. Only with `cf_stackset_arn`; defaults to `hush-security-`."
 	accountIDsDesc            = "The list of AWS account IDs discovered via this integration"
 	cfStackIDDesc             = "The CloudFormation stack ID (if applicable)"
 	statusDesc                = "The current status of the integration"
@@ -71,6 +72,15 @@ func AWSIntegrationResourceSchema() map[string]*schema.Schema {
 		ForceNew:     true,
 		RequiredWith: []string{"cf_stackset_arn"},
 	}
+	// Computed: the API reads back the default for a StackSet created without one
+	s["role_prefix"] = &schema.Schema{
+		Description:  rolePrefixDesc,
+		Type:         schema.TypeString,
+		Optional:     true,
+		Computed:     true,
+		ForceNew:     true,
+		RequiredWith: []string{"cf_stackset_arn"},
+	}
 
 	return s
 }
@@ -113,6 +123,11 @@ func AWSIntegrationDataSourceSchema() map[string]*schema.Schema {
 		},
 		"unique_suffix": {
 			Description: uniqueSuffixDesc,
+			Type:        schema.TypeString,
+			Computed:    true,
+		},
+		"role_prefix": {
+			Description: rolePrefixDesc,
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
@@ -216,6 +231,7 @@ func awsIntegrationRead(ctx context.Context, d *schema.ResourceData, m any) diag
 		"cf_stackset_arn": integration.CfStacksetArn,
 		"cf_stack_id":     integration.CfStackID,
 		"unique_suffix":   integration.UniqueSuffix,
+		"role_prefix":     integration.RolePrefix,
 		"account_ids":     integration.AccountIDs,
 		"status":          integration.Status,
 	}
