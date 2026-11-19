@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 * **Trusted ID-JAG issuers**: `id_jag_issuers` in `hush_deployment`'s `agw` block (and its data source) lists issuers besides the gateway's identity provider whose identity assertions sign users in without a browser sign-in, matched by email among the organization's users, such as a Claude organization's issuer for Claude-issued auto-connect. At most 8 https URLs. Like `idp_id`, the configuration owns the list: issuers set elsewhere are removed unless listed.
 * **Atlas built-in roles**: `hush_mongodb_atlas_access_privilege` takes `builtin_roles`, granted on the admin database. `clusterMonitor`, the one offered, grants `$indexStats`; it also reads the oplog and every database's profiler, so a credential holding it sees documents and queries from the whole cluster. `grants` is now optional; a privilege needs at least one grant or built-in role. An older hush-am does not grant the built-in roles.
 
+### Fixed
+
+* **MySQL certificate verification**: `hush_mysql_access_credential` takes `ssl_mode = "verify-ca"` and `"verify-identity"`, the forms the API accepts and `hush_mariadb_access_credential` already takes. It accepted `verify_ca` and `verify_identity` instead, which every apply refused, so Terraform could not select either verify mode for a MySQL credential. The `ssl_mode` descriptions of both resources now say what each mode does. From hush-am's next release, the modes mean what they mean in MySQL: `preferred` falls back to plaintext on a server without TLS, `required` encrypts without verifying the certificate, `verify-ca` checks it against `ssl_ca`, and `verify-identity` also checks the host name. Before that release, `verify-ca` accepts any certificate, so only `required` and `verify-identity` verify it.
+
 ## [1.40.0] - 2026-11-14
 
 ### Added
