@@ -50,7 +50,7 @@ resource "hush_mysql_access_credential" "example" {
 - `port` (Number) The port number of the MySQL server (default: 3306)
 - `secret_store_id` (String) The ID of the secret store where this credential is saved (optional)
 - `ssl_ca` (String) The SSL CA certificate for the MySQL connection
-- `ssl_mode` (String) The SSL mode for the MySQL connection (default: preferred)
+- `ssl_mode` (String) The SSL mode for the MySQL connection (default: preferred). `disabled`: no TLS. `preferred`: TLS when the server offers it, without verifying its certificate. `required`: TLS, without verifying the certificate. `verify-ca`: TLS, with the certificate verified against `ssl_ca`, or the system CAs without it. `verify-ca` does not check the host name; `verify-identity` also requires the certificate to name the host. Older hush-am versions also verify the certificate under `required`.
 
 ### Read-Only
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/hushsecurity/terraform-provider-hush/internal/credutil"
 )
 
 const (
@@ -15,7 +16,6 @@ const (
 	dbNameDesc        = "The name of the MySQL database"
 	hostDesc          = "The hostname or IP address of the MySQL server"
 	portDesc          = "The port number of the MySQL server (default: 3306)"
-	sslModeDesc       = "The SSL mode for the MySQL connection (default: preferred)"
 	sslCADesc         = "The SSL CA certificate for the MySQL connection"
 	usernameDesc      = "The username for the MySQL connection"
 	passwordDesc      = "The password for the MySQL connection"
@@ -80,11 +80,11 @@ func ResourceSchema() map[string]*schema.Schema {
 		Default:     3306,
 	}
 	s["ssl_mode"] = &schema.Schema{
-		Description:  sslModeDesc,
+		Description:  credutil.MySQLSSLModeDesc("MySQL"),
 		Type:         schema.TypeString,
 		Optional:     true,
 		Default:      "preferred",
-		ValidateFunc: validation.StringInSlice([]string{"disabled", "preferred", "required", "verify_ca", "verify_identity"}, false),
+		ValidateFunc: validation.StringInSlice(credutil.MySQLSSLModes, false),
 	}
 	s["ssl_ca"] = &schema.Schema{
 		Description: sslCADesc,
@@ -165,7 +165,7 @@ func DataSourceSchema() map[string]*schema.Schema {
 			Computed:    true,
 		},
 		"ssl_mode": {
-			Description: sslModeDesc,
+			Description: credutil.MySQLSSLModeDesc("MySQL"),
 			Type:        schema.TypeString,
 			Computed:    true,
 		},
