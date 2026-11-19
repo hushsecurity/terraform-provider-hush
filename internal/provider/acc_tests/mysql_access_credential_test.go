@@ -56,6 +56,18 @@ func TestAccResourceMySQLAccessCredential(t *testing.T) {
 					),
 				),
 			},
+			{
+				// The hyphenated form plans, applies and reads back.
+				Config: mysqlAccessCredentialVerifyIdentity() + mysqlAccessCredentialDataSource,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(
+						"data.hush_mysql_access_credential.test", "ssl_mode", "verify-identity",
+					),
+					resource.TestCheckResourceAttr(
+						"data.hush_mysql_access_credential.test", "ssl_ca", mysqlTestCA,
+					),
+				),
+			},
 		},
 	})
 }
@@ -111,6 +123,26 @@ resource "hush_mysql_access_credential" "test" {
   host            = "test-mysql.example.com"
   port            = 3306
   ssl_mode        = "preferred"
+  username        = "testuser"
+  password        = "testpassword123"
+}
+`
+}
+
+const mysqlTestCA = "-----BEGIN CERTIFICATE-----\nMIIBtest\n-----END CERTIFICATE-----\n"
+
+func mysqlAccessCredentialVerifyIdentity() string {
+	return `
+resource "hush_mysql_access_credential" "test" {
+  name            = "test-mysql-cred-updated"
+  description     = "updated mysql credential"
+  deployment_ids  = ["` + mockDeploymentID + `"]
+  secret_store_id = "sst-mock-store-1"
+  db_name         = "testdb"
+  host            = "test-mysql.example.com"
+  port            = 3306
+  ssl_mode        = "verify-identity"
+  ssl_ca          = "-----BEGIN CERTIFICATE-----\nMIIBtest\n-----END CERTIFICATE-----\n"
   username        = "testuser"
   password        = "testpassword123"
 }
