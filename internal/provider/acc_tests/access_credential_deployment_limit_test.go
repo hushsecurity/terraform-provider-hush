@@ -43,6 +43,7 @@ func TestAccResourceAccessCredentials_RejectMultipleDeployments(t *testing.T) {
 		"hush_salesforce_access_credential":     salesforceAccessCredentialStep1(),
 		"hush_sendgrid_access_credential":       sendgridAccessCredentialStep1(),
 		"hush_snowflake_access_credential":      snowflakeAccessCredentialStep1(),
+		"hush_statsig_access_credential":        statsigAccessCredentialStep1(),
 		"hush_temporal_cloud_access_credential": temporalCloudAccessCredentialStep1(),
 		"hush_aws_access_key_access_credential": `
 resource "hush_aws_access_key_access_credential" "test" {

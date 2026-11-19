@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -1006,6 +1007,115 @@ func GetSendGridAccessPrivilege(ctx context.Context, c *Client, id string) (*Sen
 func UpdateSendGridAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateSendGridAccessPrivilegeInput) (*SendGridAccessPrivilege, error) {
 	path := fmt.Sprintf("%s/sendgrid/%s", accessPrivilegesEndpoint, id)
 	var resp SendGridAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// Statsig
+
+// StatsigKey is the key a privilege mints. An empty list or ID means every
+// environment or target app, which midgard takes as null.
+type StatsigKey struct {
+	KeyType               string
+	Environments          []string
+	TargetAppID           string
+	SecondaryTargetAppIDs []string
+}
+
+func (k StatsigKey) fields() map[string]any {
+	return map[string]any{
+		"key_type":                 k.KeyType,
+		"environments":             nilIfEmpty(k.Environments),
+		"target_app_id":            nilIfEmptyString(k.TargetAppID),
+		"secondary_target_app_ids": nilIfEmpty(k.SecondaryTargetAppIDs),
+	}
+}
+
+func nilIfEmpty(v []string) any {
+	if len(v) == 0 {
+		return nil
+	}
+	return v
+}
+
+func nilIfEmptyString(v string) any {
+	if v == "" {
+		return nil
+	}
+	return v
+}
+
+type StatsigAccessPrivilege struct {
+	ID                    string   `json:"id,omitempty"`
+	Name                  string   `json:"name"`
+	Description           string   `json:"description,omitempty"`
+	Type                  string   `json:"type,omitempty"`
+	KeyType               string   `json:"key_type"`
+	Environments          []string `json:"environments"`
+	TargetAppID           string   `json:"target_app_id"`
+	SecondaryTargetAppIDs []string `json:"secondary_target_app_ids"`
+}
+
+type CreateStatsigAccessPrivilegeInput struct {
+	Name        string
+	Description string
+	Key         StatsigKey
+}
+
+func (in CreateStatsigAccessPrivilegeInput) MarshalJSON() ([]byte, error) {
+	m := in.Key.fields()
+	m["name"] = in.Name
+	if in.Description != "" {
+		m["description"] = in.Description
+	}
+	return json.Marshal(m)
+}
+
+// UpdateStatsigAccessPrivilegeInput sends every key field when Key is set,
+// so a field left out of the configuration is cleared.
+type UpdateStatsigAccessPrivilegeInput struct {
+	Name        *string
+	Description *string
+	Key         *StatsigKey
+}
+
+func (in UpdateStatsigAccessPrivilegeInput) MarshalJSON() ([]byte, error) {
+	m := map[string]any{}
+	if in.Key != nil {
+		m = in.Key.fields()
+	}
+	if in.Name != nil {
+		m["name"] = *in.Name
+	}
+	if in.Description != nil {
+		m["description"] = *in.Description
+	}
+	return json.Marshal(m)
+}
+
+func CreateStatsigAccessPrivilege(ctx context.Context, c *Client, input *CreateStatsigAccessPrivilegeInput) (*StatsigAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/statsig"
+	var resp StatsigAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetStatsigAccessPrivilege(ctx context.Context, c *Client, id string) (*StatsigAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/statsig/%s", accessPrivilegesEndpoint, id)
+	var resp StatsigAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateStatsigAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateStatsigAccessPrivilegeInput) (*StatsigAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/statsig/%s", accessPrivilegesEndpoint, id)
+	var resp StatsigAccessPrivilege
 	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
 		return nil, err
 	}
