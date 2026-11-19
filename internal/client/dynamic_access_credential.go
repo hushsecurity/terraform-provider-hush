@@ -1998,6 +1998,72 @@ func (s SendGridAccessCredential) statusFields() (string, string) {
 	return s.Status, s.StatusDetail
 }
 
+// Statsig
+
+type StatsigAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateStatsigAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
+	APIKey        string   `json:"api_key"`
+}
+
+type UpdateStatsigAccessCredentialInput struct {
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
+}
+
+func CreateStatsigAccessCredential(ctx context.Context, c *Client, input *CreateStatsigAccessCredentialInput) (*StatsigAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/statsig"
+	var resp StatsigAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetStatsigAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetStatsigAccessCredential(ctx context.Context, c *Client, id string) (*StatsigAccessCredential, error) {
+	path := fmt.Sprintf("%s/statsig/%s", accessCredentialsEndpoint, id)
+	var resp StatsigAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateStatsigAccessCredential(ctx context.Context, c *Client, id string, input *UpdateStatsigAccessCredentialInput) (*StatsigAccessCredential, error) {
+	path := fmt.Sprintf("%s/statsig/%s", accessCredentialsEndpoint, id)
+	var resp StatsigAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetStatsigAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (s StatsigAccessCredential) statusFields() (string, string) {
+	return s.Status, s.StatusDetail
+}
+
 // Temporal Cloud
 
 type TemporalCloudAccessCredential struct {
