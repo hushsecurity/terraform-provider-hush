@@ -26,6 +26,28 @@ resource "hush_service_agent" "summarizer" {
   }
 }
 
+# An agent only the summarizer may hand off to, with or without a user.
+resource "hush_service_agent" "researcher" {
+  name           = "researcher"
+  acts_for_users = true
+
+  handed_off_by {
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "eq"
+        value    = hush_service_agent.summarizer.id
+      }
+    }
+  }
+
+  aws_iam_role {
+    issuer   = "https://a1c0f603-652b-4692-937c-822f21592bdc.tokens.sts.global.api.aws"
+    role_arn = "arn:aws:iam::123456789012:role/researcher-runtime"
+  }
+}
+
 # An agent running in Kubernetes, limited to one cluster's service account.
 resource "hush_service_agent" "nightly_report" {
   name = "nightly-report"
@@ -77,12 +99,14 @@ output "summarizer_resource" {
 
 ### Optional
 
+- `accepts_hand_offs` (Boolean) Whether agents may hand off to this one. False refuses every agent; leave `handed_off_by` out then.
 - `acts_for_users` (Boolean) Whether the agent can act for a signed-in user, by exchanging the user's token (RFC 8693 token exchange).
 - `assignment` (Block List) A rule naming users the agent may act for: any user matching one of the rules; a rule matches when all of its `condition` blocks do. Without any, the agent may act for every user of the gateway's identity provider. Takes effect with `acts_for_users`. (see [below for nested schema](#nestedblock--assignment))
 - `aws_iam_role` (Block Set) An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience. (see [below for nested schema](#nestedblock--aws_iam_role))
 - `azure` (Block Set) An Azure / Entra service principal: a managed identity, an app registration or an Entra agent identity (e.g. a Foundry agent). It signs in with an app-only Entra token for `audience`, so it also sends `resource` (the gateway) when it signs in. The app registration must issue v2 tokens and be dedicated to Hush: anything that receives tokens for it could replay them. (see [below for nested schema](#nestedblock--azure))
 - `description` (String) What the agent does.
 - `enabled` (Boolean) Whether the agent can sign in.
+- `handed_off_by` (Block List) A rule naming agents that may hand off to this one, with or without a user: any agent matching one of the rules; a rule matches when all of its `condition` blocks do. Without any, every agent may, unless `accepts_hand_offs` is false. (see [below for nested schema](#nestedblock--handed_off_by))
 - `kubernetes` (Block Set) A Kubernetes service account, signing in with a projected token whose audience is the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience. (see [below for nested schema](#nestedblock--kubernetes))
 - `oidc` (Block Set) Any OIDC issuer: a token from `issuer` whose `sub` is `subject`, with the `issuer` of the `hush_agent_authorization_server` data source as its audience. (see [below for nested schema](#nestedblock--oidc))
 - `user_session_lifetime` (Number) Seconds (300 to 86400) the agent keeps acting for a user after exchanging their token, past that token's expiry. Unset, it stops when the user's token expires. Removing it ends the agent's running sessions. Needs `acts_for_users`.
@@ -175,6 +199,37 @@ Required:
 Optional:
 
 - `op` (String) 'eq' (equal), 'pfx' (starts with) or 'sfx' (ends with).
+
+
+
+<a id="nestedblock--handed_off_by"></a>
+### Nested Schema for `handed_off_by`
+
+Required:
+
+- `condition` (Block List, Min: 1) A condition of the rule. It holds when any of its `match` blocks does. (see [below for nested schema](#nestedblock--handed_off_by--condition))
+
+<a id="nestedblock--handed_off_by--condition"></a>
+### Nested Schema for `handed_off_by.condition`
+
+Required:
+
+- `match` (Block List, Min: 1) One comparison of a property of the agent handing off. (see [below for nested schema](#nestedblock--handed_off_by--condition--match))
+
+<a id="nestedblock--handed_off_by--condition--match"></a>
+### Nested Schema for `handed_off_by.condition.match`
+
+Required:
+
+- `op` (String) How the property is compared: 'eq' and 'neq' against `value`, 'in' and 'nin' against `values`.
+- `property` (String) Always 'id', the agent's id.
+- `source` (String) Always 'agent'.
+
+Optional:
+
+- `value` (String) The value 'eq' and 'neq' compare against.
+- `values` (List of String) The values 'in' and 'nin' compare against. At least one.
+
 
 
 

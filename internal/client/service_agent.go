@@ -114,6 +114,7 @@ type ServiceAgent struct {
 	// UserSessionLifetime is in seconds; nil when off.
 	UserSessionLifetime *int              `json:"user_session_lifetime"`
 	Assignments         []Assignment      `json:"assignments"`
+	HandedOffBy         []Assignment      `json:"handed_off_by"`
 	Resource            string            `json:"resource"`
 	Credentials         []AgentCredential `json:"credentials"`
 }
@@ -126,10 +127,11 @@ type ServiceAgentInput struct {
 	UserTokens          *UserTokens  `json:"user_tokens,omitempty"`
 	UserSessionLifetime *int         `json:"user_session_lifetime,omitempty"`
 	Assignments         []Assignment `json:"assignments,omitempty"`
+	HandedOffBy         []Assignment `json:"handed_off_by"` // nil = any agent, empty = none
 }
 
 // ServiceAgentUpdate is a patch: a nil field is left as it is. UserTokens,
-// UserSessionLifetime or Assignments pointing at nil clears them.
+// UserSessionLifetime, Assignments or HandedOffBy pointing at nil clears them.
 type ServiceAgentUpdate struct {
 	Name                *string       `json:"name,omitempty"`
 	Description         *string       `json:"description,omitempty"`
@@ -138,6 +140,7 @@ type ServiceAgentUpdate struct {
 	UserTokens          **UserTokens  `json:"user_tokens,omitempty"`
 	UserSessionLifetime **int         `json:"user_session_lifetime,omitempty"`
 	Assignments         *[]Assignment `json:"assignments,omitempty"`
+	HandedOffBy         *[]Assignment `json:"handed_off_by,omitempty"`
 }
 
 const agentsEndpoint = "/v1/agents"
