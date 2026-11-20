@@ -1,5 +1,5 @@
 // Package assignment is the rule blocks that grant something to users (and
-// agents): an application, or a service agent's users.
+// agents): an application, a service agent's users, or the agents that hand off to it.
 package assignment
 
 import (

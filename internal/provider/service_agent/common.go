@@ -44,6 +44,15 @@ const (
 	sourceDesc   = "Always 'user'."
 	propertyDesc = "A claim of the user's identity provider profile, such as 'email', or 'groups' " +
 		"for the groups the user is in."
+	handedOffByDesc = "A rule naming agents that may hand off to this one, with or without a user: " +
+		"any agent matching one of the rules; a rule matches when all of its `condition` blocks do. " +
+		"Without any, every agent may, unless `accepts_hand_offs` is false."
+	acceptsHandOffsDesc = "Whether agents may hand off to this one. False refuses every agent; " +
+		"leave `handed_off_by` out then."
+	agentMatchDesc    = "One comparison of a property of the agent handing off."
+	agentSourceDesc   = "Always 'agent'."
+	agentPropertyDesc = "Always 'id', the agent's id."
+
 	awsDesc = "An AWS IAM role, signing in with `sts:GetWebIdentityToken` tokens whose audience is " +
 		"the `issuer` of the `hush_agent_authorization_server` data source (`https://api.<realm>.hush-security.com/v1/deployments/<id>/agents`), not the deployment's `oidc_provider` audience."
 	awsIssuerDesc = "The AWS account's outbound identity federation issuer, from " +
@@ -171,6 +180,9 @@ func ResourceSchema() map[string]*schema.Schema {
 		},
 		"resource":   {Description: resourceAttrDesc, Type: schema.TypeString, Computed: true},
 		"assignment": assignment.Schema(assignmentDesc, matchDesc, sourceDesc, propertyDesc, []string{"user"}),
+		"handed_off_by": assignment.Schema(handedOffByDesc, agentMatchDesc, agentSourceDesc, agentPropertyDesc,
+			[]string{"agent"}),
+		"accepts_hand_offs": {Description: acceptsHandOffsDesc, Type: schema.TypeBool, Optional: true, Default: true},
 		"user_tokens": {
 			Description: userTokensDesc,
 			Type:        schema.TypeList,
@@ -399,6 +411,8 @@ func flatten(d *schema.ResourceData, agent *client.ServiceAgent) error {
 		"user_tokens":           flattenUserTokens(agent.UserTokens),
 		"user_session_lifetime": agent.UserSessionLifetime,
 		"assignment":            assignment.Flatten(agent.Assignments),
+		"handed_off_by":         assignment.Flatten(agent.HandedOffBy),
+		"accepts_hand_offs":     agent.HandedOffBy == nil || len(agent.HandedOffBy) > 0,
 		"resource":              agent.Resource,
 	}
 	for kind, list := range blocks {
@@ -517,9 +531,17 @@ func validateUserTokens(d *schema.ResourceDiff) error {
 	return nil
 }
 
-// expandAssignments is nil without rules, which heimdall takes as any user.
-func expandAssignments(d getter) []client.Assignment {
-	if rules := assignment.Expand(d, "assignment"); len(rules) > 0 {
+// expandHandedOffBy is empty, not nil, when no agent may hand off.
+func expandHandedOffBy(d getter) []client.Assignment {
+	if !d.Get("accepts_hand_offs").(bool) {
+		return []client.Assignment{}
+	}
+	return expandAssignments(d, "handed_off_by")
+}
+
+// expandAssignments is nil without rules, which heimdall takes as anyone.
+func expandAssignments(d getter, key string) []client.Assignment {
+	if rules := assignment.Expand(d, key); len(rules) > 0 {
 		return rules
 	}
 	return nil

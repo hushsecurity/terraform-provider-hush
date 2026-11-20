@@ -11,6 +11,28 @@ resource "hush_service_agent" "summarizer" {
   }
 }
 
+# An agent only the summarizer may hand off to, with or without a user.
+resource "hush_service_agent" "researcher" {
+  name           = "researcher"
+  acts_for_users = true
+
+  handed_off_by {
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "eq"
+        value    = hush_service_agent.summarizer.id
+      }
+    }
+  }
+
+  aws_iam_role {
+    issuer   = "https://a1c0f603-652b-4692-937c-822f21592bdc.tokens.sts.global.api.aws"
+    role_arn = "arn:aws:iam::123456789012:role/researcher-runtime"
+  }
+}
+
 # An agent running in Kubernetes, limited to one cluster's service account.
 resource "hush_service_agent" "nightly_report" {
   name = "nightly-report"

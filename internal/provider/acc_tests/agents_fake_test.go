@@ -76,7 +76,7 @@ func (f *fakeAgents) create(w http.ResponseWriter, r *http.Request) {
 		"enabled": true, "acts_for_users": false,
 		"resource": "https://api.example.com/v1/agents/" + id,
 	}
-	for _, key := range []string{"description", "enabled", "acts_for_users", "user_tokens", "user_session_lifetime", "assignments"} {
+	for _, key := range []string{"description", "enabled", "acts_for_users", "user_tokens", "user_session_lifetime", "assignments", "handed_off_by"} {
 		if v, ok := body[key]; ok {
 			agent[key] = v
 		}
@@ -127,7 +127,7 @@ func (f *fakeAgents) patch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for key, value := range body {
-		if !slices.Contains([]string{"name", "description", "enabled", "acts_for_users", "user_tokens", "user_session_lifetime", "assignments"}, key) {
+		if !slices.Contains([]string{"name", "description", "enabled", "acts_for_users", "user_tokens", "user_session_lifetime", "assignments", "handed_off_by"}, key) {
 			testutil.WriteError(w, http.StatusUnprocessableEntity, "unknown field "+key)
 			return
 		}

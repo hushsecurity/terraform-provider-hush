@@ -1,6 +1,7 @@
 package acc_tests
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"slices"
@@ -26,6 +27,23 @@ func agentHolds(name string, want ...string) resource.TestCheckFunc {
 			return fmt.Errorf("%s holds %v, want %v", name, got, want)
 		}
 		return nil
+	}
+}
+
+// agentHandedOffBy checks the handed_off_by the server holds, as JSON.
+func agentHandedOffBy(name, want string) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		agentsFake.mu.Lock()
+		defer agentsFake.mu.Unlock()
+		for _, agent := range agentsFake.agents {
+			if agent["name"] == name {
+				if got, _ := json.Marshal(agent["handed_off_by"]); string(got) != want {
+					return fmt.Errorf("%s handed_off_by is %s, want %s", name, got, want)
+				}
+				return nil
+			}
+		}
+		return fmt.Errorf("no agent %s", name)
 	}
 }
 
@@ -92,6 +110,17 @@ resource "hush_service_agent" "test" {
     }
   }
 
+  handed_off_by {
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "in"
+        values   = ["agt-concierge", "agt-triage"]
+      }
+    }
+  }
+
   kubernetes {
     issuer          = "https://oidc.eks.eu-central-1.amazonaws.com/id/ABC"
     namespace       = "agents"
@@ -144,6 +173,8 @@ func TestAccServiceAgent(t *testing.T) {
 						regexp.MustCompile(`^hush_as_`)),
 					resource.TestCheckResourceAttrSet("hush_service_agent_client_secret.test", "hint"),
 					agentHolds("acc-summarizer", "aws_iam_role", "azure", "client_secret"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "accepts_hand_offs", "true"),
+					agentHandedOffBy("acc-summarizer", "null"),
 				),
 			},
 			{
@@ -157,6 +188,8 @@ func TestAccServiceAgent(t *testing.T) {
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.0.clients.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test",
 						"assignment.0.condition.0.match.0.values.#", "2"),
+					resource.TestCheckResourceAttr("hush_service_agent.test",
+						"handed_off_by.0.condition.0.match.0.values.1", "agt-triage"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "aws_iam_role.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "kubernetes.#", "1"),
 					resource.TestCheckTypeSetElemNestedAttrs("hush_service_agent.test", "azure.*",
@@ -171,6 +204,8 @@ func TestAccServiceAgent(t *testing.T) {
 					resource.TestCheckResourceAttr("data.hush_service_agent.by_name", "kubernetes.#", "1"),
 					resource.TestCheckResourceAttr("data.hush_service_agent.by_id", "name", "acc-summarizer-2"),
 					resource.TestCheckResourceAttr("data.hush_service_agent.by_id", "oidc.#", "1"),
+					resource.TestCheckResourceAttr("data.hush_service_agent.by_id",
+						"handed_off_by.0.condition.0.match.0.source", "agent"),
 				),
 			},
 			{
@@ -190,11 +225,25 @@ func TestAccServiceAgent(t *testing.T) {
     }
   }
 
-`, "", 1),
+  handed_off_by {
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "in"
+        values   = ["agt-concierge", "agt-triage"]
+      }
+    }
+  }
+
+`, "  accepts_hand_offs = false\n", 1),
 				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("hush_service_agent.test", "accepts_hand_offs", "false"),
+					agentHandedOffBy("acc-summarizer-2", "[]"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_tokens.#", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "user_session_lifetime", "0"),
 					resource.TestCheckResourceAttr("hush_service_agent.test", "assignment.#", "0"),
+					resource.TestCheckResourceAttr("hush_service_agent.test", "handed_off_by.#", "0"),
 				),
 			},
 			{
@@ -232,6 +281,24 @@ resource "hush_service_agent" "bad" {
 			{
 				Config: `
 resource "hush_service_agent" "bad" {
+  name              = "acc-bad"
+  accepts_hand_offs = false
+  handed_off_by {
+    condition {
+      match {
+        source   = "agent"
+        property = "id"
+        op       = "eq"
+        value    = "agt-concierge"
+      }
+    }
+  }
+}`,
+				ExpectError: regexp.MustCompile(`handed_off_by needs accepts_hand_offs`),
+			},
+			{
+				Config: `
+resource "hush_service_agent" "bad" {
   name = "acc-bad"
   aws_iam_role {
     issuer   = "http://insecure.example.com"
@@ -264,6 +331,40 @@ resource "hush_service_agent" "bad" {
   }
 }`,
 				ExpectError: regexp.MustCompile(`expected assignment.0.condition.0.match.0.source to be one of`),
+			},
+			{
+				Config: `
+resource "hush_service_agent" "bad" {
+  name = "acc-bad"
+  handed_off_by {
+    condition {
+      match {
+        source   = "user"
+        property = "email"
+        op       = "eq"
+        value    = "alice@example.com"
+      }
+    }
+  }
+}`,
+				ExpectError: regexp.MustCompile(`expected handed_off_by.0.condition.0.match.0.source to be one of`),
+			},
+			{
+				Config: `
+resource "hush_service_agent" "bad" {
+  name = "acc-bad"
+  handed_off_by {
+    condition {
+      match {
+        source   = "agent"
+        property = "name"
+        op       = "eq"
+        value    = "concierge"
+      }
+    }
+  }
+}`,
+				ExpectError: regexp.MustCompile(`handed_off_by\[0\]\.condition\[0\]\.match\[0\]: an agent match can only compare`),
 			},
 		},
 	})

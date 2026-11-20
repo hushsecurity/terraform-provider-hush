@@ -25,8 +25,13 @@ func Resource() *schema.Resource {
 			if err := validateUserTokens(d); err != nil {
 				return err
 			}
-			if err := assignment.Validate(d, "assignment"); err != nil {
-				return err
+			for _, key := range []string{"assignment", "handed_off_by"} {
+				if err := assignment.Validate(d, key); err != nil {
+					return err
+				}
+			}
+			if !d.Get("accepts_hand_offs").(bool) && len(d.Get("handed_off_by").([]any)) > 0 {
+				return fmt.Errorf("handed_off_by needs accepts_hand_offs")
 			}
 			return validateCredentials(d)
 		},
@@ -44,7 +49,8 @@ func agentCreate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 		ActsForUsers:        d.Get("acts_for_users").(bool),
 		UserTokens:          expandUserTokens(d),
 		UserSessionLifetime: sessionLifetime(d),
-		Assignments:         expandAssignments(d),
+		Assignments:         expandAssignments(d, "assignment"),
+		HandedOffBy:         expandHandedOffBy(d),
 	})
 	if err != nil {
 		return diag.FromErr(err)
@@ -111,8 +117,13 @@ func agentUpdate(ctx context.Context, d *schema.ResourceData, m any) diag.Diagno
 		changed = true
 	}
 	if d.HasChange("assignment") {
-		rules := expandAssignments(d)
+		rules := expandAssignments(d, "assignment")
 		patch.Assignments = &rules
+		changed = true
+	}
+	if d.HasChanges("handed_off_by", "accepts_hand_offs") {
+		rules := expandHandedOffBy(d)
+		patch.HandedOffBy = &rules
 		changed = true
 	}
 	var agent *client.ServiceAgent
