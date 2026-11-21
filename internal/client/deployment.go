@@ -29,6 +29,8 @@ type Agw struct {
 	Hostname string `json:"hostname,omitempty"`
 	Region   string `json:"region,omitempty"`
 	IdpID    string `json:"idp_id,omitempty"`
+	// Issuers besides the IdP whose ID-JAGs sign users in.
+	IdJagIssuers []string `json:"id_jag_issuers,omitempty"`
 	// Read only, and dropped by MarshalJSON rather than by omitempty, which
 	// would keep it whenever it is set.
 	GatewayURL string `json:"gateway_url,omitempty"`
@@ -41,10 +43,11 @@ type Agw struct {
 // that safe.
 func (a Agw) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		Hostname string `json:"hostname,omitempty"`
-		Region   string `json:"region,omitempty"`
-		IdpID    string `json:"idp_id,omitempty"`
-	}{Hostname: a.Hostname, Region: a.Region, IdpID: a.IdpID})
+		Hostname     string   `json:"hostname,omitempty"`
+		Region       string   `json:"region,omitempty"`
+		IdpID        string   `json:"idp_id,omitempty"`
+		IdJagIssuers []string `json:"id_jag_issuers,omitempty"`
+	}{Hostname: a.Hostname, Region: a.Region, IdpID: a.IdpID, IdJagIssuers: a.IdJagIssuers})
 }
 
 // AgwPatch is the update shape, which is narrower than the create one: region
@@ -60,6 +63,8 @@ func (a Agw) MarshalJSON() ([]byte, error) {
 type AgwPatch struct {
 	Hostname *string `json:"hostname,omitempty"`
 	IdpID    *string `json:"idp_id"`
+	// Sent only when changed; an empty list clears it.
+	IdJagIssuers *[]string `json:"id_jag_issuers,omitempty"`
 }
 
 type Deployment struct {

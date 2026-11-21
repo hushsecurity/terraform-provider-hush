@@ -410,7 +410,13 @@ func expandAgw(d *schema.ResourceData) *client.Agw {
 	hostname, _ := fields["hostname"].(string)
 	region, _ := fields["region"].(string)
 	idpID, _ := fields["idp_id"].(string)
-	return &client.Agw{Hostname: hostname, Region: region, IdpID: idpID}
+	var issuers []string
+	for _, issuer := range fields["id_jag_issuers"].([]any) {
+		issuers = append(issuers, issuer.(string))
+	}
+	return &client.Agw{
+		Hostname: hostname, Region: region, IdpID: idpID, IdJagIssuers: issuers,
+	}
 }
 
 // expandAgwUpdate is the update counterpart, carrying the two members a patch
@@ -438,6 +444,10 @@ func expandAgwUpdate(d *schema.ResourceData) *client.AgwPatch {
 	if d.Get("kind").(string) == deploymentKindK8s {
 		hostname := agw.Hostname
 		patch.Hostname = &hostname
+	}
+	if d.HasChange("agw.0.id_jag_issuers") {
+		issuers := append([]string{}, agw.IdJagIssuers...)
+		patch.IdJagIssuers = &issuers
 	}
 	return patch
 }

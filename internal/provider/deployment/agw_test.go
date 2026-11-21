@@ -457,3 +457,22 @@ func TestAgwKindRules(t *testing.T) {
 		})
 	}
 }
+
+// Issuers go out on a create and, when changed, on an update.
+func TestExpandAgwIdJagIssuers(t *testing.T) {
+	issuer := "https://identity.anthropic.com/issuers/iss_1"
+	d := resourceDataFor(t, map[string]any{
+		"kind": deploymentKindHosted,
+		"agw": []any{map[string]any{
+			"region": "fra", "id_jag_issuers": []any{issuer},
+		}},
+	})
+
+	if got := expandAgw(d).IdJagIssuers; len(got) != 1 || got[0] != issuer {
+		t.Fatalf("unexpected issuers %v", got)
+	}
+	got := expandAgwUpdate(d).IdJagIssuers
+	if got == nil || len(*got) != 1 || (*got)[0] != issuer {
+		t.Fatalf("unexpected issuers patch %v", got)
+	}
+}

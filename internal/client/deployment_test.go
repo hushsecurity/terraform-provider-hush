@@ -209,6 +209,14 @@ func TestUpdateDeploymentInput_AgwMarshaling(t *testing.T) {
 			},
 			contains: `"agw":{"idp_id":"idp-1"}`,
 		},
+		{
+			// Cleared issuers travel as an empty list; unchanged ones not at all.
+			name: "cleared issuers travel as an empty list",
+			input: UpdateDeploymentInput{
+				Agw: NewAgwUpdate(&AgwPatch{IdJagIssuers: &[]string{}}),
+			},
+			contains: `"agw":{"idp_id":null,"id_jag_issuers":[]}`,
+		},
 	}
 
 	for _, tc := range tests {

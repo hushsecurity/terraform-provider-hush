@@ -60,6 +60,7 @@ Read-Only:
 
 - `gateway_url` (String)
 - `hostname` (String)
+- `id_jag_issuers` (List of String)
 - `idp_id` (String)
 - `region` (String)
 
