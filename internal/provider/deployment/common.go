@@ -31,8 +31,9 @@ const (
 	agwHostnameDataDesc = "The external hostname (FQDN) clients and the OAuth browser flow reach the gateway on. Set for a gateway the customer runs, and empty for a Hush-hosted one, which derives its own address."
 	agwRegionDataDesc   = "The region a Hush-hosted gateway is placed in. Empty for a gateway the customer runs, which Hush does not place."
 
-	agwIdpIDDesc      = "The identity provider the gateway's login flow uses, by id. Valid on either kind of gateway. Omit it to fall back to the organization's default provider. Only an enabled provider is accepted, and it is checked when the deployment is written, which is the only check there is: a provider disabled afterwards is not reported, and the login flow quietly falls back to the default."
-	agwGatewayURLDesc = "The URL agents connect to the gateway on, derived by Hush. For a hosted gateway this is the only way to learn the address, since the name is generated from the deployment id and the region."
+	agwIdpIDDesc        = "The identity provider the gateway's login flow uses, by id. Valid on either kind of gateway. Omit it to fall back to the organization's default provider. Only an enabled provider is accepted, and it is checked when the deployment is written, which is the only check there is: a provider disabled afterwards is not reported, and the login flow quietly falls back to the default."
+	agwIdJagIssuersDesc = "Issuers besides the identity provider whose identity assertions (ID-JAGs) sign users in to the gateway without a browser sign-in, matched by email among the organization's users. For Claude-issued auto-connect, the organization's issuer URL from Claude's managed authorization setup, such as https://identity.anthropic.com/issuers/iss_.... At most 8 https URLs."
+	agwGatewayURLDesc   = "The URL agents connect to the gateway on, derived by Hush. For a hosted gateway this is the only way to learn the address, since the name is generated from the deployment id and the region."
 
 	oidcProviderDesc        = "Optional OIDC provider configuration enabling passwordless deployment token exchange. When set, the deployment can exchange a signed OIDC token (for example a Kubernetes service account token) for a deployment token instead of using the password. Repeat the block to trust more than one issuer. Every block is stored in the API's 'oidc_providers' field, and each issuer may appear once."
 	oidcIssuerDesc          = "The OIDC issuer URL (must be HTTPS). Its OpenID configuration and JWKS are used to verify presented assertions."
@@ -170,6 +171,16 @@ func DeploymentResourceSchema() map[string]*schema.Schema {
 					Type:        schema.TypeString,
 					Optional:    true,
 				},
+				"id_jag_issuers": {
+					Description: agwIdJagIssuersDesc,
+					Type:        schema.TypeList,
+					Optional:    true,
+					MaxItems:    8,
+					Elem: &schema.Schema{
+						Type:         schema.TypeString,
+						ValidateFunc: validation.IsURLWithHTTPS,
+					},
+				},
 				"gateway_url": {
 					Description: agwGatewayURLDesc,
 					Type:        schema.TypeString,
@@ -267,6 +278,12 @@ func DeploymentDataSourceSchema() map[string]*schema.Schema {
 						Description: agwIdpIDDesc,
 						Type:        schema.TypeString,
 						Computed:    true,
+					},
+					"id_jag_issuers": {
+						Description: agwIdJagIssuersDesc,
+						Type:        schema.TypeList,
+						Computed:    true,
+						Elem:        &schema.Schema{Type: schema.TypeString},
 					},
 					"gateway_url": {
 						Description: agwGatewayURLDesc,
@@ -422,10 +439,11 @@ func flattenAgw(deployment *client.Deployment) []map[string]any {
 		return []map[string]any{}
 	}
 	return []map[string]any{{
-		"hostname":    deployment.Agw.Hostname,
-		"region":      deployment.Agw.Region,
-		"idp_id":      deployment.Agw.IdpID,
-		"gateway_url": deployment.Agw.GatewayURL,
+		"hostname":       deployment.Agw.Hostname,
+		"region":         deployment.Agw.Region,
+		"idp_id":         deployment.Agw.IdpID,
+		"id_jag_issuers": deployment.Agw.IdJagIssuers,
+		"gateway_url":    deployment.Agw.GatewayURL,
 	}}
 }
 
