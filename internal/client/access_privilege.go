@@ -1409,3 +1409,75 @@ func UpdateGithubAppAccessPrivilege(ctx context.Context, c *Client, id string, i
 	}
 	return &resp, nil
 }
+
+// Cloudflare R2
+
+type CloudflareR2AccessPrivilege struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Permission  string `json:"permission"`
+	// Nil for every bucket of the account, and for an admin permission.
+	Buckets      []string `json:"buckets"`
+	Jurisdiction string   `json:"jurisdiction"`
+}
+
+// CreateCloudflareR2AccessPrivilegeInput always sends buckets, as the Hush
+// API refuses an object permission without them: nil sends null, every bucket.
+type CreateCloudflareR2AccessPrivilegeInput struct {
+	Name         string   `json:"name"`
+	Description  string   `json:"description,omitempty"`
+	Permission   string   `json:"permission"`
+	Buckets      []string `json:"buckets"`
+	Jurisdiction string   `json:"jurisdiction"`
+}
+
+type UpdateCloudflareR2AccessPrivilegeInput struct {
+	Name         *string        `json:"name,omitempty"`
+	Description  *string        `json:"description,omitempty"`
+	Permission   *string        `json:"permission,omitempty"`
+	Buckets      *bucketsUpdate `json:"buckets,omitempty"`
+	Jurisdiction *string        `json:"jurisdiction,omitempty"`
+}
+
+// bucketsUpdate sends buckets on a PATCH: the list, or null for every bucket.
+// A nil wrapper is omitted; omitempty on a plain slice could not send null.
+type bucketsUpdate struct{ Buckets []string }
+
+func (b bucketsUpdate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(b.Buckets)
+}
+
+// NewBucketsUpdate wraps buckets (nil for every bucket) for an update
+// request, forcing the field to be sent.
+func NewBucketsUpdate(buckets []string) *bucketsUpdate {
+	return &bucketsUpdate{Buckets: buckets}
+}
+
+func CreateCloudflareR2AccessPrivilege(ctx context.Context, c *Client, input *CreateCloudflareR2AccessPrivilegeInput) (*CloudflareR2AccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/cloudflare_r2"
+	var resp CloudflareR2AccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetCloudflareR2AccessPrivilege(ctx context.Context, c *Client, id string) (*CloudflareR2AccessPrivilege, error) {
+	path := fmt.Sprintf("%s/cloudflare_r2/%s", accessPrivilegesEndpoint, id)
+	var resp CloudflareR2AccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateCloudflareR2AccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateCloudflareR2AccessPrivilegeInput) (*CloudflareR2AccessPrivilege, error) {
+	path := fmt.Sprintf("%s/cloudflare_r2/%s", accessPrivilegesEndpoint, id)
+	var resp CloudflareR2AccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}

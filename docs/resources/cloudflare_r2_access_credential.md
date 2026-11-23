@@ -48,6 +48,55 @@ Each live policy version holds one, named `hush-am-r2-<id>-<version>`, so plan
 for about 250 policies per account, minus the account's other tokens. Do not
 edit or delete these tokens by hand.
 
+## Delivering the S3 credentials
+
+An access policy maps the three items the access manager generates,
+`access_key_id`, `secret_access_key` and `endpoint`, to the workload;
+`account_id` and `api_token` never reach it. A `hush_cloudflare_r2_access_privilege`
+sets what the credentials reach. This policy uses the names every AWS SDK reads:
+
+```terraform
+# Deliver the S3 credentials under the names every AWS SDK reads
+resource "hush_access_policy" "cloudflare_r2_example" {
+  name                 = "prod-r2-policy"
+  access_credential_id = hush_cloudflare_r2_access_credential.example.id
+  access_privilege_ids = [hush_cloudflare_r2_access_privilege.example.id]
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  env_delivery_config {
+    name = "AWS_ACCESS_KEY_ID"
+    key  = "access_key_id"
+  }
+
+  env_delivery_config {
+    name = "AWS_SECRET_ACCESS_KEY"
+    key  = "secret_access_key"
+  }
+
+  env_delivery_config {
+    name = "AWS_ENDPOINT_URL_S3"
+    key  = "endpoint"
+  }
+}
+```
+
+**These names replace the pod's own.** A pod that also calls AWS should map the
+items to other names and build its R2 client from them in code. Otherwise its
+AWS SDK sends the R2 key to AWS, and its S3 calls to R2.
+
+**Region.** R2 takes the region `auto`. The AWS SDK for Go v2 needs a region:
+set `AWS_REGION=auto` in the pod spec, or the region in code. boto3 works
+without one, but a pod that sets `AWS_DEFAULT_REGION` to an AWS region must give
+the R2 client `region_name="auto"`.
+
+**Retry the first call.** S3 refuses a new key with `401` for a few seconds
+after the access manager issues it. Retry for up to about 10 seconds at start.
+
 ## Changing `account_id`
 
 A new account needs a new root token in the same apply, which the plan checks.
