@@ -25,6 +25,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/azure_wif_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bedrock_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/bitbucket_integration"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/cloudflare_r2_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/confluence_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/custom_mcp_application"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_credential"
@@ -201,6 +202,7 @@ func New(version string) func() *schema.Provider {
 				"hush_kafka_access_privilege":           kafka_access_privilege.Resource(),
 				"hush_pinot_access_credential":          pinot_access_credential.Resource(),
 				"hush_pinot_access_privilege":           pinot_access_privilege.Resource(),
+				"hush_cloudflare_r2_access_credential":  cloudflare_r2_access_credential.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
@@ -281,6 +283,7 @@ func New(version string) func() *schema.Provider {
 				"hush_kafka_access_privilege":           kafka_access_privilege.DataSource(),
 				"hush_pinot_access_credential":          pinot_access_credential.DataSource(),
 				"hush_pinot_access_privilege":           pinot_access_privilege.DataSource(),
+				"hush_cloudflare_r2_access_credential":  cloudflare_r2_access_credential.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)

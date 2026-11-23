@@ -35,6 +35,7 @@ const (
 	AccessCredentialTypeKafka         AccessCredentialType = "kafka"
 	AccessCredentialTypePinot         AccessCredentialType = "pinot"
 	AccessCredentialTypeGithubApp     AccessCredentialType = "github_app"
+	AccessCredentialTypeCloudflareR2  AccessCredentialType = "cloudflare_r2"
 )
 
 // Postgres
@@ -2384,4 +2385,75 @@ func UpdateGithubAppAccessCredential(ctx context.Context, c *Client, id string, 
 
 func (g GithubAppAccessCredential) statusFields() (string, string) {
 	return g.Status, g.StatusDetail
+}
+
+// Cloudflare R2
+
+type CloudflareR2AccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
+	AccountID     string               `json:"account_id"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateCloudflareR2AccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
+	AccountID     string   `json:"account_id"`
+	APIToken      string   `json:"api_token"`
+}
+
+// UpdateCloudflareR2AccessCredentialInput never sends null for account_id or
+// api_token: the Hush API rejects it.
+type UpdateCloudflareR2AccessCredentialInput struct {
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	AccountID     *string              `json:"account_id,omitempty"`
+	APIToken      *string              `json:"api_token,omitempty"`
+}
+
+func CreateCloudflareR2AccessCredential(ctx context.Context, c *Client, input *CreateCloudflareR2AccessCredentialInput) (*CloudflareR2AccessCredential, error) {
+	path := accessCredentialsEndpoint + "/cloudflare_r2"
+	var resp CloudflareR2AccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetCloudflareR2AccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetCloudflareR2AccessCredential(ctx context.Context, c *Client, id string) (*CloudflareR2AccessCredential, error) {
+	path := fmt.Sprintf("%s/cloudflare_r2/%s", accessCredentialsEndpoint, id)
+	var resp CloudflareR2AccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateCloudflareR2AccessCredential(ctx context.Context, c *Client, id string, input *UpdateCloudflareR2AccessCredentialInput) (*CloudflareR2AccessCredential, error) {
+	path := fmt.Sprintf("%s/cloudflare_r2/%s", accessCredentialsEndpoint, id)
+	var resp CloudflareR2AccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetCloudflareR2AccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (r CloudflareR2AccessCredential) statusFields() (string, string) {
+	return r.Status, r.StatusDetail
 }
