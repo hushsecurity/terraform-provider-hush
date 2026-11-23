@@ -16,10 +16,20 @@ type statusResource interface {
 	statusFields() (status, statusDetail string)
 }
 
+// StatusWaitError is a failed wait for a terminal status. Hush accepted the
+// request before it, so the caller can tell a sent change from an unsent one.
+type StatusWaitError struct {
+	Err error
+}
+
+func (e *StatusWaitError) Error() string { return e.Err.Error() }
+
+func (e *StatusWaitError) Unwrap() error { return e.Err }
+
 // waitForResourceStatus polls the given getter until a terminal status is reached.
 func waitForResourceStatus[T statusResource](ctx context.Context, c *Client, id string,
 	getFn func(context.Context, *Client, string) (*T, error)) error {
-	return waitForStatus(ctx, func() (string, string, error) {
+	err := waitForStatus(ctx, func() (string, string, error) {
 		r, err := getFn(ctx, c, id)
 		if err != nil {
 			return "", "", err
@@ -27,6 +37,10 @@ func waitForResourceStatus[T statusResource](ctx context.Context, c *Client, id 
 		status, detail := (*r).statusFields()
 		return status, detail, nil
 	})
+	if err != nil {
+		return &StatusWaitError{Err: err}
+	}
+	return nil
 }
 
 func waitForStatus(ctx context.Context, pollFn func() (
