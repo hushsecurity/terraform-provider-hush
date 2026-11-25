@@ -1,6 +1,6 @@
 module github.com/hushsecurity/terraform-provider-hush
 
-go 1.26.0
+go 1.26.11
 
 require (
 	github.com/hashicorp/go-cty v1.5.0
