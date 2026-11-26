@@ -51,9 +51,35 @@ admin key.
 
 The access manager generates `cloud_name`, `api_key`, `api_secret` and
 `cloudinary_url` for each policy version; `account_id` and the account
-management key never reach a workload. By default an access policy delivers
-`cloudinary_url` as `CLOUDINARY_URL`, which Cloudinary's SDKs read cloud name,
-key and secret from.
+management key never reach a workload. A `hush_cloudinary_access_privilege`
+sets the product environment and the role of the keys. By default an access
+policy delivers `cloudinary_url` as `CLOUDINARY_URL`, which Cloudinary's SDKs
+read cloud name, key and secret from:
+
+```terraform
+# Deliver the credentials as CLOUDINARY_URL, which Cloudinary's SDKs read
+resource "hush_access_policy" "cloudinary_example" {
+  name                 = "prod-cloudinary-policy"
+  access_credential_id = hush_cloudinary_access_credential.example.id
+  access_privilege_ids = [hush_cloudinary_access_privilege.example.id]
+  deployment_ids       = [hush_deployment.example.id]
+
+  attestation_criteria {
+    type  = "k8s:ns"
+    value = "production"
+  }
+
+  env_delivery_config {
+    name = "CLOUDINARY_URL"
+    key  = "cloudinary_url"
+  }
+}
+```
+
+A privilege with `system_policy_ids` gets a role the access manager creates for
+each privilege version, named `hush_<privilege id without dashes>_<version>`, and deletes once
+no key holds it. Do not edit these roles by hand: the access manager restores
+their policies.
 
 ## Changing `account_id`
 

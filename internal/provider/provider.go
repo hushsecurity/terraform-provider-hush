@@ -28,6 +28,7 @@ import (
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/cloudflare_r2_access_credential"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/cloudflare_r2_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/cloudinary_access_credential"
+	"github.com/hushsecurity/terraform-provider-hush/internal/provider/cloudinary_access_privilege"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/confluence_integration"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/custom_mcp_application"
 	"github.com/hushsecurity/terraform-provider-hush/internal/provider/datadog_access_credential"
@@ -207,6 +208,7 @@ func New(version string) func() *schema.Provider {
 				"hush_cloudflare_r2_access_credential":  cloudflare_r2_access_credential.Resource(),
 				"hush_cloudflare_r2_access_privilege":   cloudflare_r2_access_privilege.Resource(),
 				"hush_cloudinary_access_credential":     cloudinary_access_credential.Resource(),
+				"hush_cloudinary_access_privilege":      cloudinary_access_privilege.Resource(),
 			},
 			DataSourcesMap: map[string]*schema.Resource{
 				"hush_deployment":                       deployment.DataSource(),
@@ -290,6 +292,7 @@ func New(version string) func() *schema.Provider {
 				"hush_cloudflare_r2_access_credential":  cloudflare_r2_access_credential.DataSource(),
 				"hush_cloudflare_r2_access_privilege":   cloudflare_r2_access_privilege.DataSource(),
 				"hush_cloudinary_access_credential":     cloudinary_access_credential.DataSource(),
+				"hush_cloudinary_access_privilege":      cloudinary_access_privilege.DataSource(),
 			},
 		}
 		p.ConfigureContextFunc = configure(version, p)

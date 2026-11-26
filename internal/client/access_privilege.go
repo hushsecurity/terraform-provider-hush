@@ -1481,3 +1481,95 @@ func UpdateCloudflareR2AccessPrivilege(ctx context.Context, c *Client, id string
 	}
 	return &resp, nil
 }
+
+// Cloudinary
+
+// CloudinaryGrant is where a privilege's key lives and what it may do: one of
+// a built-in RoleID or SystemPolicyIDs, the other sent as null.
+type CloudinaryGrant struct {
+	CloudName       string
+	RoleID          string
+	SystemPolicyIDs []string
+}
+
+func (g CloudinaryGrant) fields() map[string]any {
+	return map[string]any{
+		"cloud_name":        g.CloudName,
+		"role_id":           nilIfEmptyString(g.RoleID),
+		"system_policy_ids": nilIfEmpty(g.SystemPolicyIDs),
+	}
+}
+
+type CloudinaryAccessPrivilege struct {
+	ID              string   `json:"id,omitempty"`
+	Name            string   `json:"name"`
+	Description     string   `json:"description,omitempty"`
+	Type            string   `json:"type,omitempty"`
+	CloudName       string   `json:"cloud_name"`
+	RoleID          string   `json:"role_id"`
+	SystemPolicyIDs []string `json:"system_policy_ids"`
+}
+
+type CreateCloudinaryAccessPrivilegeInput struct {
+	Name        string
+	Description string
+	Grant       CloudinaryGrant
+}
+
+func (in CreateCloudinaryAccessPrivilegeInput) MarshalJSON() ([]byte, error) {
+	m := in.Grant.fields()
+	m["name"] = in.Name
+	if in.Description != "" {
+		m["description"] = in.Description
+	}
+	return json.Marshal(m)
+}
+
+// UpdateCloudinaryAccessPrivilegeInput sends every grant field when Grant is
+// set, so switching between a role and policies clears the other.
+type UpdateCloudinaryAccessPrivilegeInput struct {
+	Name        *string
+	Description *string
+	Grant       *CloudinaryGrant
+}
+
+func (in UpdateCloudinaryAccessPrivilegeInput) MarshalJSON() ([]byte, error) {
+	m := map[string]any{}
+	if in.Grant != nil {
+		m = in.Grant.fields()
+	}
+	if in.Name != nil {
+		m["name"] = *in.Name
+	}
+	if in.Description != nil {
+		m["description"] = *in.Description
+	}
+	return json.Marshal(m)
+}
+
+func CreateCloudinaryAccessPrivilege(ctx context.Context, c *Client, input *CreateCloudinaryAccessPrivilegeInput) (*CloudinaryAccessPrivilege, error) {
+	path := accessPrivilegesEndpoint + "/cloudinary"
+	var resp CloudinaryAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetCloudinaryAccessPrivilege(ctx context.Context, c *Client, id string) (*CloudinaryAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/cloudinary/%s", accessPrivilegesEndpoint, id)
+	var resp CloudinaryAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateCloudinaryAccessPrivilege(ctx context.Context, c *Client, id string, input *UpdateCloudinaryAccessPrivilegeInput) (*CloudinaryAccessPrivilege, error) {
+	path := fmt.Sprintf("%s/cloudinary/%s", accessPrivilegesEndpoint, id)
+	var resp CloudinaryAccessPrivilege
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}

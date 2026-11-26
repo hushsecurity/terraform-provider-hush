@@ -278,6 +278,8 @@ func validateResourceDestroyed(resource, resourcePath string) func(s *terraform.
 				_, err = client.GetCloudflareR2AccessPrivilege(context.Background(), c, resourceId)
 			case "cloudinary_access_credential":
 				_, err = client.GetCloudinaryAccessCredential(context.Background(), c, resourceId)
+			case "cloudinary_access_privilege":
+				_, err = client.GetCloudinaryAccessPrivilege(context.Background(), c, resourceId)
 			default:
 				return fmt.Errorf("unknown resource type: %s", resource)
 			}
