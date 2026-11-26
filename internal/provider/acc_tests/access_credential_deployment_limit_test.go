@@ -29,6 +29,7 @@ func TestAccResourceAccessCredentials_RejectMultipleDeployments(t *testing.T) {
 		"hush_azure_wif_access_credential":      azureWifAccessCredentialStep1(),
 		"hush_bedrock_access_credential":        bedrockAccessCredentialStep1(),
 		"hush_cloudflare_r2_access_credential":  cloudflareR2AccessCredentialStep1(),
+		"hush_cloudinary_access_credential":     cloudinaryAccessCredentialStep1(),
 		"hush_datadog_access_credential":        datadogAccessCredentialStep1(),
 		"hush_gcp_sa_access_credential":         gcpSAAccessCredentialStep1(),
 		"hush_gcp_wif_access_credential":        gcpWifAccessCredentialStep1(),
