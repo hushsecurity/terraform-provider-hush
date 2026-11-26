@@ -36,6 +36,7 @@ const (
 	AccessCredentialTypePinot         AccessCredentialType = "pinot"
 	AccessCredentialTypeGithubApp     AccessCredentialType = "github_app"
 	AccessCredentialTypeCloudflareR2  AccessCredentialType = "cloudflare_r2"
+	AccessCredentialTypeCloudinary    AccessCredentialType = "cloudinary"
 )
 
 // Postgres
@@ -2455,5 +2456,78 @@ func UpdateCloudflareR2AccessCredential(ctx context.Context, c *Client, id strin
 }
 
 func (r CloudflareR2AccessCredential) statusFields() (string, string) {
+	return r.Status, r.StatusDetail
+}
+
+// Cloudinary
+
+type CloudinaryAccessCredential struct {
+	ID            string               `json:"id,omitempty"`
+	Name          string               `json:"name"`
+	Description   string               `json:"description,omitempty"`
+	Type          AccessCredentialType `json:"type"`
+	Kind          string               `json:"kind,omitempty"`
+	DeploymentIDs []string             `json:"deployment_ids"`
+	SecretStoreID string               `json:"secret_store_id,omitempty"`
+	AccountID     string               `json:"account_id"`
+	Status        string               `json:"status,omitempty"`
+	StatusDetail  string               `json:"status_detail,omitempty"`
+}
+
+type CreateCloudinaryAccessCredentialInput struct {
+	Name          string   `json:"name"`
+	Description   string   `json:"description,omitempty"`
+	DeploymentIDs []string `json:"deployment_ids"`
+	SecretStoreID string   `json:"secret_store_id,omitempty"`
+	AccountID     string   `json:"account_id"`
+	APIKey        string   `json:"api_key"`
+	APISecret     string   `json:"api_secret"`
+}
+
+// UpdateCloudinaryAccessCredentialInput never sends null for account_id,
+// api_key or api_secret: the Hush API rejects it.
+type UpdateCloudinaryAccessCredentialInput struct {
+	Name          *string              `json:"name,omitempty"`
+	Description   *string              `json:"description,omitempty"`
+	SecretStoreID *secretStoreIDUpdate `json:"secret_store_id,omitempty"`
+	AccountID     *string              `json:"account_id,omitempty"`
+	APIKey        *string              `json:"api_key,omitempty"`
+	APISecret     *string              `json:"api_secret,omitempty"`
+}
+
+func CreateCloudinaryAccessCredential(ctx context.Context, c *Client, input *CreateCloudinaryAccessCredentialInput) (*CloudinaryAccessCredential, error) {
+	path := accessCredentialsEndpoint + "/cloudinary"
+	var resp CloudinaryAccessCredential
+	if err := c.doRequest(ctx, http.MethodPost, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, resp.ID, GetCloudinaryAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func GetCloudinaryAccessCredential(ctx context.Context, c *Client, id string) (*CloudinaryAccessCredential, error) {
+	path := fmt.Sprintf("%s/cloudinary/%s", accessCredentialsEndpoint, id)
+	var resp CloudinaryAccessCredential
+	if err := c.doRequest(ctx, http.MethodGet, path, nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func UpdateCloudinaryAccessCredential(ctx context.Context, c *Client, id string, input *UpdateCloudinaryAccessCredentialInput) (*CloudinaryAccessCredential, error) {
+	path := fmt.Sprintf("%s/cloudinary/%s", accessCredentialsEndpoint, id)
+	var resp CloudinaryAccessCredential
+	if err := c.doRequest(ctx, http.MethodPatch, path, input, &resp); err != nil {
+		return nil, err
+	}
+	if err := waitForResourceStatus(ctx, c, id, GetCloudinaryAccessCredential); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+func (r CloudinaryAccessCredential) statusFields() (string, string) {
 	return r.Status, r.StatusDetail
 }
