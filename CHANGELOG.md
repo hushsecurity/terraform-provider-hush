@@ -6,14 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ---
 
-## [Unreleased]
+## [1.42.0] - 2026-11-26
 
 ### Added
 
-* **Access request notifications**: `hush_notification_configuration` creates `new_access_request` configurations, which notify admins when a user blocked in the agent gateway asks for access to an app. `aggregation = "short"`, the default on creation, sends each request as it's made; `day`, `week` or `month` sends a digest of the requests still pending. Removing `aggregation` keeps the current one: set `short` to go back from a digest. `dispatch_filters` narrow them by `deployment` and by `app`, an app instance name or its catalog id.
 * **Service agent hand-offs**: `handed_off_by` on `hush_service_agent` and its data source names the agents that may hand off to the agent, with or without a user, in the `assignment` rule format with agent `id` matches only. Without it, any agent may, as before; `accepts_hand_offs = false` refuses every agent.
 * **Trusted ID-JAG issuers**: `id_jag_issuers` in `hush_deployment`'s `agw` block (and its data source) lists issuers besides the gateway's identity provider whose identity assertions sign users in without a browser sign-in, matched by email among the organization's users, such as a Claude organization's issuer for Claude-issued auto-connect. At most 8 https URLs. Like `idp_id`, the configuration owns the list: issuers set elsewhere are removed unless listed.
-* **Atlas built-in roles**: `hush_mongodb_atlas_access_privilege` takes `builtin_roles`, granted on the admin database. `clusterMonitor`, the one offered, grants `$indexStats`; it also reads the oplog and every database's profiler, so a credential holding it sees documents and queries from the whole cluster. `grants` is now optional; a privilege needs at least one grant or built-in role. An older hush-am does not grant the built-in roles.
 * **Statsig credentials**: `hush_statsig_access_credential` holds a Statsig Console API key (`api_key` / `api_key_wo`) with the `omni_read_write` and `can_access_keys` scopes; `hush_statsig_access_privilege` picks the key the access manager mints for each policy: `key_type` `server` (the default) or `client`, optionally limited to `environments`, a `target_app_id` and `secondary_target_app_ids`. Removing those widens the key again. Statsig takes up to about five minutes to accept a new key. Creating the credential needs `hush-am` 0.34.1 or later on its deployment; on an older one the apply fails.
 * **Cloudflare R2 credentials**: `hush_cloudflare_r2_access_credential` holds a Cloudflare `account_id` and a root account API token (`api_token` / `api_token_wo`) with the `Account API Tokens` `Edit` permission. The access manager issues an R2 token per policy version and delivers its S3 `access_key_id`, `secret_access_key` and `endpoint`. `hush_cloudflare_r2_access_privilege` sets the `permission`, the `buckets` and the `jurisdiction`; an object permission names its `buckets` or sets `all_buckets = true` for every bucket, never by default. `account_id` changes only together with a new token, and only while no access policy or dynamic credential uses the credential. Needs hush-am 0.34.1 or later; see the [resource documentation](docs/resources/cloudflare_r2_access_credential.md).
 
@@ -24,6 +22,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 ### Fixed
 
 * **MySQL certificate verification**: `hush_mysql_access_credential` takes `ssl_mode = "verify-ca"` and `"verify-identity"`, the forms the API accepts and `hush_mariadb_access_credential` already takes. It accepted `verify_ca` and `verify_identity` instead, which every apply refused, so Terraform could not select either verify mode for a MySQL credential. The `ssl_mode` descriptions of both resources now say what each mode does. From hush-am's next release, the modes mean what they mean in MySQL: `preferred` falls back to plaintext on a server without TLS, `required` encrypts without verifying the certificate, `verify-ca` checks it against `ssl_ca`, and `verify-identity` also checks the host name. Before that release, `verify-ca` accepts any certificate, so only `required` and `verify-identity` verify it.
+
+## [1.41.0] - 2026-11-19
+
+### Added
+
+* **Access request notifications**: `hush_notification_configuration` creates `new_access_request` configurations, which notify admins when a user blocked in the agent gateway asks for access to an app. `aggregation = "short"`, the default on creation, sends each request as it's made; `day`, `week` or `month` sends a digest of the requests still pending. Removing `aggregation` keeps the current one: set `short` to go back from a digest. `dispatch_filters` narrow them by `deployment` and by `app`, an app instance name or its catalog id.
+* **Atlas built-in roles**: `hush_mongodb_atlas_access_privilege` takes `builtin_roles`, granted on the admin database. `clusterMonitor`, the one offered, grants `$indexStats`; it also reads the oplog and every database's profiler, so a credential holding it sees documents and queries from the whole cluster. `grants` is now optional; a privilege needs at least one grant or built-in role. An older hush-am does not grant the built-in roles.
+* **AWS integration role prefix**: `role_prefix` on `hush_aws_integration` (and its data source) sets the prefix of the StackSet role's name, which is `<role_prefix><unique_suffix>`. Only with `cf_stackset_arn`; defaults to `hush-security-`. Changing it replaces the integration.
 
 ## [1.40.0] - 2026-11-14
 
